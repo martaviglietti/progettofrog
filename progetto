@@ -4,3 +4,6 @@
 #include <unistd.h>
 #include <ncurses.h>
 #include <sys/wait.h>
+int main(){
+
+}
