@@ -1,1 +1,11 @@
+Coccodrillo coccodrilli[8];
 
+int n_flusso;
+int n_coccodrilli;
+int id_morti[8];
+while(n_coccodrilli<8){
+    n_flusso= rand()%8;
+    
+
+}
+    
