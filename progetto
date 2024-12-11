@@ -44,22 +44,7 @@ frog_pid = createFrog(pipe_fds);
 
 
 
-//creazione dei processi
-pid = fork(); // creo il processo che gestisce la rana
 
-        if (pid == -1) {
-            perror("Chiamata fork fallita (rana)");
-            exit(1);
-        } else if (pid == 0) {
-            frog(); // processo figlio rana
-        } else {
-            pid2 = fork(); // creo il processo che gestisce i coccodrilli
-
-            if (pid2 == -1) {
-                perror("Chiamata fork fallita (coccodrilli)");
-                exit(1);
-            } else if (pid2 == 0) {
-             
             
 
 
