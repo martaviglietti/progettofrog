@@ -5,7 +5,7 @@ typedef struct{
     int speed;
 }Flusso;
 
-
+//controllo modifica
 Flusso flussi[8];
 srand(time(NULL));
 int altezza_base;
