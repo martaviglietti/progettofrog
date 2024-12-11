@@ -7,7 +7,7 @@ int main(){
     int pipe_fds[2];
     //WINDOW *game; creazione finestra di gioco da continuare
 
-//FUNZIONE?
+//FUNZIONE ciao
 
     
     crocodile crocodiles[MAX_CROCODILES];
