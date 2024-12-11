@@ -8,5 +8,6 @@ while(n_coccodrilli<8){
     coccodrilli[id_morti[0]].dir=    flussi[n_flusso].dir;
     coccodrilli[id_morti[0]].speed=    flussi[n_flusso].speed;
     coccodrilli[id_morti[0]].y=    flussi[n_flusso].y;
+    if(
 
     
