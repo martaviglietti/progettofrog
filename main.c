@@ -1,4 +1,10 @@
-#define MAX_CROCODILES 7
+#include<stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <ncurses.h>
+#include <sys/wait.h>
+int main(){#define MAX_CROCODILES 7
 void createCrocodile(int pipeGame[2], pid_t *pid);
 
 int main(){
@@ -7,7 +13,7 @@ int main(){
     int pipe_fds[2];
     //WINDOW *game; creazione finestra di gioco da continuare
 
-//FUNZIONE ciao
+
 
     
     crocodile crocodiles[MAX_CROCODILES];
@@ -38,24 +44,6 @@ frog_pid = createFrog(pipe_fds);
 
 
 
-//creazione dei processi
-pid = fork(); // creo il processo che gestisce la rana
-
-        if (pid == -1) {
-            perror("Chiamata fork fallita (rana)");
-            exit(1);
-        } else if (pid == 0) {
-            frog(); // processo figlio rana
-        } else {
-            pid2 = fork(); // creo il processo che gestisce i coccodrilli
-
-            if (pid2 == -1) {
-                perror("Chiamata fork fallita (coccodrilli)");
-                exit(1);
-            } else if (pid2 == 0) {
-                river(pipeGame); // processo figlio coccodrilli
-            } else {
-                pid3 = fork(); // creo il processo che gestisce le piante
 
             
 
@@ -70,8 +58,3 @@ void controllo(int pipe[2], ){
 
 
 
-
-
-
-
-}
