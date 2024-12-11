@@ -59,10 +59,7 @@ pid = fork(); // creo il processo che gestisce la rana
                 perror("Chiamata fork fallita (coccodrilli)");
                 exit(1);
             } else if (pid2 == 0) {
-                river(pipeGame); // processo figlio coccodrilli
-            } else {
-                pid3 = fork(); // creo il processo che gestisce le piante
-
+             
             
 
 
