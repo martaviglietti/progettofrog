@@ -1,1 +1,21 @@
+int createCrocodile(int pipe_fds[2], pid_t *pid, int y) {
+    srand(time(NULL) + id);
+    *pid = fork();
+    if (*pid == -1) {
+        perror("Errore nella creazione del processo coccodrillo");
+        return 0;
+    } else if (*pid == 0) {
+        // Processo figlio
+        crocodile croc = {getpid(), 0, y, true};
+        while (croc.alive) {
+            croc.x++;
+            if (croc.x < 0 || croc.x > COLS) { // Fuori dallo schermo
+                croc.alive = false;
+            }
+            write(pipe_fds[1], &croc, sizeof(croc));
+            usleep(100000);
+        }
+        exit(0);
+    }
+    return 
 
