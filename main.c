@@ -17,8 +17,10 @@ int main() {
     curs_set(0);
 
     // Controllo del supporto colori
-    if (has_colors()) {
-        start_color();
+    //
+    if (has_colors()) { //funzione che verifica se il terminale corrente supporta i colori
+        start_color();  //abilita l uso dei colori 
+        //definisco la coppia di colori sfodo carattere
         init_pair(1, COLOR_GREEN, COLOR_BLACK);   // Colore normale
         init_pair(12, COLOR_WHITE, COLOR_BLUE);  // Colore evidenziato
     }
@@ -38,8 +40,9 @@ int main() {
     if (result == 0) {
         // L'utente ha selezionato "Inizia gioco"
         mvwprintw(game, height / 2, width / 2 - 10, "Inizio Gioco...");
+        //qui dovro iniziare il gioco
         wrefresh(game);
-        sleep(2); // Placeholder per il gioco
+        sleep(2); 
     } else if (result == 2) {
         // L'utente ha selezionato "Esci"
         mvwprintw(game, height / 2, width / 2 - 5, "Uscita...");
@@ -53,3 +56,4 @@ int main() {
 
     return 0;
 }
+
