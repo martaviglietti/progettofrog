@@ -1,19 +1,16 @@
 #include "menu.h"
 #include <string.h>
 
-// Array di stringhe che rappresentano le opzioni del menu
+// Opzioni del menu
 static const char *OPZIONI[] = {
     "Inizia gioco", "Crediti", "Esci"
 };
 
-// Funzione che gestisce il menu
 int menu(WINDOW *game) {
-    nodelay(game, false); // Rendo bloccante la getch
-    keypad(game, true);   // Abilito l'input da tastiera
+    flushinp();            // Elimina input residuo
+    keypad(game, true);    // Abilita l'input da tastiera
 
-    char choice;
     int position = 0;
-
     int gameLINES = getmaxy(game);
     int gameCOLS = getmaxx(game);
 
@@ -32,50 +29,28 @@ int menu(WINDOW *game) {
             int x = gameCOLS / 2 - (strlen(OPZIONI[i]) / 2);
             mvwprintw(game, gameLINES / 2 - 1 + i, x, "%s", OPZIONI[i]);
 
-            if (position == i) {
-                wattroff(game, COLOR_PAIR(12));
-            } else {
-                wattroff(game, COLOR_PAIR(1));
-            }
+            wattroff(game, COLOR_PAIR(1));
+            wattroff(game, COLOR_PAIR(12));
         }
 
-        choice = wgetch(game);
+        int choice = wgetch(game);
         switch (choice) {
-            case 2: // Freccia giù
+            case KEY_DOWN:
                 position++;
-                if (position >= 3) {
-                    position = 0;
-                }
+                if (position >= 3) position = 0;
                 break;
-            case 3: // Freccia su
+            case KEY_UP:
                 position--;
-                if (position < 0) {
-                    position = 2;
-                }
+                if (position < 0) position = 2;
                 break;
             case 10: // Invio
-                if (position == 0 || position == 2) {
-                    wrefresh(game);
-                    flushinp();
-                    nodelay(game, true);
-                    keypad(game, false);
-                    return position;
-                } else {
-                    credits(game);
-                }
-                break;
+                return position;
         }
 
         wrefresh(game);
-        flushinp();
     }
-
-    nodelay(game, true);
-    keypad(game, false);
-    return 0;
 }
 
-// Funzione che mostra i crediti
 void credits(WINDOW *game) {
     wclear(game);
     box(game, ACS_VLINE, ACS_HLINE);
@@ -88,6 +63,5 @@ void credits(WINDOW *game) {
     mvwprintw(game, gameLINES / 2 + 1, gameCOLS / 2 - 17, "Premi un tasto per tornare al menu...");
 
     wrefresh(game);
-    flushinp();
     wgetch(game);
 }
