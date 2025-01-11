@@ -1,0 +1,227 @@
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <ncurses.h>
+#include <sys/wait.h>
+#define MAX_CROCODILES 16
+#define POS_SPAWN_COC_SINISTRA
+#define POS_SPAWN_COC_DESTRA
+#define VELMAX_FLUSSO
+#define VELMIN_FLUSSO
+#define DELAY 1000000
+
+
+
+
+typedef struct{
+    int id;
+    int y;
+    int dir;
+    int speed;
+}Flusso;
+
+typedef struct{
+    int id;
+    int y;
+    int x;
+    int dir;
+    int speed;
+    int id_flusso;
+}Coccodrillo;
+
+typedef struct{
+    int id;
+    int y;
+    int x;
+    int dir;
+    int speed;
+}Proiettile;
+
+typedef struct{
+    int id;
+    int x;
+    int y;
+}Rana;
+
+typedef struct{
+	int id;
+	int x;
+	int y;
+}Temp;
+
+
+
+void definizione_flussi(Flusso *flussi);
+void creazione_processi(Flusso *flussi,Coccodrillo *coccodrilli);
+void procControllo (int *pipe_fds);
+bool Gestione_grafica();
+void Kill_processi();
+void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli);
+
+
+
+
+Flusso flussi[8];
+Coccodrillo coccodrilli[8];  //vanno inizzializzate nel main;
+Rana rana;
+
+
+void startGame(WINDOW *game) {			//questa funz viene chiamata dal main ogni volta che si rientra in game
+    //inizzializzazione finestra
+    int maxX = getmaxx(game);
+    int maxY = getmaxy(game);
+						//bisogna impostare i parametri di una struttura che contiene le info sul gioco: vite,gioca, e altri parametri da definire;
+    wclear(game);
+    box(game, 0, 0);
+    wrefresh(game);
+    
+    //strutture
+    Flusso flussi[8];
+    Coccodrillo coccodrilli[MAX_COCCODRILES]; 
+    Rana rana;
+    
+    for(int i=0;i<MAX_COCCODRILES;i++){
+		coccodrilli[i].id=i;
+    bool gioca= true;
+    int verifica_creazione;
+    def_vel_flussi(flussi);                     //la velocità dei flussi rimane invariata durante tutta la partita;                
+    
+    while(gioca){
+    
+    	windowGeneration(game, maxX, maxY);      //il while ricomincia ogni volta che la manche finisce e riprintiamo la schermata di gioco iniziale;
+    	
+    	creazione_processi(flussi,coccodrilli);		//i processi vengono ricreati da capo ogni volta per ricominciare a giocare. 
+    	
+	gioca=Gestione_grafica();		//si esce quando gestione_grafica individua le situazioni di uscita.	ps: sicuramente non useremo 'gioca' ma la struttura delle info sul gioco per ricevere le info;
+	
+   	kill_processi();		//uccidiamo tutti i processi in modo da poterli ricreare da capo;
+   	wclear(game); 
+   	wrefresh(game);
+	} 
+}		//condizioni di uscita ancora da verificare
+			
+
+	
+
+
+    
+
+   
+   
+   
+   
+   
+   
+
+
+}
+}
+
+
+void creazione_processi(Flusso *flussi,Coccodrillo *coccodrilli){
+	
+	pid1=fork();
+	if(pid1==-1){
+		perror("Erorre nella fork della rana : ");
+		exit(1);
+	else if(pid==0){
+		funzione_rana()                               //da definire
+	else{
+		pid2=fork();
+		if(pid2==-1){
+			perror("Errore nella fork dei coccodrilli: ");
+			exit(-1);
+		else if(pid2==0){
+			funzione_gestione_coccodrilli(flussi,coccodrilli);     //è quella che si occupa di crearli e gestire le loro morti;
+	 	else return; 
+}									       //se serviranno altri processi li inseriamo in questa;
+	
+	
+	
+	
+	
+void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli){
+	int n_coc_alive=0;
+	int n_flusso;
+	int flusso_scelto;
+	int dir;
+	int indici_minimi[8];
+	int minor_coccodrilli;
+	int n_coc_flusso[8];
+	int contatore=0;
+	int flusso_scelto;
+	minor_coccodrilli=n_coc_flusso[0];
+	
+	while(n_coc_alive<MAX_CROCODILES){
+		for(int i=0;i<8;i++)}
+			n_coc_flusso[i]=0;
+		}
+	   	for (int i = 0; i < 8; i++) {
+			if (n_coc_flusso[i] < min_coccodrilli) {			//funzione semplice( di prova ma da cambiare sicuramente) per la scelta del flusso dove inserire coccodrillo;
+		    		minor_coccodrilli = n_coc_flusso[i];
+		}}
+		
+		for(int i=0;i<8;i++){							
+			if(n_coc_flusso[i]== min_coccodrilli){
+				indici_minimi[contatore++]=i;}
+		}
+	       	
+		flusso_scelto=indici_minimi[rand()%contatore];
+   		
+   		
+   		funzione_coccodrillo();                                             //verrà chiamata alla fine della scelta del flusso e l'impostazione di tutti i parametri(tra cui il tempo di spawn);
+   		
+   		
+   	} 
+   		 
+   		 
+   		 
+   		 //parte ancora da completare e unire;
+   		 
+   		 
+   		 
+   		 
+   		 
+   		 
+   		 coccodrilli[id_morti[0]]->dir=    flussi[n_flusso].dir;
+    		 coccodrilli[id_morti[0]]->speed=   flussi[n_flusso].speed;
+   		 coccodrilli[id_morti[0]]->y=    flussi[n_flusso].y;
+   		 n_flusso=coccodrilli[id_morti[0]]->dir;
+    		 if(dir==1){
+    		 	coccodrilli[id_morti[0]].x=POS_SPAWN_COC_SINISTRA; // macro impostata per mettere il coccodrillo ,suppongo, appena fuori dallo schermo per poi farlo entrare nel flusso(devo verificare questa possibilità)
+    		 }else{
+    		 	coccodrilli[id_morti[0]].x=POS_SPAWN_COC_DESTRA;
+		 }
+		 
+	
+
+}
+
+
+
+
+
+void def_vel_flussi(Flusso *flussi){
+	
+	srand(time(NULL));
+	int altezza_base;
+	int dist_flussi;
+	for(int i=0;i<8;i++){
+    		flussi[i].y=altezza_base - i*dist_flussi;
+    		flussi[i].speed= VELMIN_FLUSSO + rand()%(VELMAX_FLUSSO - VELMIN_FLUSSO +1);
+	}
+}
+
+
+
+
+
+void def_dir_flussi(Flusso *flussi){
+
+    		flussi[i].dir= rand()%2;
+    		if(flussi[i].dir==0) flussi[i].dir=1; 
+    		else flussi[i].dir=-1;
+    
+	}
+}
