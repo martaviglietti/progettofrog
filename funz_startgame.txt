@@ -301,7 +301,7 @@ void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli){
 	
 	
 	
-	for(int i=0; i<MAX_CROCODILES;i++){
+	for(int i=0; i<MAX_CROCODILES;i++){  //serve a creare per la prima volta tutti i coccoddrillo(suppongo che per adesso ce ne siano 16
 		for(int i=0;i<8;i++)}
 			n_coc_flusso[i]=0;
 		}
