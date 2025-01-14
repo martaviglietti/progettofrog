@@ -24,7 +24,7 @@ static const char *OPZIONI[] = {
 
 
 typedef struct{
-    int id;httpsgithub.comalessandrosoccFrogger-in-C
+    int id;
     int y;
     int dir;
     int speed;
@@ -51,8 +51,13 @@ typedef struct{
     int y;
     int x;
     int dir;
-    int speed;
 }Proiettile;
+
+typedef struct{
+    int ch;
+    int colour_pair;	
+}background;
+
 
 typedef struct{
     int id;
@@ -92,7 +97,7 @@ int main() {
     noecho();
     cbreak();
     curs_set(0);
-    resizeterm(42, 80);       //avvisare ncurses del cambio di dimensioni
+    resizeterm(45, 80);       //avvisare ncurses del cambio di dimensioni
     if (has_colors()) {       //verifica il supporto ai colori da parte del terminale
         start_color();
         init_pair(1, COLOR_GREEN, COLOR_BLACK);   // Normale
@@ -105,11 +110,11 @@ int main() {
     pipe(pipe1);        //pipe per comunicare pid da generatore_coc verso la principale
     pipe(pipe2);	//pipe per comunicare morte da coc a generatore coc;
 
-    int height = LINES;
+    int height = LINES-4;
     int width = COLS;
 
-    WINDOW *game = newwin(height, width, 0, 0);
-    box(game, 0, 0);
+    WINDOW *game = newwin(height, width, 1, 0);
+    box(game, ACS_VLINE, ACS_HLINE);
     wrefresh(game);
 
     while (true) {
@@ -241,7 +246,7 @@ bool Gestione_grafica(int pipe1[], int pipe2[], int array_pid[]){			//non sarà 
 	while(true){				
 		
 		read(pipe1[0],&pid_temp,sizeof(pid_coc));
-		array_pid[pid_temp.id]=pid_temp.pid_coc;	//salvo nell array i pid dei coccodrilli che mi manda la funz di creazione;
+									//salvo nell array i pid dei coccodrilli che mi manda la funz di creazione;
 		
 		
 	
@@ -332,7 +337,7 @@ void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli){
 			perror("Erorre nella fork coccodrillo: ");
 			exit(1);
 		else if(pid_coc==0){
-   			funzione_coccodrillo(coccodrilli[i]);}  
+   			funzione_coccodrillo(coccodrilli[i],flussi);}  
    		else{
    		
    		messaggio.pid_coc=pid_coc;						//imposto il messsaggio fa inviare
@@ -346,24 +351,99 @@ void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli){
    	} 
    	
    	
-void funzione_coccodrillo(coccodrilli coccodrillo){
+void funzione_coccodrillo(coccodrilli coccodrillo,flussi){
+	flusso flusso_scelto;
+	srand(time(NULL)+coccodrillo.id);
+	usleep(rand_funz(2000000,3000000);
+
+	while(true){
+		
+		coccodrillo.x=coccodrillo.x+dir;
+		write(pipe[1], &crocodile, sizeof(messaggio));
+		
+		usleep(coccodrillo.vel);
+		
+		if((coccoddrillo.x + LARGHEZZA_COC)>COLS-2 and coccodrillo.dir=1){
+			flusso_scelto=flusso[rand()%8];
+			while(coccodrillo.y==flusso_scelto){
+				flusso_scelto=flusso[rand()%8];
+			}
+			
+			coccodrillo.y=flusso_scelto.y;
+			coccodrillo.dir=flusso_scelto.dir;
+			if(dir=1){
+				coccodrillo.x=MACRO_POS_SINISR;
+			else coccodrillo.x=MACRO_POS_DESTR;
+		}
+		else if(coccoddrillo.x + LARGHEZZA_COC)<0 and coccodrillo.dir=-1){
+			flusso_scelto=flusso[rand()%8];
+			while(coccodrillo.y==flusso_scelto){
+				flusso_scelto=flusso[rand()%8];
+			}
+			
+			coccodrillo.y=flusso_scelto.y;
+			coccodrillo.dir=flusso_scelto.dir;
+			if(dir=1){
+				coccodrillo.x=MACRO_POS_SINISR;
+			else coccodrillo.x=MACRO_POS_DESTR;
+			
+		}
+		
+	
+	
+			
+	
+	}
 
 
 
+void proiettile(Coccodrillo coccodrillo){   //vediamo per le pipe;
+	
+	Temp proiettile={0,0,0};	//sarà necessaria struttura diversa?
+	proiettile.x=coccodrillo.x;
+	proiettile.y=coccodrillo.y;			//servirà alive?
+	proiettile.id= //vedimo
+	
+	while(true){
+		write(pipe[1], &temp, sizeof(messaggio));			
+		proiettile.x+=coccodrillo.dir;
+		usleep(MACRO VEL PROIETT);
+		if(proiettile.x>COLS-2 or proiettile.x<2){
+			write(pipe[1], &temp, sizeof(messaggio));  //avvisa della morte;
+			break;
+		}
+	}
+}
 
-
-} 	
+	
    
-void funzione_rana(){
-
-
-
-
-
+void tempo(pipe()){
+	int tempo=MACRO_secondi max //oppure verifico la scadenza nella funz grafica;
+	temp tempo={0,0,0};
+	tempo.id= MACRO_ID_TEMPO;
+	while(tempo){
+		sleep(1);
+		write(pipe[1], &temp, sizeof(messaggio)); //manda il tempo attuale alla principale
+	}
+	write(pipe[1], &temp, sizeof(messaggio));
 
 
 }	
    	
+   
+
+void kill_processi(pid_t* pid,int count){
+	
+	for(int i=0; i<count;i++){
+		if(pid[i]>0){
+			if(kill(pid[i],SIGKILL)!=0){
+				perror("Error killing process");
+			}
+		waitpid(pid[i], NULL, 0);}		
+	
+	}
+}
+   
    	
    	
    	
@@ -472,7 +552,7 @@ void credits(WINDOW *game) {
 int rand_funz(int min, int max){
 
 	return min + rand() % (max-min+1);
-}COLS / 2 - 15, "Gabriele Stampatori");
+}eCOLS / 2 - 15, "Gabriele Stampatori");
     mvwprintw(game, gameLINES / 2 + 1, gameCOLS / 2 - 17, "Premi un tasto per tornare al menu...");
 
     wrefresh(game);
