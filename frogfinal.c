@@ -288,24 +288,34 @@ void creazione_processi(Flusso *flussi,Coccodrillo *coccodrilli){
 }		
 
 
-
 void drawCoccodrilli(WINDOW *game, Coccodrillo *coccodrilli, int maxCoccodrilli) {
     for (int i = 0; i < maxCoccodrilli; i++) {
         if (coccodrilli[i].alive) { // Controlla se il coccodrillo è attivo
             // Seleziona la sprite in base alla direzione
-            const char *sprite[ALTEZZACOCCODRILLO] = {
-                " XXXXXXX ",
-                (coccodrilli[i].dir == 1) ? "0X0XXXXXX" : "XXXXXX0X0"
-            };
+            const char *sprite[ALTEZZACOCCODRILLO];
+            if (coccodrilli[i].dir == 1) { // Direzione verso destra
+                sprite[0] = " XXXXXXX ";
+                sprite[1] = "0X0XXXXXX";
+            } else { // Direzione verso sinistra
+                sprite[0] = " XXXXXXX ";
+                sprite[1] = "XXXXXX0X0";
+            }
+
+            // Imposta il colore per il coccodrillo
+            wattron(game, COLOR_PAIR(1)); // Ad esempio, COLOR_PAIR(1) per i coccodrilli
 
             // Disegna la sprite del coccodrillo riga per riga
             for (int j = 0; j < ALTEZZACOCCODRILLO; j++) {
                 mvwprintw(game, coccodrilli[i].y + j, coccodrilli[i].x, "%s", sprite[j]);
             }
+
+            // Disattiva il colore dopo il disegno
+            wattroff(game, COLOR_PAIR(1));
         }
     }
     wrefresh(game); // Aggiorna la finestra di gioco
 }
+
 
 
 
