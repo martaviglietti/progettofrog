@@ -1,0 +1,186 @@
+void windowGeneration(WINDOW *game, int maxX, int maxY, int tane_chiuse[5]){
+    start_color();
+    
+    init_color(8,34,139,34); //verde foresta;
+    init_color(9,0,123,184); //blu scuro;		//in futuro li possiamo modificare ma l importante è non modificare l id;
+    init_color(10,95,95,95); //grigio scuro;
+    init_color(11,192,192,192); //grigio chiaro;
+    init_color(12,101,67,33); //marrone
+    init_color(13,152,118,84); //marrone pastello
+    
+    
+    
+    
+    init_pair(2, 9, COLOR_BLUE);	      // Fiume "~"
+    init_pair(3, COLOR_YELLOW, COLOR_YELLOW); // Tane zona intorno
+    init_pair(4, 10, 11);                     // Tane recinzione
+    init_pair(5, 13, 13); 		      //tana vera e propria
+    init_pair(6, COLOR_BLACK, COLOR_RED);     // Marciapiede
+    init_pair(7, COLOR_WHITE, COLOR_MAGENTA); // Punteggio e vite		//questi sono da attivare a inizio programma in una funzione apposita;
+    init_pair(8, 8, COLOR_GREEN);   	      //prato;
+    
+    int offsetSumV=2;  //posizione di stampa del tempo;
+    int offsetSumH=1;  //per ignorare il bordo laterale;
+	
+    char tane[TANE][78]={
+    
+    				   "                                                                              ",
+    				   "                                                                              ",
+    				   "        +----+        +----+        +----+        +----+        +----+        ",		          
+    				   "        |....|        |....|        |....|        |....|        |....|        ",			
+    				   "        |....|        |....|        |....|        |....|        |....|        ",
+    				   "        |....|        |....|        |....|        |....|        |....|        "};						
+    				 
+    
+
+
+
+
+    
+    
+    char fiume[FIUME][78]=
+    				       {"                                                                              ",
+    				        "                                                                              ",
+    				        "                                                                              ",
+    				        "                                                                              ",
+    				        "                                                                              ",
+    				        "                                                                              ",
+    				        "                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",	
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              "};     //25
+    
+    
+    
+    
+    char prato[PRATO][78]={   
+    
+    				        "                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              ",
+    					"                                                                              "};
+    
+    
+    
+    
+    
+    
+    
+    
+    // Sezione superiore: Punteggio e vite
+    wattron(game, COLOR_PAIR(7));
+    mvwprintw(game, offsetSumV, 2, "Punteggio: 0 | Vite: 3");
+    wattroff(game, COLOR_PAIR(7));
+    
+    offsetSumV += 2;                                               //ci spostiamo da posizione tempo a inizio zona tane;
+    
+    
+    // Sezione Tane
+    wattron(game,COLOR_PAIR(3));
+    for(int i=0; i<TANE;i++){
+    	for(int j=0; j<maxX-2;j++){				//printa zona intorno
+    	     if(tane[i][j]==' ' ){				
+    	     	 mvwaddch(game,i+offsetSumV,j+offsetSumH,tane[i][j]);
+   
+        }
+    }}
+    wattroff(game,COLOR_PAIR(3));
+    
+    for(int i=0;i<5;i++){			//questo for decide come stampare la zona delle tane;
+    	if(tane_chiuse[i]==0){
+    		 wattron(game,COLOR_PAIR(4));
+   		 for(int v=2; v<TANE;v++){
+    			for(int h=8*(i+1)+i*6; h<8*(i+1)+i*6+6;h++){							//printa recinzione
+    	  		   if(tane[v][h]=='|' || tane[v][h]=='+' || tane[v][h]=='-'){				
+    	     			 mvwaddch(game,v+offsetSumV,h+offsetSumH,tane[v][h]);
+   
+       		 }}}
+  		 wattroff(game,COLOR_PAIR(4));
+    
+   		 wattron(game,COLOR_PAIR(5));
+   		 for(int v=2; v<TANE;v++){
+    			for(int h=8*(i+1)+i*6; h<8*(i+1)+i*6+6;h++){							//printa tana vera e propria
+    	  		   	if(tane[v][h]=='.'){				
+    	     			 	mvwaddch(game,v+offsetSumV,h+offsetSumH,tane[v][h]);
+   		
+   		 }}
+ 		 wattroff(game,COLOR_PAIR(5));}}
+    
+    	else{
+    		
+    		wattron(game,COLOR_PAIR(3));
+  		for(int v=2; v<TANE;v++){
+    			for(int h=8*(i+1)+i*6; h<8*(i+1)+i*6+6;h++){							//ricopri zona tana col colore dell area circostante;	
+    	     			mvwaddch(game,v+offsetSumV,h+offsetSumH,tane[v][h]);
+   		
+   		}}
+   		wattroff(game,COLOR_PAIR(3));}
+    		
+   	
+    }	
+    
+   
+    
+    
+    offsetSumV += TANE;  //siamo a 10
+
+    // Sezione Marciapiede
+    wattron(game, COLOR_PAIR(6));
+    for (int i = 0; i < MARCIAPIEDE; i++) {
+        
+        mvwhline(game, offsetSumV + i, offsetSumH, ' ', maxX - 2);
+        
+    }
+    wattroff(game, COLOR_PAIR(6));
+    
+    
+    
+    
+    offsetSumV += MARCIAPIEDE;  //siamo a 15
+
+
+
+    // Sezione Fiume
+    wattron(game,COLOR_PAIR(2));
+    for(int i=0; i<FIUME;i++){
+    	for(int j=0; j<maxX-2;j++){	
+    											
+    	     	 mvwaddch(game,i+offsetSumV,j+offsetSumH,fiume[i][j]);
+   
+        }
+    }
+    wattroff(game,COLOR_PAIR(2));
+    
+    offsetSumV += FIUME;  //siamo a 40
+    
+    
+    // Sezione Prato
+    wattron(game,COLOR_PAIR(8));
+    for(int i=0; i<PRATO;i++){
+    	for(int j=0; j<maxX-2;j++){											
+    	     	 mvwaddch(game,i+offsetSumV,j+offsetSumH,prato[i][j]);
+   
+        }
+    }
+    wattroff(game,COLOR_PAIR(8));
+    
+    
+    
+    wrefresh(game);
+};
