@@ -15,7 +15,7 @@
 #define TANE 6
 #define FIUME 25
 #define PRATO 5
-#define MARCIAPIEDE 5
+#define SPONDA_SUPERIORE 5
 #define N_PID 100
 //definizione id da usare;
 #define IDTIME 40
@@ -39,7 +39,7 @@ const char *frog_sprite[ALTEZZARANA] = {
     " - "
 };
 
-const char *coc_sprite[2][ALTEZZACOCCODRILLO]{" XXXXXXX ","XXXXXX0X0"},{" XXXXXXX ","0X0XXXXXX"};
+const char *coc_sprite[2][ALTEZZACOCCODRILLO]{"XXXXXXX","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"};
             
            
           
@@ -61,6 +61,13 @@ typedef struct{
     int game; //serve per la condizione di uscita dal game;
 }Game_struct;
 
+typedef struct{
+    int vite;
+    int tempo;
+    int velocità_proiettili;
+    int velocità_coccodrilli;
+ 
+}Stat_game;
 
 typedef struct{
     int id;
@@ -132,21 +139,80 @@ int main() {
     int pipe2[2];	
     pipe(pipe1);        //pipe per comunicare pid da generatore_coc verso la principale
     pipe(pipe2);	//pipe per comunicare morte da coc a generatore coc;
-
+	
     int height = LINES;
     int width = COLS;
-
+    int scelta;
+    int difficoltà;
+    int ricomincia=1;
+    Stat_game stat_game={0,0,0,0};
+    Game_struct risultato;
     WINDOW *game = newwin(height, width, 0, 0); //area gioco  
 
     box(game, ACS_VLINE, ACS_HLINE);
     wrefresh(game);
 
     while (true) {
-        int result = menu(game);
-
-        if (result == 0) {  // "Inizia gioco"
-            startGame(game);
-        } else if (result == 2) {  // "Esci"
+    	if(ricomincia){
+        	scelta= menu(game,"Menu Principale", OPZIONI, 3);}	//se ricomincia è 0 non rifacciamo il menu;
+	
+        if (scelta == 0) {  // "Inizia gioco"
+             if(ricomincia){
+             difficoltà=scegliDifficoltà(game);}
+        
+        
+             switch(difficoltà){
+                    case 0: //principiante
+                        stat_game.vite=10;
+                        stat_game.tempo=3000000;
+                        stat_game.velocità_proiettili=3000;
+                        stat_game.velocità_coccodrilli=50000;
+                        break;
+                    case 1: //intermedio
+                        stat_game.vite=10;
+                        stat_game.tempo=3000000;
+                        stat_game.velocità_proiettili=3000;
+                        stat_game.velocità_coccodrilli=50000;
+                    case 2: //difficile
+                        stat_game.vite=10;
+                        stat_game.tempo=3000000;
+                        stat_game.velocità_proiettili=3000;
+                        stat_game.velocità_coccodrilli=50000;
+                        break;
+                   
+                }
+        
+        
+        
+            risultato=startGame(game,pipe1,pipe2,stat_game);
+            if(risultato.game==1){	//abbiamo vinto
+            	wclear(game);
+            	scelta=gameWin(game,risultato.score);
+            	if(scelta==1){		//ricomincia la stessa partita;		
+            		ricomincia=0;
+            	}else{
+            	        ricomincia=1;
+            	}
+            }else{
+            	wclear(game);
+            	scelta=gameOver(game,risultato.score);
+            	if(scelta==1){					//ricomincia la stessa partita;
+            		ricomincia=0;
+            	}else{
+            		ricomincia=1;
+            	
+            	}
+            	
+            
+            
+            }}
+        else if(scelta==1){ //crediti
+        	credits(game);
+        	
+        }
+            
+            
+        }else{  // "Esci"
             wclear(game);
             mvwprintw(game, height / 2, width / 2 - 5, "Uscita...");
             wrefresh(game);
@@ -158,6 +224,44 @@ int main() {
     delwin(game);
     endwin();
     return 0;
+}
+
+int gameWin(WINDOW *game, int score) {
+    wclear(game);
+    mvwprintw(game, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
+    wrefresh(game);
+    char decision = wgetch(game);
+    while(decision!= s || decision!=n){
+    	 decision = wgetch(game);
+    }
+    if (decision == 'n') {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+
+int gameOver(WINDOW *game, int score) {
+    wclear(game);
+    mvwprintw(game, 10, 10, "GAME OVER! Punteggio: %d. Vuoi tornare al menù? (s/n)", score);
+    wrefresh(game);
+    char decision = wgetch(game);
+    while(decision!= s || decision!=n){
+    	 decision = wgetch(game);
+    }
+    if (decision == 'n') {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+
+
+int scegliDifficolta(WINDOW *game) {
+    const char *difficolta[] = {"Facile", "Media", "Difficile"};
+    return menu(game, "Scegli la Difficoltà", difficolta, 3);
 }
 
 
@@ -461,41 +565,8 @@ int Gestione_grafica(int pipe1[], int pipe2[], int array_pid[], Game_struct* gam
 					}
 			}
 		
-		//funzione che gestisce uno spawn controllato dei coccodrilli;
 		
-		
-		if(temp.id==IDRICHIESTA){
-			for(int i=0; i<MAX_CROCODILES; i++){
-				if((coccodrilli[i].alive==1 && coccodrilli[i].y==temp.y && coccodrilli[i].x-4>temp.x+4+10 && coccodrilli[i].dir==1) ||(coccodrilli[i].alive==1 && coccodrilli[i].y==temp.y && coccodrilli[i].x-4>temp.x+4+10 && coccodrilli[i].dir==1)){ //ps:devo correggere la condizione di questo if!
-				
-					temp.x=0		
-				}
-				else{
-				
-				 	temp.x=1;  
-		
-		
-				}}
-				
-			temp.id=temp.info; //sposto l'id
-			for(int i=0; i<MAX_CROCODILES; i++){
-		
-				write(pipe2, &temp,sizeof(Temp)); // mando il messaggio al coccodrillo che lha richiesto nella pipe secondaria;
-		
-		
-		}}	//devo ancora finire di completarlo!;
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+	
 		
 		
 		
@@ -987,7 +1058,7 @@ void def_dir_flussi(Flusso *flussi){
 }
 
 
-int menu(WINDOW *game) {
+int menu(WINDOW *game, const char *title, const char *options[], int num_options) {
     flushinp();            // Elimina input residuo
     keypad(game, true);    // Abilita l'input da tastiera
 
@@ -999,16 +1070,16 @@ int menu(WINDOW *game) {
         wclear(game);
         box(game, ACS_VLINE, ACS_HLINE);
 
-        mvwprintw(game, gameLINES / 2 - 5, gameCOLS / 2 - 4, "Frogger");
-        for (int i = 0; i < 3; i++) {
+        mvwprintw(game, gameLINES / 2 - 5, gameCOLS / 2 - 4, "%s", title);
+        for (int i = 0; i < num_options; i++) {
             if (position == i) {
                 wattron(game, COLOR_PAIR(12));
             } else {
                 wattron(game, COLOR_PAIR(1));
             }
 
-            int x = gameCOLS / 2 - (strlen(OPZIONI[i]) / 2);
-            mvwprintw(game, gameLINES / 2 - 1 + i, x, "%s", OPZIONI[i]);
+            int x = gameCOLS / 2 - (strlen(options[i]) / 2);
+            mvwprintw(game, gameLINES / 2 - 1 + i, x, "%s", options[i]);
 
             wattroff(game, COLOR_PAIR(1));
             wattroff(game, COLOR_PAIR(12));
@@ -1018,11 +1089,11 @@ int menu(WINDOW *game) {
         switch (choice) {
             case KEY_DOWN:
                 position++;
-                if (position >= 3) position = 0;
+                if (position >= num_options) position = 0;
                 break;
             case KEY_UP:
                 position--;
-                if (position < 0) position = 2;
+                if (position < 0) position = num_options-1;
                 break;
             case 10: // Invio
                 return position;
@@ -1030,6 +1101,7 @@ int menu(WINDOW *game) {
 
         wrefresh(game);
     }
+    wclear(game);
 }
 
 void credits(WINDOW *game) {
