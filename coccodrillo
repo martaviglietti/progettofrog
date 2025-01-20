@@ -1,21 +1,71 @@
-int createCrocodile(int pipe_fds[2], pid_t *pid, int y) {
-    srand(time(NULL) + id);
-    *pid = fork();
-    if (*pid == -1) {
-        perror("Errore nella creazione del processo coccodrillo");
-        return 0;
-    } else if (*pid == 0) {
-        // Processo figlio
-        crocodile croc = {getpid(), 0, y, true};
-        while (croc.alive) {
-            croc.x++;
-            if (croc.x < 0 || croc.x > COLS) { // Fuori dallo schermo
-                croc.alive = false;
-            }
-            write(pipe_fds[1], &croc, sizeof(croc));
-            usleep(100000);
-        }
-        exit(0);
-    }
-    return 
+//funzione che gestisce uno spawn controllato dei coccodrilli;
+		
+		
+		if(temp.id==IDRICHIESTA){
+			for(int i=0; i<MAX_CROCODILES; i++){
+				if((coccodrilli[i].alive==1 && coccodrilli[i].y==temp.y && coccodrilli[i].x-4>temp.x+4+10 && coccodrilli[i].dir==1) ||(coccodrilli[i].alive==1 && coccodrilli[i].y==temp.y && coccodrilli[i].x-4>temp.x+4+10 && coccodrilli[i].dir==1)){ //ps:devo correggere la condizione di questo if!
+				
+					temp.x=0		
+				}
+				else{
+				
+				 	temp.x=1;  
+		
+		
+				}}
+				
+			temp.id=temp.info; //sposto l'id
+			for(int i=0; i<MAX_CROCODILES; i++){
+		
+				write(pipe2, &temp,sizeof(Temp)); // mando il messaggio al coccodrillo che lha richiesto nella pipe secondaria;
+		
+		
+		}}	//devo ancora finire di completarlo!;
 
+
+void funzione_coccodrillo(coccodrilli coccodrillo,Flusso flussi[8],int id_flusso_scelto, int pipe1[]){
+	close(pipe1[0]);
+	Flusso flusso_scelto=flussi[id_flusso_scelto];									//serve per salvare il flusso scelto per ogni respawn;
+	srand(time(NULL)+coccodrillo.id);
+	int larghezza_coccoddrillo=4;
+	Temp risposta={-1,0,0,0};
+	Temp richiesta={IDRICHIESTA,0,0,0};
+	Temp coccodrillo={coccodrillo.id,coccodrillo.x,coccodrillo.y,0};			//x e y sono già impostate prima della creazione;
+	while(true){
+		
+		coccodrillo.x=coccodrillo.x+flusso_scelto.dir;
+		write(pipe1[1], &coccodrillo, sizeof(Temp));		//invia la prima posizone quando il primo carattere del coccodrillo è nello schermo;
+		
+		usleep(flusso_scelto.vel);
+		
+		if(coccoddrillo.x>=POS_SPAWN_COC_DESTRA && coccodrillo.dir=1 || (coccoddrillo.x<=POS_SPAWN_COC_SINISTRA && coccodrillo.dir=-1){
+			usleep(rand_funz(2000000,3000000);
+			while(risposta.x==0){   //spawn negato => cambiamo flusso;
+				flusso_scelto=flusso[rand()%8];
+				while(coccodrillo.y==flusso_scelto.y){
+					flusso_scelto=flussi[rand()%8];
+				}
+			
+			
+				if(flusso_scelto.dir==1){
+				coccodrillo.x=POS_SPAWN_COC_SINISTRA;}
+				else coccodrillo.x=POS_SPAWN_COC_DESTRA;
+			
+				richiesta.x=coccodrillo.x;
+				richiesta.y=coccodrillo.y;
+				richista.info=coccodrillo.id;
+				write(pipe[1], &richiesta, sizeof(Temp)); //chiede alla render se può spawnare in quella posizione;
+				usleep(10000);					
+				while(risposta.id!=coccodrillo.id){
+					read(pipe2[0], &risposta, sizeof(Temp)); //verifica le risposte della render;
+					usleep(50000);				 //giusto il tempo che tutti quelli in attesa leggano ognuno il proprio messaggio;
+				
+				}
+			}					//in pratica con questo metodo confidiamo che tutti i coccodrilli che stanno scegliendo il proprio flusso di spawn ricevano il loro messaggio di risposta;
+			coccodrillo.y=flusso_scelto.y; 
+			risposta.id=-1; //così da poterlo riusare la prossima volta;
+			
+		}
+		
+}}
+}
