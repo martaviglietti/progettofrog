@@ -34,15 +34,15 @@ static const char *OPZIONI[] = {
 };
 
 //sprite rana
-const char *frog_sprite[ALTEZZARANA] = {
+const char *frog_sprite[2] = {
     "@ @",
     " - "
 };
 
-const char *coc_sprite[2][ALTEZZACOCCODRILLO]{"XXXXXXX","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"};
+const char *coc_sprite[2][2]={{" XXXXXXX ","XXXXXX0X0"},{" XXXXXXX ","0X0XXXXXX"}};
             
-           
-          
+
+
 typedef struct{
     int id;
     int y;
@@ -105,19 +105,44 @@ typedef struct{
 	int info;
 }Temp;
 
-void creazione_colori();
-void startGame(WINDOW *game, int pipe1[],int pipe2[]);
-void windowGeneration(WINDOW *game, int maxX, int maxY,int tane_chiuse[5]);
-void definizione_flussi(Flusso *flussi);
-void creazione_processi(Flusso *flussi,Coccodrillo *coccodrilli);
 
-bool Gestione_grafica();
-void Kill_processi();
-void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli);
-void funz_rana();
-void funz_coccodrillo(Coccodrillo* coccodrillo);
+int gameWin(WINDOW *game, int score);
+int gameOver(WINDOW *game, int score);
+int scegliDifficolta(WINDOW *game);
+void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct game_struct);
+Game_struct startGame(WINDOW *game,Stat_game stat_game);
+void Gestione_grafica(WINDOW* game,int pipe1[], int pipe2[], int array_pid[], Game_struct* game_struct);
+int CollisioneRanaProiettile(Rana rana,Proiettile proiettile);
+int RanaSuTana(Rana rana, Game_struct* game_struct);
+int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli);
+void creazione_processi(Flusso *flussi, int array_pid[N_PID], int pipe1[]);
+void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]);
+void funzione_coccodrillo(Coccodrillo coccodrillo,Flusso flussi[8],int id_flusso_scelto, int pipe1[]);
+void proiettile(Coccodrillo coccodrillo, int pipe1[]);
+void tempo(int pipe1[]);
+void kill_processi(pid_t* pid,int count);
+void def_vel_flussi(Flusso *flussi);
+void def_dir_flussi(Flusso *flussi);
+int menu(WINDOW *game, const char *title, const char *options[], int num_options);
+void credits(WINDOW *game);
 int rand_funz(int min, int max);
+void frog(int pipe1[2]);
+void sparaGranata(int startX, int startY,int pid_array[],int pipe1[], int pipe2[]);
+void sparaProiettile(Coccodrillo coccodrillo,int pid_array[], int pipe1[]);
+void granata(int startX, int startY, int pipe1[], int pipe2[]);
+void creazione_colori();
+void draw_proiettile(WINDOW* game, Proiettile proiettile);
+void draw_granate(WINDOW* game, Granata granate[2]);
+void draw_frog(WINDOW *game, Rana rana);
 void drawCoccodrilli(WINDOW *game, Coccodrillo *coccodrilli);
+
+
+
+
+
+      
+         
+
 
 
 
@@ -134,11 +159,7 @@ int main() {
     resizeterm(49, 80);       //avvisare ncurses del cambio di dimensioni
     
     
-    //creazione pipe;
-    int pipe1[2];	
-    int pipe2[2];	
-    pipe(pipe1);        //pipe per comunicare pid da generatore_coc verso la principale
-    pipe(pipe2);	//pipe per comunicare morte da coc a generatore coc;
+    
 	
     int height = LINES;
     int width = COLS;
@@ -158,7 +179,7 @@ int main() {
 	
         if (scelta == 0) {  // "Inizia gioco"
              if(ricomincia){
-             difficoltà=scegliDifficoltà(game);}
+             difficoltà=scegliDifficolta(game);}
         
         
              switch(difficoltà){
@@ -184,7 +205,7 @@ int main() {
         
         
         
-            risultato=startGame(game,pipe1,pipe2,stat_game);
+            risultato=startGame(game,stat_game);
             if(risultato.game==1){	//abbiamo vinto
             	wclear(game);
             	scelta=gameWin(game,risultato.score);
@@ -212,7 +233,7 @@ int main() {
         }
             
             
-        }else{  // "Esci"
+        else{  // "Esci"
             wclear(game);
             mvwprintw(game, height / 2, width / 2 - 5, "Uscita...");
             wrefresh(game);
@@ -231,7 +252,8 @@ int gameWin(WINDOW *game, int score) {
     mvwprintw(game, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
     wrefresh(game);
     char decision = wgetch(game);
-    while(decision!= s || decision!=n){
+    while(decision!= 's' || decision!='n'){
+
     	 decision = wgetch(game);
     }
     if (decision == 'n') {
@@ -247,7 +269,7 @@ int gameOver(WINDOW *game, int score) {
     mvwprintw(game, 10, 10, "GAME OVER! Punteggio: %d. Vuoi tornare al menù? (s/n)", score);
     wrefresh(game);
     char decision = wgetch(game);
-    while(decision!= s || decision!=n){
+    while(decision!= 's' || decision!='n'){
     	 decision = wgetch(game);
     }
     if (decision == 'n') {
@@ -265,8 +287,11 @@ int scegliDifficolta(WINDOW *game) {
 }
 
 
-void windowGeneration(WINDOW *game, int maxX, int maxY, int tane_chiuse[5]){
+void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct game_struct){
     
+    wclear(game);
+    wrefresh(game);
+
     int offsetSumV=2;  //posizione di stampa del tempo;
     int offsetSumH=1;  //per ignorare il bordo laterale;
 	
@@ -333,7 +358,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, int tane_chiuse[5]){
     
     // Sezione superiore: Punteggio e vite
     wattron(game, COLOR_PAIR(7));
-    mvwprintw(game, offsetSumV, 2, "Punteggio: 0 | Vite: 3");
+    mvwprintw(game, offsetSumV, 2, "Punteggio: %d | Vite: %d",game_struct.score,game_struct.vite);
     wattroff(game, COLOR_PAIR(7));
     
     offsetSumV += 2;                                               //ci spostiamo da posizione tempo a inizio zona tane;
@@ -351,7 +376,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, int tane_chiuse[5]){
     wattroff(game,COLOR_PAIR(3));
     
     for(int i=0;i<5;i++){			//questo for decide come stampare la zona delle tane;
-    	if(tane_chiuse[i]==0){
+    	if(game_struct.tane[i]==0){
     		 wattron(game,COLOR_PAIR(4));
    		 for(int v=2; v<TANE;v++){
     			for(int h=8*(i+1)+i*6; h<8*(i+1)+i*6+6;h++){							//printa recinzione
@@ -388,9 +413,9 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, int tane_chiuse[5]){
     
     offsetSumV += TANE;  //siamo a 10
     
-    // Sezione Marciapiede
+    // Sezione Sponda superiore
     wattron(game, COLOR_PAIR(6));
-    for (int i = 0; i < MARCIAPIEDE; i++) {
+    for (int i = 0; i < SPONDA_SUPERIORE; i++) {
         
         mvwhline(game, offsetSumV + i, offsetSumH, ' ', maxX - 2);
         
@@ -400,7 +425,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, int tane_chiuse[5]){
     
     
     
-    offsetSumV += MARCIAPIEDE;  //siamo a 15
+    offsetSumV += SPONDA_SUPERIORE;  //siamo a 15
 
 
 
@@ -447,95 +472,126 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, int tane_chiuse[5]){
 
 
 
-void startGame(WINDOW *game, int pipe1[],int pipe2[]) {			
+Game_struct startGame(WINDOW *game,Stat_game stat_game) {			
     
-    
-    	
+    //creazione pipe;
+    int pipe1[2];	//quella per comunicare tra consumatore e produttore;
+    int pipe2[2];	//quella per comunicare alla granata se è morta;
+    pipe(pipe1);        
+    pipe(pipe2);	
+    fcntl(pipe1[0], F_SETFL, (fcntl(pipe1[0], F_GETFL, 0)) | O_NONBLOCK);	//rendo non bloccante la lettura della pipe principale;
+    fcntl(pipe2[1], F_SETFL, (fcntl(pipe2[1], F_GETFL, 0)) | O_NONBLOCK);	//rendo bloccante la scrittura della seconda pipe
+    fcntl(pipe2[0], F_SETFL, (fcntl(pipe2[0], F_GETFL, 0)) | O_NONBLOCK);	//rendo bloccante la lettura della seconda pipe
     wclear(game);
     box(game, 0, 0);
     wrefresh(game);
-    
+    int tane_occupate=0;
     Game_struct game_struct;
     game_struct.score=0;
-    game_struct.vite=3;
-    game_struct.game=0;   //lo metteremo a uno quando bisognerà concludere la partita;
+    game_struct.vite=stat_game.vite;
+    game_struct.game;
     
     for(int i=0;i<TANE -1;i++){
     	game_struct.tane[i]=0;}
     
+    Flusso flussi[8];
     
     def_vel_flussi(flussi);                            
     int array_pid[N_PID];  
     for(int i=0;i<N_PID;i++){	
     	array_pid[i]=0;}
     
-    while(gioca){
-    	
-    	windowGeneration(game,game_struct.tane);      
+    while(true){
+    	game_struct.tempo=stat_game.tempo; //resetto tempo manche;
+    	    
     	def_dir_flussi(flussi);	
     					
-    	creazione_processi(array_pid);		
+    	creazione_processi(flussi,array_pid, pipe1);		
     
     	
-	game_struct.game=Gestione_grafica(pipe1,pipe2,array_pid,&game_struct);		
+	Gestione_grafica(game,pipe1,pipe2,array_pid,&game_struct);		
 	
 	
 	
 	
 	
-   	kill_processi(array_pid);		//killiamo tutto per ricominciare;
-   	wclear(game); 
-   	wrefresh(game);
-	} 
+   	kill_processi(array_pid,N_PID);		//killiamo tutto per ricominciare;
+   	
+        //le modifiche al numero di vite e allo score sono fatte all interno della render;
+        if(game_struct.vite==0){ //sono finite le vite
+ 	    	game_struct.game=0;
+ 	    	return game_struct;
+	     
+	}
+        //le modifiche alle tane occupate sono fatte nella render
+   	for(int i=0;i<5;i++){
+ 	        if(game_struct.tane[i]==1){
+  	        	tane_occupate++;
+  	        }
+     
+ 	}
+ 	if(tane_occupate==5){		//tutte le tane occupate;
+ 	    		game_struct.game==1;
+	     		return game_struct;
+ 	}
+	tane_occupate=0;   //riazzero per il prossimo conteggio;
+	
+	//se ci servono altre verifiche di fine game le mettiamo qui; 
+	     
+	wclear(game);
+	wrefresh(game);     
+}
 }
 
 
-int Gestione_grafica(int pipe1[], int pipe2[], int array_pid[], Game_struct* game_struct){			
+void Gestione_grafica(WINDOW* game,int pipe1[], int pipe2[], int array_pid[], Game_struct* game_struct){			
 	
+	//per generazione proiettile
 	struct timespec start, end; //strutture per utilizzare le funzioni sul tempo;
 	gettimeofday(&end,NULL);		
 	gettimeofday(&start,NULL);
 	long time_proiettile; 
 	int random=rand_funz(2,4);
-	int result; //contiene il risultato delle funzioni di collisione;
-	game_struct->time=30;		 
+	//
+	
+	int result; //contiene il risultato delle funzioni di collisione;	 
 	Temp temp={0,0,0,0};
 	Temp risposta={0,0,0,0};
 	int time; //tempo da stampare a schermo;
 	//settare impostazioni default dei vari processi
 	Coccodrillo coccodrilli[MAX_CROCODILES];
-	for(int i=0; i<MAX_CROCODILES;i++{
+	for(int i=0; i<MAX_CROCODILES;i++){
 		coccodrilli[i].id=i;
 		coccodrilli[i].x=-1;
-		coccodrilli[i].y=-1
+		coccodrilli[i].y=-1;
 		coccodrilli[i].alive=0;}
-	Rana rana;
-	Proiettile proiettile;
 	
 	Granata granate[2];
-	for(int i=0; i<2;i++{
+	for(int i=0; i<2;i++){
 		granate[i].id=i;
 		granate[i].x=-1;
-		granate[i].y=-1
-		granate[i].alive=0}
+		granate[i].y=-1;
+		granate[i].alive=0;}
 		
+	Rana rana;	
 	rana.id=IDRANA;
-	rana.x=-1;
-	rana.y=-1;
+	rana.x=40; 
+	rana.y=43;
 	
+	Proiettile proiettile;
 	proiettile.id=IDPROIETTILE;
 	proiettile.x=-1;
 	proiettile.y=-1;
 	proiettile.alive=0;
 	
 	int coc_scelto;
-	int granata_morta;
+	Temp granata_morta={0};
 	
 	while(true){	
 		//serve resettare temp? bho vediamo😶‍🌫️️
-		windowGeneration(game,game_struct.tane);
-					
-		read(pipe_fd[0],&temp,sizeof(Temp)); //per adesso la considero bloccante;
+		windowGeneration(game,COLS,LINES,game_struct);
+		temp={0,0,0,0};
+		read(pipe1[0],&temp,sizeof(Temp));               //Non bloccante;
 		
 		//se l'ID è della rana						
 		if(temp.id==IDRANA){
@@ -543,29 +599,32 @@ int Gestione_grafica(int pipe1[], int pipe2[], int array_pid[], Game_struct* gam
 			rana.y=temp.y;	
 			
 			if(CollisioneRanaProiettile(rana,proiettile)==1){      //c'è stata collisione con proiettile
-				game_struct.vite--;
-				//restarto manche;
+				game_struct->vite--;
+				//perdita punti?
+				return;
 			}
 			if(rana.y<10){					       //controllo se la rana sta su una tana oppure muore;				
-				if(RanaSuTana(rana,&game_struct)){
+				if(RanaSuTana(rana,&game_struct)==1){
 					
-					//do punteggio;
-					//restarto la manche;
+					game_struct->score+=//bho vediamo
+					
 				}
 				else{
-					game_struct.vite--;
-					//restarto manche;}
-				}
+					game_struct->vite--
+					//perdita di punti?;
+					return;}
+			}
 			
 			if(rana.y>=15 && rana.y<40){
-				if(RanaSuCoccodrillo(&rana,&coccodrilli)==0){ 	//significa che è nel fiume ma non su un coccodrillo;
-					game_struct.vite--;
-					//restarto manche;
+				if(RanaSuCoccodrillo(&rana,&coccodrilli)==-1){ 	//significa che è nel fiume ma non su un coccodrillo;
+					game_struct->vite--;
+					//perdita punti
+					return;
 					
 					}
 			}
 		
-		
+		}
 	
 		
 		
@@ -586,12 +645,13 @@ int Gestione_grafica(int pipe1[], int pipe2[], int array_pid[], Game_struct* gam
 					if(coc_scelto==coccodrilli[temp.id].id){
 						if((frog->x<=2 && coccodrilli[temp.id].dir=-1) || (frog->x>=77 && coccodrilli[temp.id].dir=1)){        //rana agli estremi della mappa sopra coccodrillo (che si è già mosso nella direzione);				
 							if(RanaSuCoccodrillo(&rana,&coccodrilli)!=coc_scelto){	//la rana è caduta in acqua dopo che il coccodrillo si è mosso;
-								game_struct.vite--;
-								//reset match;
+								game_struct->vite--;
+								//togli punti;
+								return;
 							}	
 						
 						} else{						//rana non agli estremi;
-							rana.x+=coccodrilli[temp.id].dir;
+							rana.x=coccodrilli[temp.id].x;
 						
 						}               
 					
@@ -622,9 +682,11 @@ int Gestione_grafica(int pipe1[], int pipe2[], int array_pid[], Game_struct* gam
 		
 		//se l'id è del tempo
 		if(temp.id==IDTIME){	//probabilemnte quando otteniamo lo 0 è morto il processo tempo e bisogna fre la wait;
-			game_struct.tempo=temp.x;
+			game_struct->tempo--;;
 			if(time==0){
 				game_struct.vite--;
+				//perdita punti?
+				return;
 			}
 			
 		
@@ -635,18 +697,18 @@ int Gestione_grafica(int pipe1[], int pipe2[], int array_pid[], Game_struct* gam
 					case 0:
 					case 1:
 						if(temp.x==IDMORTI){
-							granate[temp.id].alive=0;//vuoldire che è morta quella granata;
+							granate[temp.id-IDGRANATE].alive=0;//vuoldire che è morta quella granata;
 						
 						}else{
 							granate[i].x=temp.x;	
 							granate[i].y=temp.y;
-							if(granate[i].x==proiettile.x && granate[i].y==proiettile.y){
+							if(granate[i].x==proiettile.x && granate[i].y==proiettile.y && proiettile.alive==1){
 								kill_processi(array_pid[IDPROIETTILI],1);		//killa proiettile;
-								array_pid(IDPROIETTILI)=0;
+								array_pid[IDPROIETTILI]=0;
 								proiettile.alive=0;
 								granate[i].alive=0;
 								granata_morta=i;
-								write(pipe_verso_granata,&granata_morta,sizeof(int);}}	//avverte il processo granata che una delle due deve smettere di inviare la posizione;
+								write(pipe_verso_granata,&granata_morta,sizeof(temp);}}	//avverte il processo granata che una delle due deve smettere di inviare la posizione;
 								
 						}
 						break;
@@ -655,7 +717,7 @@ int Gestione_grafica(int pipe1[], int pipe2[], int array_pid[], Game_struct* gam
 						
 							spara_granata(rana.x,rana.y,array_pid);
 							granate[0].alive=1;
-							granate[0].alive=1;
+							granate[1].alive=1;
 							break;}
 			
 			
@@ -682,12 +744,13 @@ int Gestione_grafica(int pipe1[], int pipe2[], int array_pid[], Game_struct* gam
 			
 			if(CollisioneRanaProiettile(rana,proiettile)==1){      //c'è stata collisione con proiettile
 				game_struct.vite--;
-				//restarto manche;
+				//assegno punti
+				return;
 				}
 		
 		
-		if(granate[0].alive==0 && granate[1].alive){ //vuoldire che la funzione granata è terminata;
-			waitpid(array_pid[IDGRANATe], NULL, 0);	
+		if(granate[0].alive==0 && granate[1].alive==0){ //vuoldire che la funzione granata è terminata;
+			kill_processi(array_pid[IDGRANATA],1);	
 			array_pid[IDGRANATE]=0;
 		}
 		
@@ -754,7 +817,7 @@ int CollisioneRanaProiettile(Rana rana,Proiettile proiettile){
 int RanaSuTana(Rana rana, Game_struct* game_struct){
 	 
 	 for(int i=0;i<5;i++){
-	 	if(rana.x<10+8*i+6*i && rana.x>11+8*i+6*i){
+	 	if(rana.x>=10+8*i+6*i && rana.x<=11+8*i+6*i){
 	 		if(game_struct.tane[i]==0){
 	 		 	 game_struct.tane[i]=1;
 	 			 return 1;}
@@ -781,7 +844,7 @@ int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli){
         }
     }
 
-    return 0; 
+    return -1; 
 }
 
 
@@ -799,16 +862,7 @@ int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli){
 
 
 
-
-
-
-
-
-
-
-
-
-void creazione_processi(Flusso *flussi,Coccodrillo *coccodrilli, int array_pid[N_PID]){
+void creazione_processi(Flusso *flussi, int array_pid[N_PID], int pipe1[]){
 	
 	for(int i=0;i<N_ID;i++){
 		array_pid[i]=0;}	//resettiamo tutti i pid per ricominciare a creare i processi;
@@ -818,14 +872,14 @@ void creazione_processi(Flusso *flussi,Coccodrillo *coccodrilli, int array_pid[N
 		perror("Erorre nella fork della rana : ");
 		exit(1);}
 	else if(array_pid[IDRANA]==0){
-		funzione_rana() }                       
+		frog(pipe1); }                       
 	else{
 		array_pid[MAX_CROCODILES]=fork();
 		if(array_pid[MAX_CROCODILES]==-1){
 			perror("Errore nella fork del generatore coccodrilli: ");
 			exit(-1);}
 		else if(array_pid[MAX_CROCODILES]==0){
-			funzione_gestione_coccodrilli(flussi,coccodrilli);}
+			funzione_gestione_coccodrilli(flussi,pipe1);}
 			     
 	 	else{
 	 		array_pid[IDTIME]=fork();
@@ -833,7 +887,7 @@ void creazione_processi(Flusso *flussi,Coccodrillo *coccodrilli, int array_pid[N
 			perror("Errore nella fork del generatore coccodrilli: ");
 			exit(-1);}
 			else if(array_pid[IDTIME]==0){
-				tempo(pipe_fd);} 
+				tempo(pipe1);} 
 				
 			else return;	
 				
@@ -844,7 +898,7 @@ void creazione_processi(Flusso *flussi,Coccodrillo *coccodrilli, int array_pid[N
 
 
 		
-void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli){
+void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]){
 	int n_coc_alive=0;
 	int n_flusso;
 	int flusso_scelto;
@@ -853,17 +907,18 @@ void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli){
 	int minor_coccodrilli;
 	int n_coc_flusso[8];
 	int flusso_scelto;
-	minor_coccodrilli=n_coc_flusso[0];
 	Temp messaggio={0,0,0,0};
 	pid_t pid_coc;
-	
+	Coccodrillo coccodrilli[MAX_CROCODILES];
 
 	for(int i=0; i<MAX_CROCODILES;i++){
-		for(int i=0;i<8;i++)}
+		minor_coccodrilli=20;
+		contatore=0;
+		for(int i=0;i<8;i++){
 			n_coc_flusso[i]=0;
 		}
 	   	for (int i = 0; i < 8; i++) {
-			if (n_coc_flusso[i] < min_coccodrilli) {		
+			if (n_coc_flusso[i] < minor_coccodrilli) {		
 		    		minor_coccodrilli = n_coc_flusso[i];
 		}}
 		
@@ -874,10 +929,9 @@ void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli){
 	       	
 		flusso_scelto=indici_minimi[rand()%contatore];
    		
-   		coccodrilli[i]->dir=    flussi[flusso_scelto].dir;
-   		coccodrilli[i]->y=    flussi[flusso_scelto].y;
+   		coccodrilli[i].y=    flussi[flusso_scelto]->y;
    		n_coc_flusso[flusso_scelto]++;
-   		if(coccodrilli[i]->dir==1){
+   		if(coccodrilli[i].dir==1){
    			coccodrilli[i].x=POS_SPAWN_COC_SINISTRA;   
    		}
    		else{
@@ -887,27 +941,29 @@ void funzione_gestione_coccodrilli(Flusso *flussi,Coccodrillo *coccodrilli){
    		pid_coc=fork();
 		if(pid_coc==-1){
 			perror("Errorre nella fork coccodrillo: ");
-			exit(1);
+			exit(1);}
 		else if(pid_coc==0){
-   			funzione_coccodrillo(coccodrilli[i],flussi,flusso_scelto);}  
+   			funzione_coccodrillo(coccodrilli[i],flussi,flusso_scelto,pipe1);}  
    		else{
    		
    		messaggio.x=pid_coc;						//imposto il messsaggio fa inviare
    		messaggio.id=i;
    		messaggio.y=IDAGGIUNTAPID;                            //serve per far capire che è un nuovo pid da aggiungere nella lista dei pid;      
    		
-   		write(pipe_fds[1], &messaggio,sizeof(Temp);                          //invio messaggio alla principale con pid del coc creato       
+   		write(pipe1[1], &messaggio,sizeof(Temp);                          //invio messaggio alla principale con pid del coc creato       
    		usleep(rand_funz(20000,40000);}
    		if(i== (MAX_CROCODILES/2 -1){
    			usleep(rand_funz(3000000,4000000);				//a metà della creazione dei coc fermo la loro generazione per qualche secondo;
    		}
    		
    	} 
-   	
+}	
   
   
+
    	
-void funzione_coccodrillo(coccodrilli coccodrillo,Flusso flussi[8],int id_flusso_scelto){
+void funzione_coccodrillo(coccodrilli coccodrillo,Flusso flussi[8],int id_flusso_scelto, int pipe1[]){
+	close(pipe1[0]);
 	Flusso flusso_scelto=flussi[id_flusso_scelto];									//serve per salvare il flusso scelto per ogni respawn;
 	srand(time(NULL)+coccodrillo.id);
 	int larghezza_coccoddrillo=4;
@@ -917,36 +973,23 @@ void funzione_coccodrillo(coccodrilli coccodrillo,Flusso flussi[8],int id_flusso
 	while(true){
 		
 		coccodrillo.x=coccodrillo.x+flusso_scelto.dir;
-		write(pipe[1], &coccodrillo, sizeof(Temp));		//invia la prima posizone quando il primo carattere del coccodrillo è nello schermo;
+		write(pipe1[1], &coccodrillo, sizeof(Temp));		//invia la prima posizone quando il primo carattere del coccodrillo è nello schermo;
 		
 		usleep(flusso_scelto.vel);
 		
 		if(coccoddrillo.x>=POS_SPAWN_COC_DESTRA && coccodrillo.dir=1 || (coccoddrillo.x<=POS_SPAWN_COC_SINISTRA && coccodrillo.dir=-1){
+			
+			flusso_scelto=flusso[rand()%8];
+			while(coccodrillo.y==flusso_scelto.y){
+				flusso_scelto=flussi[rand()%8];
+			}
+			coccodrillo.y=flusso_scelto.y;
+			if(flusso_scelto.dir==1){
+			coccodrillo.x=POS_SPAWN_COC_SINISTRA;}
+			else coccodrillo.x=POS_SPAWN_COC_DESTRA;
 			usleep(rand_funz(2000000,3000000);
-			while(risposta.x==0){   //spawn negato => cambiamo flusso;
-				flusso_scelto=flusso[rand()%8];
-				while(coccodrillo.y==flusso_scelto.y){
-					flusso_scelto=flussi[rand()%8];
-				}
 			
 			
-				if(flusso_scelto.dir==1){
-				coccodrillo.x=POS_SPAWN_COC_SINISTRA;}
-				else coccodrillo.x=POS_SPAWN_COC_DESTRA;
-			
-				richiesta.x=coccodrillo.x;
-				richiesta.y=coccodrillo.y;
-				richista.info=coccodrillo.id;
-				write(pipe[1], &richiesta, sizeof(Temp)); //chiede alla render se può spawnare in quella posizione;
-				usleep(10000);					
-				while(risposta.id!=coccodrillo.id){
-					read(pipe2[0], &risposta, sizeof(Temp)); //verifica le risposte della render;
-					usleep(50000);				 //giusto il tempo che tutti quelli in attesa leggano ognuno il proprio messaggio;
-				
-				}
-			}					//in pratica con questo metodo confidiamo che tutti i coccodrilli che stanno scegliendo il proprio flusso di spawn ricevano il loro messaggio di risposta;
-			coccodrillo.y=flusso_scelto.y; 
-			risposta.id=-1; //così da poterlo riusare la prossima volta;
 			
 		}
 		
@@ -955,8 +998,8 @@ void funzione_coccodrillo(coccodrilli coccodrillo,Flusso flussi[8],int id_flusso
 
 
 
-void proiettile(Coccodrillo coccodrillo){   //vediamo per le pipe;
-	
+void proiettile(Coccodrillo coccodrillo, int pipe1[]){   //vediamo per le pipe;
+	close(pipe1[0]);
 	Temp proiettile={0,0,0,0};
 	int segnale;
 	if(coccodrillo.dir==1) proiettile.x=coccodrillo.x+5;
@@ -970,11 +1013,11 @@ void proiettile(Coccodrillo coccodrillo){   //vediamo per le pipe;
 		if(proiettile.x>78 || proiettile.x<1){
 			proiettile.id=IDMORTE;		
 			proiettile.x=IDPROIETTILE;
-			write(pipe[1], &temp, sizeof(messaggio));  //avvisa della morte;
+			write(pipe1[1], &temp, sizeof(messaggio));  //avvisa della morte;
 			break;
 		else{
 		
-			write(pipe[1], &temp, sizeof(messaggio));  //coordinate proiettile alla render;			
+			write(pipe1[1], &temp, sizeof(messaggio));  //coordinate proiettile alla render;			
 			proiettile.x+=coccodrillo.dir;
 			usleep(MACRO VEL PROIETT);}
 		
@@ -985,15 +1028,13 @@ void proiettile(Coccodrillo coccodrillo){   //vediamo per le pipe;
 
 	
    
-void tempo(pipe()){
-	
-	temp tempo={0,0,0,0};		//non manda 30 quindi lo dobbiamo printare noi all inzio (con il primo windowgeneration);
+void tempo(pipe1[]){
+	close(pipe1[0]);
+	temp tempo={0,0,0,0};		
 	tempo.id=IDTEMPO;
-	tempo.x=30
-	while(tempo.x){
+	while(true){
 		sleep(1);
-		tempo.x--;
-		write(pipe[1], &temp, sizeof(messaggio)); //manda il tempo attuale alla principale
+		write(pipe1[1], &temp, sizeof(messaggio)); //manda segnale alla main
 	}
 	
 	_exit(0);
@@ -1020,17 +1061,6 @@ void kill_processi(pid_t* pid,int count){
    	
 
 
-void enqueue(int* coc_morti,int* tail,int id){
-
-	coc_morti[*tail]					//funzioni utili per la gestione di una coda mediante array;
-	*tail=(*tail+1)%MAX_CROCODILES;
-}
-
-void dequeue(int* head){
-	*head= (*head +1)% MAX_CROCODILES;
-}
-
-
 
 
 void def_vel_flussi(Flusso *flussi){
@@ -1040,7 +1070,7 @@ void def_vel_flussi(Flusso *flussi){
 	int dist_flussi=3;
 	for(int i=0;i<8;i++){
     		flussi[i].y=altezza_base - i*dist_flussi;
-    		flussi[i].speed= VELMIN_FLUSSO + rand()%(VELMAX_FLUSSO - VELMIN_FLUSSO +1);
+    		flussi[i].speed= rand_funz(VELMIN,VELMAX);
 	}
 }
 
@@ -1049,12 +1079,15 @@ void def_vel_flussi(Flusso *flussi){
 
 
 void def_dir_flussi(Flusso *flussi){
-
-    		flussi[i].dir= rand()%2;
-    		if(flussi[i].dir==0) flussi[i].dir=1; 
-    		else flussi[i].dir=-1;
-    
-	}
+	for(int i=0;i<8;i++){
+   		 if(i>=1){
+   		     flussi[i].dir= -flussi[i-1].dir;
+        
+  		  }else{
+  		  flussi[i].dir= rand()%2;
+  		  if(flussi[i].dir==0) flussi[i].dir=1; else flussi[i].dir=-1;
+  		  }
+}	
 }
 
 
@@ -1101,7 +1134,6 @@ int menu(WINDOW *game, const char *title, const char *options[], int num_options
 
         wrefresh(game);
     }
-    wclear(game);
 }
 
 void credits(WINDOW *game) {
@@ -1115,7 +1147,8 @@ void credits(WINDOW *game) {
     mvwprintw(game, gameLINES / 2 - 1, gameCOLS / 2 - 15, "Gabriele Stampatori");
     mvwprintw(game, gameLINES / 2 + 1, gameCOLS / 2 - 17, "Premi un tasto per tornare al menu...");
 
-    wrefresh(game);
+    wrefresh(game); 
+//servirà flushinp?
     wgetch(game);
 }
 
@@ -1125,10 +1158,6 @@ int rand_funz(int min, int max){
 
 }
 
-int rand_funz(int min, int max){
-
-	return min + rand() % (max-min+1);
-}
 
 
 
@@ -1137,7 +1166,9 @@ int rand_funz(int min, int max){
 
 
 
-void frog(int pipe_fd[2]) {
+
+void frog(int pipe1[2]) {
+    close(pipe1[0]);
     int x = 40, y = 43; // Posizione iniziale della rana (nel marciapiede)
     int key;
     Temp rana={IDRANA,x,y,0};      
@@ -1168,16 +1199,15 @@ void frog(int pipe_fd[2]) {
                 break;
             case 's': 
             	
-            	write(pipe_fd[1],&granata,sizeof(Temp));   //mando un messaggio alla render con un id che gli fa capire che voglio creare la granata;(sarà la render a decidere se crearla o no!!;
+            	write(pipe1[1],&granata,sizeof(Temp));   //mando un messaggio alla render con un id che gli fa capire che voglio creare la granata;(sarà la render a decidere se crearla o no!!;
                 
                 break;
-            case 'q': // Esci dal gioco
-                return;
+         
         }
 
 
         // Invia posizione aggiornata al processo principale tramite pipe
-        write(pipe_fd[1], &rana, sizeof(int));
+        write(pipe1[1], &rana, sizeof(int));
        
         
     }
@@ -1185,22 +1215,22 @@ void frog(int pipe_fd[2]) {
 
 
 
-void sparaGranata(int startX, int startY,int pid_array[]) {
+void sparaGranata(int startX, int startY,int pid_array[],int pipe1[], int pipe2[]) {
     pid_array[IDGRANATA]= fork(); // Crea un nuovo processo per la granata
 
     if (pid_array[IDGRANATA] < 0) {
         perror("Errore nella creazione del processo granata");
-        return;
+        exit(0);
     }
 
     if (pid_array[IDGRANATA] == 0) {
         // Processo figlio: gestisce la granata
-        granata(startX, startY);
+        granata(startX, startY, pipe1,pipe2);
     }
 }
 
 
-void sparaProiettile(Coccodrillo coccodrillo,int pid_array[]) {
+void sparaProiettile(Coccodrillo coccodrillo,int pid_array[], int pipe1[]) {
     pid_array[PROIETTILE]= fork(); // Crea un nuovo processo per la granata
 
     if (pid_array[PROIETTILE] < 0) {
@@ -1215,15 +1245,16 @@ void sparaProiettile(Coccodrillo coccodrillo,int pid_array[]) {
 }
 
 
-void granata(int startX, int startY) {		//posizione della rana;
+void granata(int startX, int startY, int pipe1[], int pipe2[]) {		//posizione della rana;
     						//facciamo partire dal basso i proiettili essendo la bocca della rana e del coccodrillo nella parte bassa;
-    
+    close(pipe2[1]);
+    close(pipe1[0]);
     Temp granate[2];
     int granata_morta;	//serve per ricevere messaggio dalla render;
     
     int alive_sinistra=1;
     int alive_destra=1
-    granate[0].id=IDGRANATA 
+    granate[0].id=IDGRANATA; 
     granate[1].i=IDGRANATA + 1;
     granate[0].x=startX - 2;	//le granate partono dal carattere appena esterno a quelli della rana;
     granate[1].x=startX + 2; 				
@@ -1236,35 +1267,34 @@ void granata(int startX, int startY) {		//posizione della rana;
     
     
 
-    while (alive_sinistra && alive_destra) {
+    while (true) {
+    
+        if(read(pipe2[0],&granata_morta,sizeof(int))!=-1){ 		//read non bloccante;
+        	if(granata_morta==0) alive_sinistra=0;					//se il main riconosce una collisione manda il messaggio al processo granate che disattiva l'invio delle coordinate;
+		else alive_destra=0;
+        	
+        } //se 0 è morta a sinistra se 1 a destra; 
+         
         if(granate[1].x>78 && alive_destra){       			
-        	granate[1].alive=0;
+        	alive_destra=0;
         	granata[1].id=IDGRANATE+1;
     		granata[1].x=IDMORTI;
-    		write(pipe[1], &granata[1], sizeof(messaggio));  //avvisa della morte;
+    		write(pipe1[1], &granata[1], sizeof(messaggio));  //avvisa della morte;
         }else if(alive_destra){
-        	write(pipe_fd[1],granate[1],sizeof(Temp));	 //manda coordinate;
+        	write(pipe1[1],granate[1],sizeof(Temp));	 //manda coordinate;
         	granate[1].x++;}
         	
         if(granate[0].x<1 && alive_sinistra){
         	alive_sinistra=0;
         	granata[0].id=IDGRANATE;
     		granata[0].x=IDMORTI;
-    		write(pipe[1], &granata[0], sizeof(messaggio));  //avvisa della morte;
+    		write(pipe1[1], &granata[0], sizeof(messaggio));  //avvisa della morte;
         }else if(alive_sinistra){
-        	write(pipe_fd[1],granate[0],sizeof(Temp));
+        	write(pipe1[1],granate[0],sizeof(Temp));
         	granate[0].x--;}
-        	
-        if(read(pipe_da_creare,&granata_morta,sizeof(int))!=-1){ 		//read non bloccante;
-        	if(granata_morta==0) alive_sinistra=0;					//se il main riconosce una collisione manda il messaggio al processo granate che disattiva l'invio delle coordinate;
-		else alive_destra=0;
-        	
-        } //se 0 è morta a sinistra se 1 a destra;
-    
-        
-        
+        	 
 
-        wrefresh(game);
+        
         usleep(GRANATA_VELOCITA); // Velocità del movimento   
     }
     
@@ -1312,21 +1342,21 @@ void draw_proiettile(WINDOW* game, Proiettilee proiettile){
 	
 	if(proiettile.alive){		//se il proiettile è vivo;
 		if(proiettile.y<15 && proiettile.y>=10){
-			wattron(COLOR_PAIR());
+			wattron(game,COLOR_PAIR(6));
 			mvwaddch(game,y,x,'-');
-			wattroff(COLOR_PAIR());			//impostiamo i colori come le zone della mappa;
+			wattroff(game,COLOR_PAIR(6));			//impostiamo i colori come le zone della mappa;
 		}
 		if(proiettile.y<40 && proiettile.y>=15){
-			wattron(COLOR_PAIR());
+			wattron(game,COLOR_PAIR(2));
 			mvwaddch(game,y,x,'-');
-			wattroff(COLOR_PAIR());
+			wattroff(game,COLOR_PAIR(2));
 		}	
 		if(proiettile.y<45 && proiettile.y>=40){
-			wattron(COLOR_PAIR());
+			wattron(game,COLOR_PAIR(8));
 			mvwaddch(game,y,x,'-');
-			wattroff(COLOR_PAIR());
+			wattroff(game,COLOR_PAIR(8));
 		}}	
-	
+	wrefresh(game);
 }
 
 void draw_granate(WINDOW* game, Granata granate[2]){
@@ -1336,21 +1366,23 @@ void draw_granate(WINDOW* game, Granata granate[2]){
 		if(granate[i].alive){
 					//se il proiettile è vivo;
 			if(proiettile.y<15 && proiettile.y>=10){
-				wattron(COLOR_PAIR());
+				wattron(game,COLOR_PAIR(6));
 				mvwaddch(game,y,x,'X');
-				wattroff(COLOR_PAIR());			//impostiamo i colori come le zone della mappa;
+				wattroff(game,COLOR_PAIR(6));			//impostiamo i colori come le zone della mappa;
 				}
 			if(proiettile.y<40 && proiettile.y>=15){
-				wattron(COLOR_PAIR());
+				wattron(game,COLOR_PAIR(2));
 				mvwaddch(game,y,x,'X');
-				wattroff(COLOR_PAIR());
+				wattroff(game,COLOR_PAIR(2));
 				}	
 			if(proiettile.y<45 && proiettile.y>=40){
-				wattron(COLOR_PAIR());
+				wattron(game,COLOR_PAIR(8));
 				mvwaddch(game,y,x,'X');
-				wattroff(COLOR_PAIR());
+				wattroff(game,COLOR_PAIR(8));
 				}
-}}}
+}}
+	wrefresh(game);
+}
 
 void draw_frog(WINDOW *game, Rana rana) {
 	//attivare colore rana;
