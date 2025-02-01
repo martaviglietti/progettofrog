@@ -144,100 +144,86 @@ void sblocca_fd(int fd);
 void killProcess(pid_t pid);
 
 
-
-      
-         
-
-
-
-
 int main() {
-    printf("\e[8;%d;%dt", 49, 80);  
-    fflush(stdout);
-    sleep(1);
-
-    // Inizializza NCURSES
+    printf("\e[8;%d;%dt", 49, 80);   //imposta la dimensione del terminale
+    fflush(stdout);                  //controlla che tutti i dati siano visulizzati su terminale
+    sleep(1);                        //pausa l'esecuzione per 1 secondo
+    
+    // Inizializza NCURSES-------------------------------------------------------
     initscr();
-    noecho();
+    noecho(); //i tasti premuti non saranno visualizzati sullo schermo
     cbreak();
-    curs_set(0);
-    resizeterm(49, 80);       //avvisare ncurses del cambio di dimensioni
+    curs_set(0); //nasconde il cursore nel terminale
+    resizeterm(49, 80);  //avvisare ncurses del cambio di dimensioni
     creazione_colori();
-    
-    
-	
+
     int height = LINES;
     int width = COLS;
-    int scelta;
+    int menuchoice; //nuova variabile per differenziare quella della scelta del menu e quella che salva il valore di ritorno di fine partita
+    int continue_playing=1; //variabile che sarà utilizzata per memorizzare il valore di ritorno di gamewin e gamelost
     int difficoltà;
     int ricomincia=1;
     Stat_game stat_game={0,0,0,0};
     Game_struct risultato;
-    WINDOW *game = newwin(height, width, 0, 0); //area gioco  
-
-    box(game, ACS_VLINE, ACS_HLINE);
+    WINDOW *game = newwin(height, width, 0, 0); //creo una nuova finestra 
+    box(game, ACS_VLINE, ACS_HLINE); //disegna un borto attorno alla finestra di gioco
     wrefresh(game);
 
-    while (true) {
+
+    //LOOP PRINCIPALE DEL GIOCO---------------------------------------------------
+    while (true) { //questo ciclo continua finchè non si esce dal menu di gioco
     	if(ricomincia){
-        	scelta= menu(game,"Menu Principale", OPZIONI, 3);}	//se ricomincia è 0 non rifacciamo il menu;
-	
-        if (scelta == 0) {  // "Inizia gioco"
-             if(ricomincia){
-             difficoltà=scegliDifficolta(game);}
-        
-        
-             switch(difficoltà){
-                    case 0: //principiante
-                        stat_game.vite=10;
-                        stat_game.tempo=30;
-                        stat_game.velocità_proiettili=3000;
-                        stat_game.velocità_coccodrilli=500000;
-                        break;
-                    case 1: //intermedio
-                        stat_game.vite=10;
-                        stat_game.tempo=30;
-                        stat_game.velocità_proiettili=3000;
-                        stat_game.velocità_coccodrilli=50000;
-                        break;
-                    case 2: //difficile
-                        stat_game.vite=10;
-                        stat_game.tempo=30;
-                        stat_game.velocità_proiettili=3000;
-                        stat_game.velocità_coccodrilli=50000;
-                        break;
-                   
-                }
-        
-        
-        
+        	menuchoice=menu(game,"Menu Principale", OPZIONI, 3);
+        }	//se ricomincia è 0 non rifacciamo il menu;
+
+        if (menuchoice == 0) {  // "Inizia gioco"
+            if(ricomincia){
+            difficoltà=scegliDifficolta(game);
+            }
+            switch(difficoltà){
+                case 0: //principiante
+                    stat_game.vite=10;
+                    stat_game.tempo=30;
+                    stat_game.velocità_proiettili=3000;
+                    stat_game.velocità_coccodrilli=500000;
+                    break;
+                case 1: //intermedio
+                    stat_game.vite=10;
+                    stat_game.tempo=30;
+                    stat_game.velocità_proiettili=3000;
+                    stat_game.velocità_coccodrilli=50000;
+                    break;
+                case 2: //difficile
+                    stat_game.vite=10;
+                    stat_game.tempo=30;
+                    stat_game.velocità_proiettili=3000;
+                    stat_game.velocità_coccodrilli=50000;
+                    break;
+            }
+            //funzione che esegue il gioco e ritorna lo stato finale del gioco in una struttura risultato
             risultato=startGame(game,stat_game);
             if(risultato.game==1){	//abbiamo vinto
-            	wclear(game);
-            	scelta=gameWin(game,risultato.score);
-            	if(scelta==1){		//ricomincia la stessa partita;		
-            		ricomincia=0;
-            	}else{
-            	        ricomincia=1;
-            	}
-            }else{
-            	wclear(game);
-            	scelta=gameOver(game,risultato.score);
-            	if(scelta==1){					//ricomincia la stessa partita;
-            		ricomincia=0;
-            	}else{
-            		ricomincia=1;
-            	
-            	}
-            	
-            
-            
-            }}
-        else if(scelta==1){ //crediti
-        	credits(game);
-        	
+                wclear(game);
+                continue_playing=gameWin(game,risultato.score);
+                if(continue_playing==1){		//ricomincia la stessa partita 
+                    ricomincia=0;  
+                }else{
+                    ricomincia=1; //se alla fine di una partita scelgo di non ricominciare mi riporta al manu tramita ricomincia=1
+                }
+            }
+            else{ //caso di pardita
+                wclear(game);
+                continue_playing=gameOver(game,risultato.score);
+                if(continue_playing==1){					
+                    ricomincia=0;
+                }else{
+                    ricomincia=1;     
+                }
+            }
         }
-            
+        else if(menuchoice==1){ //crediti
+        credits(game);  	
+        }  
             
         else{  // "Esci"
             wclear(game);
@@ -253,12 +239,14 @@ int main() {
     return 0;
 }
 
+
 int gameWin(WINDOW *game, int score) {
     werase(game);
     mvwprintw(game, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
     wrefresh(game);
+   
     char decision = wgetch(game);
-    while(decision!= 's' || decision!='n'){
+    while(decision!= 's' && decision!='n'){
 
     	 decision = wgetch(game);
     }
@@ -275,7 +263,7 @@ int gameOver(WINDOW *game, int score) {
     mvwprintw(game, 10, 10, "GAME OVER! Punteggio: %d. Vuoi tornare al menù? (s/n)", score);
     wrefresh(game);
     char decision = wgetch(game);
-    while(decision!= 's' || decision!='n'){
+    while(decision!= 's' && decision!='n'){
     	 decision = wgetch(game);
     }
     if (decision == 'n') {
@@ -284,6 +272,11 @@ int gameOver(WINDOW *game, int score) {
         return 1;
     }
 }
+
+            	
+            
+            
+       
 
 
 
