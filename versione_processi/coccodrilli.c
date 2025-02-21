@@ -5,7 +5,6 @@ void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]){
 	int n_coc_alive=0;
 	int n_flusso;
 	int flusso_scelto;
-	int dir;
 	int indici_minimi[8];
 	int minor_coccodrilli;
 	int n_coc_flusso[8];
@@ -45,17 +44,19 @@ void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]){
    		pid_coc=fork();
 		if(pid_coc==-1){
 			perror("Errorre nella fork coccodrillo: ");
-			exit(1);}
+			exit(1);
+		}
 		else if(pid_coc==0){
-   			funzione_coccodrillo(coccodrilli[i],flussi,flusso_scelto,pipe1);}  
+   			funzione_coccodrillo(coccodrilli[i],flussi,flusso_scelto,pipe1);
+		}  
    		else{
+   			messaggio.x=pid_coc;						//imposto il messsaggio fa inviare
+   			messaggio.id=i;
+   			messaggio.y=IDAGGIUNTAPID;                            //serve per far capire che è un nuovo pid da aggiungere nella lista dei pid;      
    		
-   		messaggio.x=pid_coc;						//imposto il messsaggio fa inviare
-   		messaggio.id=i;
-   		messaggio.y=IDAGGIUNTAPID;                            //serve per far capire che è un nuovo pid da aggiungere nella lista dei pid;      
-   		
-   		write(pipe1[1], &messaggio,sizeof(Temp));                          //invio messaggio alla principale con pid del coc creato       
-   		usleep(rand_funz(20000,40000));}
+   			write(pipe1[1], &messaggio,sizeof(Temp));                          //invio messaggio alla principale con pid del coc creato       
+   			usleep(rand_funz(20000,40000));
+		}
    		if(i== (MAX_CROCODILES/2 -1)){
    			usleep(rand_funz(3000000,4000000));				//a metà della creazione dei coc fermo la loro generazione per qualche secondo;
    		}

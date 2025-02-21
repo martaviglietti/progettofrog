@@ -1,20 +1,36 @@
-SRC_DIR = ../progettofrog
-OBJ_DIR = ../obj
+SRC_DIR = .
 BUILD_DIR = ../build
 
-VERSIONE_PROCESSI_SRC = $(SRC_DIR)/versione_processi
+OBJ_DIR_PROCESSI = ../obj/versione_processi
+OBJ_DIR_THREADS = ../obj/versione_threads
+
+PROCESSI_SRC = $(SRC_DIR)/versione_processi
+THREADS_SRC = $(SRC_DIR)/versione_threads
+
+OBJECTS_PROCESSI = $(OBJ_DIR_PROCESSI)/coccodrilli.o \
+				$(OBJ_DIR_PROCESSI)/collisioni.o \
+				$(OBJ_DIR_PROCESSI)/draws.o \
+				$(OBJ_DIR_PROCESSI)/main.o \
+				$(OBJ_DIR_PROCESSI)/funzionegioca.o \
+				$(OBJ_DIR_PROCESSI)/gestionegrafica.o \
+				$(OBJ_DIR_PROCESSI)/menu.o \
+				$(OBJ_DIR_PROCESSI)/rana.o \
+				$(OBJ_DIR_PROCESSI)/windowgeneration.o
 
 CFLAGS = -g -Wall -I/usr/include  -I/usr/include/x86_64-linux-gnu # Include ncurses headers if needed
 LDFLAGS = -lncurses
 
-OBJECTS = $(OBJ_DIR)/coccodrilli.o $(OBJ_DIR)/collisioni.o $(OBJ_DIR)/draws.o $(OBJ_DIR)/main.o $(OBJ_DIR)/funzionegioca.o $(OBJ_DIR)/gestionegrafica.o $(OBJ_DIR)/menu.o $(OBJ_DIR)/rana.o $(OBJ_DIR)/windowgeneration.o
-
 PROCESSI_EXEC = $(BUILD_DIR)/versione_processi/a.out
+THREADS_EXEC = $(BUILD_DIR)/versione_threads/a.out
 
-$(PROCESSI_EXEC): $(OBJECTS)
-	gcc $(OBJECTS) -o $(PROCESSI_EXEC) $(LDFLAGS)
+# Default target: build both projects
+#all: $(PROCESSI_EXEC) $(THREADS_EXEC)
 
-$(OBJ_DIR)/%.o: $(VERSIONE_PROCESSI_SRC)/%.c
+# Project 1 executable (build ont one executable)
+$(PROCESSI_EXEC): $(OBJECTS_PROCESSI)
+	gcc $(OBJECTS_PROCESSI) -o $(PROCESSI_EXEC) $(LDFLAGS)
+
+$(OBJ_DIR_PROCESSI)/%.o: $(PROCESSI_SRC)/%.c
 	gcc $(CFLAGS) -c $< -o $@
 
 clean:
