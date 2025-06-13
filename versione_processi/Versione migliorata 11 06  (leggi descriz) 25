@@ -42,8 +42,8 @@ static const char *OPZIONI[] = {
 
 //sprite rana
 const char *frog_sprite[2] = {
-    "@ @",
-    " - "
+    "* *",
+    "   "
 };
 
 const char *coc_sprite[2][2]={{"XXXXXXX","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
@@ -200,7 +200,7 @@ int main(){
                     stat_game.vite=10;			   //numero vite
                     stat_game.tempo=100;		   //tempo di gioco
                     stat_game.velocità_proiettili=30000;   //velocità proiettili
-                    stat_game.velocità_coccodrilli=200000;  //velocità coccodrilli
+                    stat_game.velocità_coccodrilli=100000;  //velocità coccodrilli
                     break;
                 case 1:  //Medio
                     stat_game.vite=10;
@@ -303,12 +303,12 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct* game_struct
     
     //Definiamo la mappa di gioco
     char tane[TANE][LARGHEZZA_GIOCO-2]={
-        "                                                                               ",
-    	"                                                                               ",
-    	"     +-------+      +-------+      +-------+      +-------+      +-------+     ",		          
-    	"     |.......|      |.......|      |.......|      |.......|      |.......|     ",			
-    	"     |.......|      |.......|      |.......|      |.......|      |.......|     ",
-    	"     |.......|      |.......|      |.......|      |.......|      |.......|     "
+        "     ..o..            o                   .          o                o        ",
+    	"                 o               O                           .                 ",
+    	"     +-------+      +-------+      +-------+      +-------+      +-------+  O  ",		          
+    	"     |*******|      |*******|      |*******|      |*******|      |*******|     ",			
+    	"  .  |*******|      |*******|   o  |*******|      |*******|      |*******|     ",
+    	"     |*******|      |*******|      |*******|      |*******|      |*******|     "
     };	
     							 
     char fiume[FIUME][LARGHEZZA_GIOCO-2]={
@@ -341,10 +341,10 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct* game_struct
     
     char prato[PRATO][LARGHEZZA_GIOCO-2]={   
     
-    	"                                                                               ",
+    	"      .                                                                        ",
     	"                   /          |                      /          .     \\        ",
-    	"       .                                         .                             ",
-    	"                 .                 .                       \\          .        ",
+    	"         \\                                       .                             ",
+    	"   .             .                 .                       \\          .        ",
     	"                          /                     /                              "
     };
     
@@ -356,9 +356,10 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct* game_struct
     wattron(game,COLOR_PAIR(3));
     for (int i=0; i<TANE;i++) {
     	for (int j=0; j<maxX-2;j++) {				
-    	    if (tane[i][j]==' ' ) {  		
+    	    if (tane[i][j]==' ' || tane[i][j]=='o' || tane[i][j]=='O' || tane[i][j]=='.') {  		
     	        mvwaddch(game,i+offsetSumV,j+offsetSumH,tane[i][j]);
-            }
+            } 		
+    	      
         }
     }
     wattroff(game,COLOR_PAIR(3));
@@ -379,7 +380,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct* game_struct
 	    wattron(game,COLOR_PAIR(5));
 	    for (int v=2; v<TANE;v++) {
 	    	for (int h=5+(8+7)*i; h<5+(8+7)*i+9 ;h++) {
-	    	    if (tane[v][h]=='.') {									
+	    	    if (tane[v][h]=='*') {									
 	    	        mvwaddch(game,v+offsetSumV,h+offsetSumH,tane[v][h]);
 	   	    }
 	   	}
@@ -391,7 +392,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct* game_struct
 	    wattron(game,COLOR_PAIR(3));
 	    for (int v=2; v<TANE;v++) {
 		for (int h=5+(8+7)*i; h<5+(8+7)*i+9 ;h++) {								
-	     	    mvwaddch(game,v+offsetSumV,h+offsetSumH,'\0');
+	     	    mvwaddch(game,v+offsetSumV,h+offsetSumH,' ');
 		}
 	    }
 	    wattroff(game,COLOR_PAIR(3));    
@@ -488,6 +489,8 @@ Game_struct startGame(WINDOW *game,Stat_game stat_game){
     	game_struct.tempo=stat_game.tempo; 	
 	svuota_pipe(pipe1[0]);  //svuotiamo la pipe per eliminare eventuali elementi rimasti all'interno
 	
+
+
    	kill_processi(array_pid);		
    	
         //Controlli di fine manche
@@ -563,7 +566,7 @@ void Gestione_grafica(WINDOW* game,int pipe1[], int pipe2[], int array_pid[],int
     int riattivare;
     int distanze_coc[8];
     for (int i=0; i<8;i++) {
-	distanze_coc[i]=rand_funz(7,10);  //impostiamo le distanze iniziali tra coccodrilli per ogni flusso del fiume
+	distanze_coc[i]=rand_funz(13,16);  //impostiamo le distanze iniziali tra coccodrilli per ogni flusso del fiume
     }
     int indice_flusso;
     
@@ -612,7 +615,7 @@ void Gestione_grafica(WINDOW* game,int pipe1[], int pipe2[], int array_pid[],int
 		
 		//controlli per lo spostamento della rana
 		if (coc_scelto==coccodrilli[temp.id].id) {  //controlliamo che il coccodrillo attuale sia anche quello su cui la rana era posata prima dello spostamento
-		    if ((rana.x<=2 && coccodrilli[temp.id].dir==-1) || (rana.x>=77 && coccodrilli[temp.id].dir==1)) {  //controllo se la rana si trova agli estremi della mappa			
+		    if ((rana.x<=2 && coccodrilli[temp.id].dir==-1) || (rana.x>=LARGHEZZA_GIOCO-3 && coccodrilli[temp.id].dir==1)) {  //controllo se la rana si trova agli estremi della mappa			
 			if (RanaSuCoccodrillo(&rana,coccodrilli)!=coc_scelto) {	//se la rana non viene considerata più sopra l'attuale coccodrillo allora è caduta in acqua sul bordo della mappa 
 			    game_struct->vite--;
 			    game_struct->score-=10;
@@ -624,8 +627,8 @@ void Gestione_grafica(WINDOW* game,int pipe1[], int pipe2[], int array_pid[],int
 		}	
 		
 		//controllo sullo stato del coccodrillo
-		if (coccodrilli[temp.id].x>=POS_SPAWN_COC_DESTRA || coccodrilli[temp.id].x<=POS_SPAWN_COC_SINISTRA) {	//verifichiamo se il coccodrillo è all'interno della mappa
-		    coccodrilli[temp.id].alive=0;  //coccodrillo fuori dalla mappa = non attivo
+		if ((coccodrilli[temp.id].x>=POS_SPAWN_COC_DESTRA && coccodrilli[temp.id].dir==1) || (coccodrilli[temp.id].x<=POS_SPAWN_COC_SINISTRA && coccodrilli[temp.id].dir==-1)) {	//verifichiamo se il coccodrillo è all'interno della mappa
+		    coccodrilli[temp.id].alive=0;  //coccodrillo fuori dalla mappa = non attivo/morto
 		} else {  
 		    coccodrilli[temp.id].alive=1;  //coccoddrillo dentro alla mappa = attivo/vivo
 		}
@@ -634,11 +637,12 @@ void Gestione_grafica(WINDOW* game,int pipe1[], int pipe2[], int array_pid[],int
 			
 			
 		//gestione dello stato di attesa 
-		if ((coccodrilli[temp.id].x==LARGHEZZA_GIOCO+2 && coccodrilli[temp.id].dir==-1) || (coccodrilli[temp.id].x==-3 && coccodrilli[temp.id].dir==1)) {  //controlliamo che il coccodrillo corrente stia effettivamente a inizio tragitto			
+		if ((coccodrilli[temp.id].x==POS_SPAWN_COC_DESTRA && coccodrilli[temp.id].dir==-1) || (coccodrilli[temp.id].x==POS_SPAWN_COC_SINISTRA && coccodrilli[temp.id].dir==1)) {  //controlliamo che il coccodrillo corrente si trova a inizio tragitto			
 		    for (int i=0;i<MAX_CROCODILES;i++) {
-		        indice_flusso=(coccodrilli[i].y-16)/3;  //individuiamo indice del flusso del coccoddrillo corrente
+		        indice_flusso=(coccodrilli[i].y-37)/-3;  //individuiamo l'indice del flusso del coccoddrillo corrente
 					
-			if (i!=coccodrilli[temp.id].id && coccodrilli[i].y==coccodrilli[temp.id].y && ((coccodrilli[temp.id].x+distanze_coc[indice_flusso]>coccodrilli[i].x-4 && coccodrilli[temp.id].dir==1)||(coccodrilli[temp.id].x-distanze_coc[indice_flusso]<coccodrilli[i].x+4 && coccodrilli[temp.id].dir==-1)) && coccodrilli[i].wait!=1){
+			//controlliamo se il coccodrillo attuale stia spawnando con coccodrilli troppo vicini nelle stesso flusso
+			if (i!=coccodrilli[temp.id].id && coccodrilli[i].y==coccodrilli[temp.id].y && ((coccodrilli[temp.id].x-distanze_coc[indice_flusso]<coccodrilli[i].x && coccodrilli[temp.id].dir==-1) || (coccodrilli[temp.id].x+distanze_coc[indice_flusso]>coccodrilli[i].x && coccodrilli[temp.id].dir==1)) && coccodrilli[i].wait!=1){
 						
 			   coccodrilli[temp.id].wait=1;    //lo mettiamo in wait perchè ci sono coccodrilli non in wait vicino a dove spawna
 		
@@ -651,21 +655,22 @@ void Gestione_grafica(WINDOW* game,int pipe1[], int pipe2[], int array_pid[],int
 		
 				
 			
-		for (int i=0;i<MAX_CROCODILES;i++) {
+		for (int i=0;i<MAX_CROCODILES;i++) {  //controlliamo se dobbiamo sbloccare qualche coccodrillo
 		    if (coccodrilli[i].wait==1) {
-			indice_flusso=(coccodrilli[i].y-16)/3;
+			indice_flusso=(coccodrilli[i].y-37)/-3;
 		        	
 			riattivare=1;
-			for (int j=0;j<MAX_CROCODILES;j++) {
-			    if(i!=j && coccodrilli[j].y==coccodrilli[i].y && ((coccodrilli[i].x+distanze_coc[indice_flusso]>coccodrilli[j].x-4 && coccodrilli[i].dir==1)||(coccodrilli[i].x-distanze_coc[indice_flusso]<coccodrilli[j].x+4 && coccodrilli[i].dir==-1)) && coccodrilli[j].wait!=1){
-			        riattivare=0;			 
+			
+			for (int j=0;j<MAX_CROCODILES;j++) {  //per ogni coccodrillo in wait controlliamo se ci sono ancora coccodrilli nelle vicinanze (quelli in wait non contano)
+			    if(i!=j && coccodrilli[j].y==coccodrilli[i].y && ((coccodrilli[i].x-distanze_coc[indice_flusso]<coccodrilli[j].x && coccodrilli[i].dir==-1) || (coccodrilli[i].x+distanze_coc[indice_flusso]>coccodrilli[j].x && coccodrilli[i].dir==1)) && coccodrilli[j].wait!=1){
+			        riattivare=0;
+			        break; 
 			    }		
 			}
-			if (riattivare) {	  
-					  
-			    distanze_coc[indice_flusso]=rand_funz(7,10);                    //modifico la distanza da rispettare così da variare un pò la posizione dei coccodrilli;						
-					
-			    coccodrilli[i].wait=-1;    //lo mettiamo in wait perchè ci sono coccodrilli non in wait vicino a dove spawna
+			if (riattivare) {	  	  
+			    distanze_coc[indice_flusso]=rand_funz(13,16);    //modifichiamo la distanza da rispettare così da aggiungere diversità						
+			    	
+			    coccodrilli[i].wait=-1;    //togliamo la wait e lo facciamo ripartire;
 			    kill(array_pid[i],SIGCONT);	
 			}
 		    }
@@ -1005,7 +1010,8 @@ void funz_proiettile(Coccodrillo coccodrillo,int vel,int pipe1[]){   //vediamo p
 
 //funzion di gestione dei coccodrilli
 void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]){
-   
+    close(pipe1[0]);
+    
     int numero_coc_flussi[8]={0};
     int flusso_random;
     Temp coccodrillo;
@@ -1059,7 +1065,7 @@ void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]){
 
 //funzione i controllo del coccodrillo
 void funzione_coccodrillo(Temp coccodrillo,Flusso flussi[8],int id_flusso_scelto, int pipe1[]){
-    close(pipe1[0]);
+    
     usleep(rand_funz(100000,300000));
     Flusso flusso_scelto=flussi[id_flusso_scelto];  //serve per salvare il flusso scelto ad ogni spawn;
     coccodrillo.info=flusso_scelto.dir;
@@ -1079,13 +1085,13 @@ void funzione_coccodrillo(Temp coccodrillo,Flusso flussi[8],int id_flusso_scelto
 	
 	    if (flusso_scelto.dir==1) {
 	    
-	        coccodrillo.x=POS_SPAWN_COC_SINISTRA;
+	        coccodrillo.x=POS_SPAWN_COC_SINISTRA-1;
 	        
 	    } else {
 	    
-	        coccodrillo.x=POS_SPAWN_COC_DESTRA;
+	        coccodrillo.x=POS_SPAWN_COC_DESTRA+1;
 	    }
-	    usleep(rand_funz(1000000,2000000));}
+	    usleep(rand_funz(500000,2000000));}
 	    	
     }
 }
@@ -1124,7 +1130,7 @@ void kill_processi(pid_t pid[N_PID]) {
     for (int i=0; i<N_PID;i++) {
 	if(pid[i]>0) {
 	    if(kill(pid[i],SIGKILL)!=0) {
-		perror("Error killing process");
+		perror("Errore nel killare i processi: ");
 		exit(-1);
 	    } else {
 	        waitpid(pid[i], NULL, 0);
@@ -1355,7 +1361,7 @@ void granata(int startX, int startY, int velocità_proiettile, int pipe1[], int 
 void creazione_colori(){
     if (has_colors()) { //verifica il supporto ai colori da parte del terminale
         start_color();
-        init_color(8,0,300,0);     //verde foresta
+        init_color(8,0,300,0);       //verde foresta
    	init_color(9,0,123,184);     //blu scuro		
   	init_color(10,95,95,95);     //grigio scuro
   	init_color(11,192,192,192);  //grigio chiaro
@@ -1365,10 +1371,12 @@ void creazione_colori(){
         init_color(15,0,500,0);      //verde chiaro
         init_color(16, 150,200,0);   //verde scuro
         init_color(17,100,500,700);  //blu chiaro
+        init_color(18,800,800,0);  //giallo chiaro
+        init_color(19,350,350,350);  //grigio 
         
-    	init_pair(1,8,14);                         //rana
-   	init_pair(2, COLOR_BLUE, 17);	           //per i "~" del fiume
-   	init_pair(3, COLOR_YELLOW, COLOR_YELLOW);  //zona in torno alle tane
+    	init_pair(1,COLOR_BLACK,14);               //rana
+   	init_pair(2, COLOR_BLUE, 17);	           //fiume
+   	init_pair(3, 19, COLOR_YELLOW);  //zona in torno alle tane
    	init_pair(4, 10, 11);                      //recinzione delle tane
     	init_pair(5, 13, 13); 		           //tana vera e propria
    	init_pair(6, COLOR_YELLOW, 16);            //marciapiede
@@ -1376,11 +1384,13 @@ void creazione_colori(){
    	init_pair(8, 8, 15);   	                   //prato;
         init_pair(9,COLOR_BLACK,COLOR_WHITE);	   //selezione menù
         init_pair(10,COLOR_BLACK,14);              //coccodrillo
-        init_pair(11,COLOR_RED,COLOR_BLUE);	   //proiettile
-        init_pair(12,COLOR_YELLOW,COLOR_GREEN);    //granata nel prato
-        init_pair(13,COLOR_YELLOW,COLOR_BLUE);	   //granata fiume
+        init_pair(11,COLOR_RED,17);	   //proiettile
+        init_pair(12,COLOR_RED,15);    //granata nel prato
+        init_pair(13,COLOR_RED,17);	   //granata fiume
         init_pair(14,COLOR_RED,COLOR_RED); 	   //zona esterna al gioco
         init_pair(15,COLOR_WHITE,14);		   //colore score-vite-tempo
+        init_pair(16,COLOR_BLACK,18);      //occhi rana e coccodrilli    
+        init_pair(17,COLOR_RED,16);     //granata nel marciapiede 
                 
     } else {  //il terminale non supporta i colori
     	printw("Il terminale non permette la visualizzazione dei colori\n"); 
@@ -1401,7 +1411,7 @@ void draw_proiettile(WINDOW* game, Proiettile proiettile){
     if (proiettile.alive) {  //mostriamo il proiettile solo se vivo		
         wattron(game,COLOR_PAIR(11));
 	
-	    mvwaddch(game,proiettile.y,proiettile.x,'-');		
+	    mvwaddch(game,proiettile.y,proiettile.x,'*');		
 	
 	wattroff(game,COLOR_PAIR(11));
 	}		
@@ -1418,17 +1428,17 @@ void draw_granate(WINDOW* game, Granata granate[2]){
 				
 	    if (granate[i].y<15 && granate[i].y>=10) {  //granata sul marciapiede
 		wattron(game,COLOR_PAIR(6));
-		mvwaddch(game,granate[i].y,granate[i].x,'X');
+		mvwaddch(game,granate[i].y,granate[i].x,'O');
 		wattroff(game,COLOR_PAIR(6));			
 	    }
 	    if (granate[i].y<40 && granate[i].y>=15) {  //granata sul fiume
-		wattron(game,COLOR_PAIR(11));
-		mvwaddch(game,granate[i].y,granate[i].x,'X');
-		wattroff(game,COLOR_PAIR(11));
+		wattron(game,COLOR_PAIR(13));
+		mvwaddch(game,granate[i].y,granate[i].x,'O');
+		wattroff(game,COLOR_PAIR(13));
 	    }	
 	    if (granate[i].y<45 && granate[i].y>=40) {  //granata sul prato
 		wattron(game,COLOR_PAIR(12));
-		mvwaddch(game,granate[i].y,granate[i].x,'X');
+		mvwaddch(game,granate[i].y,granate[i].x,'O');
 		wattroff(game,COLOR_PAIR(12));
             }
 	}
@@ -1446,7 +1456,10 @@ void draw_frog(WINDOW *game, Rana rana){
             mvwaddch(game, rana.y + i, rana.x -1 + j, frog_sprite[i][j]);
         }
     }
-    wattroff(game,COLOR_PAIR(1));
+    wattron(game,COLOR_PAIR(16));
+    mvwaddch(game, rana.y, rana.x -1, frog_sprite[0][0]);
+    mvwaddch(game, rana.y, rana.x + 1, frog_sprite[0][2]);
+    wattroff(game,COLOR_PAIR(16));
 }
 
 
@@ -1460,28 +1473,38 @@ void drawCoccodrilli(WINDOW *game, Coccodrillo *coccodrilli){
     wattron(game, COLOR_PAIR(10));
     
     for (int i = 0; i < MAX_CROCODILES; i++) {
-        if (coccodrilli[i].alive && coccodrilli[i].dir==1 && coccodrilli[i].wait!=1) { //coccodrillo vivo e direzionato verso destra
+        if (coccodrilli[i].alive && coccodrilli[i].dir==1 && coccodrilli[i].wait!=1) { //coccodrillo vivo, non in wait e direzionato verso destra
           
             h=0; 
 	    
 	    //printiamo la parte superiore del coccodrillo
             for (int j = 0; j < LARGHEZZACOCCODRILLO-2; j++) {
 	        if (coccodrilli[i].x-3+j>0 && coccodrilli[i].x-3+j<LARGHEZZA_GIOCO-1) {  //condizioni necessarie per printare solo le parti del coccodrillo all'interno della mappa	
-	       	    mvwaddch(game, coccodrilli[i].y + h, coccodrilli[i].x -3 + j, coc_sprite[0][h][j]);   
-    	        }
-   	    }
+	            
+	                mvwaddch(game, coccodrilli[i].y, coccodrilli[i].x -3 + j, coc_sprite[0][h][j]);
+	        }
+	       	      
+    	    }
+   	    
             h=1;
             
             //printiamo la parte inferiore del coccodrillo
             for (int j = 0; j < LARGHEZZACOCCODRILLO; j++) {
-       	        if (coccodrilli[i].x-4+j>0 && coccodrilli[i].x-4+j<LARGHEZZA_GIOCO-1) {			
+       	        if (coccodrilli[i].x-4+j>0 && coccodrilli[i].x-4+j<LARGHEZZA_GIOCO-1) {		
+       	            if(coc_sprite[0][h][j]=='0'){
+	                wattron(game, COLOR_PAIR(16));
+	                mvwaddch(game, coccodrilli[i].y + h, coccodrilli[i].x -4 + j, coc_sprite[0][h][j]);
+	                wattroff(game, COLOR_PAIR(16));
+	                
+	                wattron(game, COLOR_PAIR(10));
+	            
+	            } else {	
        		     	mvwaddch(game, coccodrilli[i].y + h, coccodrilli[i].x -4 + j, coc_sprite[0][h][j]);
-     	    	}
-   	    }
-            
-       
-            
-        } else if (coccodrilli[i].alive && coccodrilli[i].dir==-1 &&  coccodrilli[i].wait!=1) {   //coccodrillo vivo e direzionato verso sinistra
+     	    	    }
+   	        }
+           
+            }
+        } else if (coccodrilli[i].alive && coccodrilli[i].dir==-1 &&  coccodrilli[i].wait!=1) {   //coccodrillo vivo, non in wait e direzionato verso sinistra
        	    
        	    h=0; 
             
@@ -1497,12 +1520,26 @@ void drawCoccodrilli(WINDOW *game, Coccodrillo *coccodrilli){
             //printiamo la parte inferiore del coccodrillo
             for (int j = 0; j < LARGHEZZACOCCODRILLO; j++) {
        		   if (coccodrilli[i].x-4+j>0 && coccodrilli[i].x-4+j<LARGHEZZA_GIOCO-1) {			
-       		     	mvwaddch(game, coccodrilli[i].y + h, coccodrilli[i].x -4 + j, coc_sprite[1][h][j]);
+       		     	
+       		     	if(coc_sprite[1][h][j]=='0'){
+			        wattron(game, COLOR_PAIR(16));
+			        mvwaddch(game, coccodrilli[i].y + h, coccodrilli[i].x -4 + j, coc_sprite[1][h][j]);
+			        wattroff(game, COLOR_PAIR(16));
+			        
+			        wattron(game, COLOR_PAIR(10));
+	            
+	                } else {
+       		     	    mvwaddch(game, coccodrilli[i].y + h, coccodrilli[i].x -4 + j, coc_sprite[1][h][j]);
+     	    	        }
      	    	   }
-   	    }  
+     	          	    
+   	    }
+   	    
+   	    
         }
     }
     wattroff(game, COLOR_PAIR(10));
+    
 }
 
 
