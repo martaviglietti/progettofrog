@@ -37,8 +37,6 @@ typedef struct{
 }Flusso;
 
 
-
-
 typedef struct{
     int vite;
     int score;
@@ -93,6 +91,9 @@ typedef struct{
 	int info;
 }Temp;
 
+// Dichiarazioni delle variabili globali
+extern const char *frog_sprite[2];
+extern const char *coc_sprite[2][2];
 
 int gameWin(WINDOW *game, int score);
 int gameOver(WINDOW *game, int score);
@@ -139,52 +140,16 @@ void attesa_coccodrilli(int id, Coccodrillo* coccodrilli, int distanze_coc[], in
 void controllo_stato_coccodrillo(int id,Coccodrillo* coccodrilli);
 int spostamento_ranaCoc(int id, int coc_scelto, Coccodrillo* coccodrilli, Rana* rana, Game_struct* game_struct , int fine_manche);
 void impostazioni_gioco(Stat_game* stat_game, int difficoltà );
+
 #ifndef HEADER_H
 #define HEADER_H
 
-// Opzioni del menu
-static const char *OPZIONI[] = {
-    "Inizia gioco", "Crediti", "Esci"
-};
 
 
 
 
-// Dichiarazioni delle variabili globali
-extern const char *frog_sprite[2];
-extern const char *coc_sprite[2][2];
 
-int gameWin(WINDOW *game, int score);
-int gameOver(WINDOW *game, int score);
-int scegliDifficolta(WINDOW *game);
-void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct* game_struct);
-Game_struct startGame(WINDOW *game,Stat_game stat_game);
-void Gestione_grafica(WINDOW* game,int pipe1[], int pipe2[], int array_pid[],int vel_proiettili, Game_struct* game_struct);
-int CollisioneRanaProiettile(Rana rana,Proiettile proiettile);
-int RanaSuTana(Rana rana, Game_struct* game_struct);
-int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli);
-void creazione_processi(Flusso *flussi, int array_pid[N_PID], int pipe1[],WINDOW* game);
-void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]);
-void funzione_coccodrillo(Temp coccodrillo,Flusso flussi[8],int id_flusso_scelto, int pipe1[]);
-void funz_proiettile(Coccodrillo coccodrillo,int vel_proiettile, int pipe1[]);
-void tempo(int pipe1[]);
-void kill_processi(pid_t* pid);
-void def_vel_flussi(Flusso *flussi, int velocità_coccodrillo);
-void def_dir_flussi(Flusso *flussi);
-int menu(WINDOW *game, const char *title, const char *options[], int num_options);
-void credits(WINDOW *game);
-int rand_funz(int min, int max);
-void frog(WINDOW* game,int pipe1[2]);
-void sparaGranata(int startX, int startY,int vel_proiettile ,int pid_array[],int pipe1[], int pipe2[]);
-void sparaProiettile(Coccodrillo coccodrillo,int vel_proiettile,int pid_array[], int pipe1[]);
-void granata(int startX, int startY,int vel_proiettile,int pipe1[], int pipe2[]);
-void creazione_colori();
-void draw_proiettile(WINDOW* game, Proiettile proiettile);
-void draw_granate(WINDOW* game, Granata granate[2]);
-void draw_frog(WINDOW *game, Rana rana);
-void drawCoccodrilli(WINDOW *game, Coccodrillo *coccodrilli);
-void sblocca_fd(int fd);
-void killProcess(pid_t pid);
+
 
 #endif // HEADER_H
 
