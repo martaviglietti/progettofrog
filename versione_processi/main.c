@@ -1,105 +1,77 @@
 
-//IN QUESTO FILE SONO PRESENTI IL MAIN
-// LE FUNZIONI DI GESTIONE DELLE SCHERMATE DI FINE GIOCO
-// LA FUNZIONE DI GESTIONE DELLA SCELTA DELLA DIFFICOLTA'
-// LA FUNZIONE DI CREAZIONE DEI PROCESSI
+
 
 #include "header.h"
 
 
 
-//sprite rana
-const char *frog_sprite[2] = {
-    "@ @",
-    " - "
-};
+int main(){
+    printf("\e[8;%d;%dt", 49, 81);  //ridimensioniamo il terminale
+    fflush(stdout);
+    setlocale(LC_ALL, "");     // Abilita UTF-8	
+    sleep(1);	
 
-const char *coc_sprite[2][2]={{"XXXXXXX","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
-            
-
-
-int main() {
-    printf("\e[8;%d;%dt", 49, 80);   //imposta la dimensione del terminale
-    fflush(stdout);                  //controlla che tutti i dati siano visulizzati su terminale
-    sleep(1);                        //pausa l'esecuzione per 1 secondo
-    
-    // Inizializza NCURSES--------------------------------------------------------------------------------------------------------------------------------
+    //Inizializziamo ncurses
     initscr();
-    noecho(); //i tasti premuti non saranno visualizzati sullo schermo
+    noecho();
     cbreak();
-    curs_set(0); //nasconde il cursore nel terminale
-    resizeterm(49, 80);  //avvisare ncurses del cambio di dimensioni
-    creazione_colori();
-
+    curs_set(0);
+    resizeterm(49, 81);  //avvisiamo ncurses del cambio di dimensioni del terminale
+    creazione_colori();    
+    srand(time(NULL));
+    
+	
     int height = LINES;
     int width = COLS;
-    int menuchoice;
-    int continue_playing=1;
-    int difficoltà;
+    
+    int scelta;	     //variabile contenente la scelta dal menù principale
+    int difficoltà;  //variabile contenente la difficoltà scelta dal menù delle difficoltà
     int ricomincia=1;
+    
     Stat_game stat_game={0,0,0,0};
-    Game_struct risultato;
-    WINDOW *game = newwin(height, width, 0, 0); //creo una nuova finestra 
-    box(game, ACS_VLINE, ACS_HLINE); //disegna un borto attorno alla finestra di gioco
-    wrefresh(game);
+    Game_struct risultato;  //conterrà i risultati del game 
+    WINDOW *game = newwin(height, width, 0, 0);  //finestra dell'area gioco  
+    
 
-
-    //LOOP PRINCIPALE DEL GIOCO-----------------------------------------------------------------------------------------------------------------------------------
-    while (true) { //questo ciclo continua finchè non si esce dal menu di gioco
-    	if(ricomincia){
-        	menuchoice=menu(game,"Menu Principale", OPZIONI, 3);
-        }	//se ricomincia è 0 non rifacciamo il menu;
-
-        if (menuchoice == 0) {  // "Inizia gioco"
-            if(ricomincia){
-            difficoltà=scegliDifficolta(game);
+    while (true){
+    	if (ricomincia) {  //se 'ricomincia' è 0 non torniamo al menu;
+            scelta= menu(game,"Menu Principale", OPZIONI, 3);  //se 'ricomincia' è 0 non torniamo al menu;
+        }	
+	
+        if (scelta == 0) { 
+         
+   	    if (ricomincia) {  //se 'ricomincia' è 0 manteniamo la stessa difficoltà
+                difficoltà=scegliDifficolta(game);
             }
-            switch(difficoltà){
-                case 0: //principiante
-                    stat_game.vite=10;
-                    stat_game.tempo=30;
-                    stat_game.velocità_proiettili=3000;
-                    stat_game.velocità_coccodrilli=500000;
-                    break;
-                case 1: //intermedio
-                    stat_game.vite=10;
-                    stat_game.tempo=30;
-                    stat_game.velocità_proiettili=3000;
-                    stat_game.velocità_coccodrilli=50000;
-                    break;
-                case 2: //difficile
-                    stat_game.vite=10;
-                    stat_game.tempo=30;
-                    stat_game.velocità_proiettili=3000;
-                    stat_game.velocità_coccodrilli=50000;
-                    break;
-            }
-            //funzione che esegue il gioco e ritorna lo stato finale del gioco in una struttura risultato
-            risultato=startGame(game,stat_game);
-            if(risultato.game==1){	//abbiamo vinto
-                wclear(game);
-                continue_playing=gameWin(game,risultato.score);
-                if(continue_playing==1){		//ricomincia la stessa partita 
-                    ricomincia=0;  
-                }else{
-                    ricomincia=1; //se alla fine di una partita scelgo di non ricominciare mi riporta al manu tramita ricomincia=1
-                }
-            }
-            else{ //caso di pardita
-                wclear(game);
-                continue_playing=gameOver(game,risultato.score);
-                if(continue_playing==1){					
-                    ricomincia=0;
-                }else{
-                    ricomincia=1;     
-                }
-            }
-        }
-        else if(menuchoice==1){ //crediti
-        credits(game);  	
-        }  
+        
+            impostazioni_gioco(&stat_game, difficoltà);
             
-        else{  // "Esci"
+        
+        
+        
+            risultato=startGame(game, stat_game);
+            
+            if (risultato.game==1) {  //Vittoria
+                scelta=gameWin(game,risultato.score); 
+            	
+            	if (scelta) {	
+            	    ricomincia=1;  //torna al menù principale
+            	} else {
+            	    ricomincia=0;  //ricomincia il game con stessa difficoltà
+            	}	
+            } else {  //Sconfitta
+            	scelta=gameOver(game,risultato.score);
+            	if (scelta) {					
+            	    ricomincia=1;  //torna al menù principale
+            	} else {
+            	    ricomincia=0;  //ricomincia il game con stessa difficoltà
+            	} 	
+            }
+        
+        } else if (scelta==1) {  //crediti
+            credits(game);
+        	
+        } else {  //Uscita
             wclear(game);
             mvwprintw(game, height / 2, width / 2 - 5, "Uscita...");
             wrefresh(game);
@@ -113,83 +85,66 @@ int main() {
     return 0;
 }
 
-//FUNZIONE DI VINCITA DELLA PARTITA---------------------------------------------------------------------------------------------------------------------------------------------------------------------
-int gameWin(WINDOW *game, int score) {
-    werase(game);
+void impostazioni_gioco(Stat_game* stat_game, int difficoltà ){
+    switch (difficoltà) {
+                case 0:  //Facile
+                    stat_game->vite=10;			   //numero vite
+                    stat_game->tempo=100;		   //tempo di gioco
+                    stat_game->velocità_proiettili=30000;   //velocità proiettili
+                    stat_game->velocità_coccodrilli=100000;  //velocità coccodrilli
+                    break;
+                case 1:  //Medio
+                    stat_game->vite=10;
+                    stat_game->tempo=30;
+                    stat_game->velocità_proiettili=30000;
+                    stat_game->velocità_coccodrilli=50000;
+                    break;
+                case 2:  //Difficile
+                    stat_game->vite=10;
+                    stat_game->tempo=30;
+                    stat_game->velocità_proiettili=3000;
+                    stat_game->velocità_coccodrilli=50000;
+                    break;      
+            }
+}
+
+int gameWin(WINDOW *game, int score){  //schermata in caso di vittoria
+    wclear(game);
+    box(game, ACS_VLINE, ACS_HLINE);
     mvwprintw(game, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
     wrefresh(game);
-   
     char decision = wgetch(game);
-    while(decision!= 's' && decision!='n'){
-
-    	 decision = wgetch(game);
+    while (decision!= 's' && decision!='n') {
+        decision = wgetch(game);
     }
-    if (decision == 'n') {
+    if (decision == 's') {  //se rispondiamo di si ripetiamo il game (con stessa difficoltà) da capo
         return 0;
-    } else {
+    } else {  //altrimenti torniamo al menù
         return 1;
     }
 }
 
-//FUNZIONE DI PERDITA DELLA PARTITA---------------------------------------------------------------------------------------------------------------------------------------------------------------------
-int gameOver(WINDOW *game, int score) {
-    werase(game);
-    mvwprintw(game, 10, 10, "GAME OVER! Punteggio: %d. Vuoi tornare al menù? (s/n)", score);
+
+int gameOver(WINDOW *game, int score){  //schermata in caso di perdita
+    wclear(game);
+    box(game, ACS_VLINE, ACS_HLINE);
+    mvwprintw(game, 10, 10, "GAME OVER! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
     wrefresh(game);
     char decision = wgetch(game);
-    while(decision!= 's' && decision!='n'){
+    while (decision!= 's' && decision!='n') {
     	 decision = wgetch(game);
     }
-    if (decision == 'n') {
+    if (decision == 's') {  //se rispondiamo di si ripetiamo il game (con stessa difficoltà) da capo
         return 0;
-    } else {
+    } else {  //altrimenti torniamo al menù
         return 1;
     }
 }
 
 
 
-int scegliDifficolta(WINDOW *game) {
+int scegliDifficolta(WINDOW *game) {  //schermata per scelta della difficoltà
     const char *difficolta[] = {"Facile", "Media", "Difficile"};
     return menu(game, "Scegli la Difficoltà", difficolta, 3);
 }
 
-
-
-//FUNZIONE PER LA CREAZIONE DEI PROCESSI DEL GIOCO--------------------------------------------------------------------------------------------------------------------
-
-
-void creazione_processi(Flusso *flussi, int array_pid[N_PID], int pipe1[], WINDOW* game){
-	
-    //resetto tutti i pid dell'array per ricominciare a creare i processi
-	for(int i=0;i<N_PID;i++){
-		array_pid[i]=0;}	
-	
-    //chiamo la fork per creare il nuovo processo della rana
-    array_pid[IDRANA]=fork();
-	if(array_pid[IDRANA]==-1){
-		perror("Erorre nella fork della rana : ");
-		exit(1);}
-        else if(array_pid[IDRANA]==0){
-            frog(game,pipe1); 
-        }                       
-	else {
-        array_pid[IDTIME]=fork();
-		if(array_pid[IDTIME]==-1){
-			perror("Erorre nella fork della rana : ");
-			exit(1);}
-		else if(array_pid[IDTIME]==0){
-			tempo(pipe1);       
-        } 
-	    else {
-            array_pid[MAX_CROCODILES]=fork();
-            if(array_pid[MAX_CROCODILES]==-1){
-                perror("Errore nella fork del generatore coccodrilli: ");
-                exit(-1);}
-            else if(array_pid[MAX_CROCODILES]==0){
-                funzione_gestione_coccodrilli(flussi,pipe1);
-                exit(-1);}
-            else return;
-            }
-        }
-}
