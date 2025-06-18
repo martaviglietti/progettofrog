@@ -148,3 +148,36 @@ int scegliDifficolta(WINDOW *game) {  //schermata per scelta della difficoltà
     return menu(game, "Scegli la Difficoltà", difficolta, 3);
 }
 
+//funzione di creazione dei processi
+void creazione_processi(Flusso *flussi, int array_pid[N_PID], int pipe1[], WINDOW* game){
+	
+    for (int i=0;i<N_PID;i++) {
+	array_pid[i]=0;  //settiamo tutti i pid a 0 per cominciare a creare i processi
+    }	
+
+    array_pid[IDRANA]=fork();  //creaiamo il processo rana
+    if (array_pid[IDRANA]==-1) {
+	perror("Erorre nella fork della rana : ");
+	exit(1);
+    } else if (array_pid[IDRANA]==0) {
+	frog(game,pipe1); 
+
+    } else {  
+        array_pid[IDTIME]=fork();  //creiamo il processo del tempo
+	if (array_pid[IDTIME]==-1) {
+	    perror("Erorre nella fork della rana : ");
+	    exit(1);
+	} else if (array_pid[IDTIME]==0) {
+	    tempo(pipe1);
+	} else {
+	    array_pid[MAX_CROCODILES]=fork();  //creiamo il processo che gestisce la creazione dei coccodrilli
+	    if (array_pid[MAX_CROCODILES]==-1) {
+		perror("Errore nella fork del generatore coccodrilli: ");
+		exit(-1);
+	    } else if (array_pid[MAX_CROCODILES]==0) {
+	        funzione_gestione_coccodrilli(flussi,pipe1);
+	        exit(-1);
+	    } else return;
+	}
+    }
+}
