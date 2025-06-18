@@ -1,4 +1,10 @@
 #include "header.h"
+
+// Opzioni del menu
+static const char *OPZIONI[] = {
+    "Inizia gioco", "Crediti", "Esci"
+};
+
 int menu(WINDOW *game, const char *title, const char *options[], int num_options){
     flushinp();  //elimina input residuo
     keypad(game, true);  //abilita l'input da tastiera
