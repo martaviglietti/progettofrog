@@ -35,9 +35,6 @@ Game_struct startGame(WINDOW *game,Stat_game stat_game){
     	game_struct.tempo=stat_game.tempo; 	
 	svuota_pipe(pipe1[0]);  //svuotiamo la pipe per eliminare eventuali elementi rimasti all'interno
 	
-	if(read(pipe1[0],&a,sizeof(int))!= -1){
-	    perror("roba nella pipe");
-	}
 	
 
 
