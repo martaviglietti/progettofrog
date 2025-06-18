@@ -343,7 +343,12 @@ int RanaSuCoccodrillo(Rana* rana, Coccodrillo *coccodrilli){
     return -1; 
 }
 
+//funzione utile per creare un numero random tra un minimo e un massimo (compresi)
+int rand_funz(int min, int max){
 
+    return min + rand() % (max-min+1);
+
+}
 
 
 
