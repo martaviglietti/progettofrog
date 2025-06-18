@@ -1,7 +1,7 @@
 #include "header.h"
-int menu(WINDOW *game, const char *title, const char *options[], int num_options) {
-    flushinp();            // Elimina input residuo
-    keypad(game, true);    // Abilita l'input da tastiera
+int menu(WINDOW *game, const char *title, const char *options[], int num_options){
+    flushinp();  //elimina input residuo
+    keypad(game, true);  //abilita l'input da tastiera
 
     int position = 0;
     int gameLINES = getmaxy(game);
@@ -42,7 +42,9 @@ int menu(WINDOW *game, const char *title, const char *options[], int num_options
     }
 }
 
-void credits(WINDOW *game) {
+
+//funzione che mostra i crediti
+void credits(WINDOW *game){
     wclear(game);
     box(game, ACS_VLINE, ACS_HLINE);
 
@@ -54,13 +56,14 @@ void credits(WINDOW *game) {
     mvwprintw(game, gameLINES / 2 + 1, gameCOLS / 2 - 17, "Premi un tasto per tornare al menu...");
 
     wrefresh(game); 
-//servirà flushinp?
     wgetch(game);
 }
 
+
+//funzione utile per creare un numero random tra un minimo e un massimo (compresi)
 int rand_funz(int min, int max){
 
-	return min + rand() % (max-min+1);
+    return min + rand() % (max-min+1);
 
 }
 
