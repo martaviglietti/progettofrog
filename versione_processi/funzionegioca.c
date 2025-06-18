@@ -97,3 +97,30 @@ void blocca_fd(int fd) {
         exit(-1);
     }
 }
+
+//funzione per killare un processo
+void killProcess(pid_t pid){
+    int status;
+    if(kill(pid, SIGKILL)!=0) {
+	perror("errore nel killare il processo: ");
+	exit(-1);
+    } else {
+        waitpid(pid, &status, 0);
+    }
+}
+
+//funzione per killare più processi
+void kill_processi(pid_t pid[N_PID]) {
+	
+    for (int i=0; i<N_PID;i++) {
+	if(pid[i]>0) {
+	    if(kill(pid[i],SIGKILL)!=0) {
+		perror("Errore nel killare i processi: ");
+		exit(-1);
+	    } else {
+	        waitpid(pid[i], NULL, 0);
+	        pid[i]=0;
+	    }
+	}			
+    }
+}
