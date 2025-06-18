@@ -65,3 +65,35 @@ Game_struct startGame(WINDOW *game,Stat_game stat_game){
 	}
 }
 
+
+
+
+//funzione che sblocca le pipe
+void sblocca_fd(int fd) {
+
+    int flags = fcntl(fd, F_GETFL);
+    if (flags == -1) {
+        perror("Errore nell'ottenere i flag del fd");
+        exit(-1);
+    }
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        perror("Errore nel settare O_NONBLOCK");
+        exit(-1);
+    }
+}
+
+
+//funzione che blocca le pipe
+void blocca_fd(int fd) {
+
+    int flags = fcntl(fd, F_GETFL);
+    if (flags == -1) {
+        perror("Errore nell'ottenere i flag del fd");
+        exit(-1);
+    }
+    flags &= ~O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, flags) == -1) {
+        perror("Errore nel rimuovere O_NONBLOCK");
+        exit(-1);
+    }
+}
