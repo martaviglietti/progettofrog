@@ -89,5 +89,106 @@ void funzione_coccodrillo(Temp coccodrillo,Flusso flussi[8],int id_flusso_scelto
     }
 }
 
+//funzione gestione proiettile
+void funz_proiettile(int id, Coccodrillo coccodrillo,int vel,int pipe1[]){   
+    close(pipe1[0]);
+    Temp proiettile={IDPROIETTILE+id,0,0,0};
+	
+    //impostiamo il proiettile in base al coccodrillo che lo ha sparato
+    if (coccodrillo.dir==1) proiettile.x=coccodrillo.x+5;
+    else proiettile.x=coccodrillo.x-5;	
+    proiettile.y=coccodrillo.y;	
+
+    while (true) {
+
+	    
+        write(pipe1[1], &proiettile, sizeof(Temp));  			
+        proiettile.x+=coccodrillo.dir;
+        usleep(vel);
+	
+    }
+}
+
+//funzione che assegna una direzione ad ogni flusso
+void def_dir_flussi(Flusso *flussi){
+    for (int i=0;i<8;i++) {
+	if (i>=1) {  //tutti i flussi dal secondo in poi hanno direzione opposta al flusso precedente
+	    flussi[i].dir= -flussi[i-1].dir;
+
+	} else {
+	    //impostiamo la direzione del primo flusso in modo randomico
+	    flussi[i].dir= rand()%2;
+	    if (flussi[i].dir==0) flussi[i].dir=1;
+	    else flussi[i].dir=-1;
+	}
+    }	
+}
 
 
+//funzione di gestione dei coccodrilli
+void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]){
+    close(pipe1[0]);
+    
+    int numero_coc_flussi[8]={0};
+    int flusso_random;
+    Temp coccodrillo;
+    Temp messaggio;   
+    pid_t pid_coc;
+    
+    for(int i=0;i<MAX_CROCODILES;i++){
+    
+        do {
+            flusso_random=rand_funz(0,7);
+           
+        }while(numero_coc_flussi[flusso_random]==3);  //cerchiamo un flusso random che abbia meno di 3 coccodrilli;
+   
+   
+       	
+	//imposto il coccodrillo
+	coccodrillo.id=i;
+	coccodrillo.info=0;
+	coccodrillo.y=flussi[flusso_random].y;
+	
+	numero_coc_flussi[flusso_random]++;  //aumentiamo di uno il numero di coccodrilli nel flusso selezionato
+	
+	if (flussi[flusso_random].dir==1) {
+	    coccodrillo.x=POS_SPAWN_COC_SINISTRA-1;   
+	} else {
+	    coccodrillo.x=POS_SPAWN_COC_DESTRA+1;
+	}
+	
+	pid_coc=fork();
+	if (pid_coc==-1) {
+	    perror("Errorre nella fork coccodrillo: ");
+	    exit(1);
+	} else if (pid_coc==0) {
+		funzione_coccodrillo(coccodrillo,flussi,flusso_random,pipe1);
+	} else {
+	    
+	    messaggio.info=pid_coc;  //impostiamo il messsaggio fa inviare
+	    messaggio.id=i;
+	    messaggio.y=IDAGGIUNTAPID;  //serve per far capire che è un nuovo pid da aggiungere nella lista dei pid;      
+	
+	    write(pipe1[1], &messaggio,sizeof(Temp));                            
+	    usleep(rand_funz(500000,800000));}
+	    if (i== MAX_CROCODILES/2) {
+		usleep(rand_funz(2000000,3000000));  //a metà della creazione dei coc fermiamo la loro generazione per qualche secondo, così da aumentare la randomicità;
+	    }
+    } 
+}
+
+//funzione che gestisce la creazione del processo proiettile
+void sparaProiettile(int id,int identificatore_coc, Coccodrillo* coccodrilli,int velocità_proiettile, int pid_array[], int pipe1[]){
+    pid_array[IDPROIETTILE+id]= fork(); // Crea un nuovo processo per la granata
+
+    if (pid_array[IDPROIETTILE+id] < 0) {
+        perror("Errore nella creazione del processo proiettile");
+        exit(-1);
+    }
+
+    if (pid_array[IDPROIETTILE+id] == 0) {
+   
+        funz_proiettile(id,coccodrilli[identificatore_coc],velocità_proiettile,pipe1);  //chiamiamo la funzione proiettile all'interno del processo figlio
+       
+    }
+}
