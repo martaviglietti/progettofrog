@@ -31,13 +31,12 @@ void* Gestione_grafica(void* arg){
         coccodrilli[i].alive=0;   //stato del coccoddrillo
         coccodrilli[i].wait=-1;}  //variabile per stato di attesa
 
-    Granata granate[2];
-    for (int i=0; i<2;i++) {
-	granate[i].id=i;
-	granate[i].x=-1;
-	granate[i].y=-1;
-	granate[i].alive=0;}
-		
+    
+    Granata granate[2] = {
+        {.x = -1, .y = -1, .alive = 0},
+        {.x = -1, .y = -1, .alive = 0}
+    };
+
     Rana rana;	
     rana.id=IDRANA;
     rana.x=40; 
@@ -50,7 +49,6 @@ void* Gestione_grafica(void* arg){
     proiettile.alive=0;
    
     int tempo=game_struct->tempo;
-
     
     int riattivare;
     int distanze_coc[8];
@@ -150,43 +148,51 @@ void* Gestione_grafica(void* arg){
                 }
             }
         }
-    
-        // Gestione delle granate
-        if (temp.id >= IDGRANATE && temp.id <= IDGRANATE + 2) {
-            if (temp.id == IDGRANATE + 2) {  // richiesta di sparare
-                if (granate[0].alive == 0 && granate[1].alive == 0) {
-                    sparaGranata(rana.x, rana.y, vel_proiettile);  // chiamata a funzione modificata
-                    granate[0].alive = 1;
-                    granate[1].alive = 1;
-                }
-            } else {
-                 // Aggiornamento posizione
-                int i = temp.id - IDGRANATE;
-                granate[i].x = temp.x;
-                granate[i].y = temp.y;
-            }
+
+
+    if (temp.id >= IDGRANATE && temp.id < IDGRANATE + 2) {
+        int i = temp.id - IDGRANATE;
+        granate[i].x = temp.x;
+        granate[i].y = temp.y;
+        granate[i].alive = 1;
+
+          // collisione con proiettile
+        if (temp.x == proiettile.x && temp.y == proiettile.y && proiettile.alive == 1) {
+            proiettile.alive = 0;
+            granate[i].alive = 0;
+            proiettile.x = -1;
+            granate[i].x = -1;
+
+            game_struct->score += 5;
+
+            // invia messaggio per dire alla granata di fermarsi
+            messaggio stop_msg = {.id = IDGRANATE + 10 + i};  // 70 o 71
+            produttore(stop_msg);
         }
+
+    } else if (temp.id == IDGRANATE + 2) {
+    if (!granate[0].alive && !granate[1].alive) {
+        sparaGranata(rana.x, rana.y, vel_proiettile);
+    }
+
+    } else if (temp.id == IDGRANATE + 10 || temp.id == IDGRANATE + 11) {
+    int i = temp.id - (IDGRANATE + 10);
+    granate[i].alive = 0;
+    granate[i].x = -1;
+    granate[i].y = -1;
+    }
 
         //PROIETTILE
         if (temp.id == IDPROIETTILE) {
         proiettile.x = temp.x;
         proiettile.y = temp.y;
+        proiettile.alive=1;
         }
 
 
        // Collisioni proiettile con i bordi
         if ((proiettile.x < 1 || proiettile.x > LARGHEZZA_GIOCO - 2) && proiettile.alive == 1) {
             proiettile.alive = 0;
-        }
-
-
-        // Controllo uscita granate dai bordi
-        for (int i = 0; i < 2; i++) {
-            if ((granate[i].x < 1 || granate[i].x > LARGHEZZA_GIOCO - 2) &&
-                granate[i].alive == 1 && granate[i].x != -1) {
-                granate[i].alive = 0;
-                granate[i].x = -1;
-            }
         }
 
 
@@ -200,28 +206,7 @@ void* Gestione_grafica(void* arg){
         }
 
 
-            // Controllo collisione granata-proiettile
-        for (int i = 0; i < 2; i++) {
-            if (granate[i].x == proiettile.x &&
-                granate[i].y == proiettile.y &&
-                proiettile.alive == 1 &&
-                granate[i].alive == 1) {
-
-                // disattiva entrambi
-                proiettile.alive = 0;
-                granate[i].alive = 0;
-                proiettile.x = -1;
-                granate[i].x = -1;
-
-            // aumento punteggio
-                game_struct->score += 5;
-            }
-        }
-
-        if (granate[0].alive == 0 && granate[1].alive == 0 && thread_granata_attivo) {
-        thread_granata_attivo=0; // Segnala al thread granate di terminare
-        // puoi anche usare pthread_cancel se proprio necessario (meno elegante)
-        }
+        
 
             // GESTIONE DELLO SPARO DEL PROIETTILE
         if (rana.y < 40 && rana.x >= 15) {
@@ -275,7 +260,8 @@ void* Gestione_grafica(void* arg){
 
     print_tempo(game, game_struct, tempo);
     wrefresh(game);
-    pthread_exit(NULL);
     pthread_mutex_unlock(&mutex_ncurses);
+    pthread_exit(NULL);
+    
     }
         

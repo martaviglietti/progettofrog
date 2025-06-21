@@ -32,7 +32,6 @@ messaggio consumatore() {
 }
 
 
-
 void inizializza_buffer() {
     buffer.in = 0;
     buffer.out = 0;
@@ -51,25 +50,23 @@ void crea_thread_gioco(Game_struct* game_struct, Flusso flussi[], int vel_proiet
     perror("Errore malloc ArgGrafica");
     exit(EXIT_FAILURE);
     }
-    arg->game_struct = &game_struct;
+    arg->game_struct = game_struct;
     arg->game = game;
-    arg->vel_proiettile = stat_game.velocità_proiettili;
+    arg->vel_proiettile = vel_proiettile;
 
-    pthread_create(&game_struct.t_grafica, NULL, Gestione_grafica, (void*)arg);
+    pthread_create(NULL, NULL, Gestione_grafica, (void*)arg);
 
     // Thread rana (input tastiera)
-    pthread_create(&game_struct->rana.tid, NULL, thread_rana, (void *)game_struct);
+    pthread_create(NULL, NULL, thread_rana, (void *)game_struct);
 
     // Thread tempo
     int *tempo_ptr = malloc(sizeof(int));
-    *tempo_ptr = tempo_totale;
-    pthread_create(&game_struct->t_tempo, NULL, thread_tempo, tempo_ptr);
+    *tempo_ptr = tempo;
+    pthread_create(NULL, NULL, thread_tempo, tempo_ptr);
     crea_thread_coccodrilli(flussi, game_struct);
     
     // NB: Thread granate e proiettili vanno creati dinamicamente quando necessario (non qui)
 }
-
-
 
 
 void* thread_tempo(void* arg) {
@@ -83,11 +80,8 @@ void* thread_tempo(void* arg) {
         m.y = 0;
         m.dir = 0;
         m.speed = 0;
-        m.alive = true;  // non importante
-        // m.tid non serve
-
+        m.alive = true;  // non important
         produttore(m);  // usa il buffer già condiviso
-
         sleep(1);
         tempo_rimanente--;
     }
@@ -104,13 +98,13 @@ void* thread_tempo(void* arg) {
 //GESTIONE GRANATE-----------------------------------------
 
 void* thread_granata(void* arg) {
-    messaggio m = *(messaggio*)arg;
-    free(arg);
-    while (m.y > 0 && m.x > 0 && m.x < LARGHEZZA_GIOCO - 1) {
-        produttore(m);  // invia posizione nel buffer
-        m.y--;  // le granate si muovono in verticale
-        usleep(m.speed);
+    messaggio* m = (messaggio*)arg;
+    while (m->alive && m->y > 0 && m->x > 0 && m->x < LARGHEZZA_GIOCO - 1) {
+        produttore(*m);  // invia posizione nel buffer
+        m->x += m->dir;  // le granate si muovono in orizzontale
+        usleep(m->speed);
     }
+    free(m);
     pthread_exit(NULL);
 }
 
@@ -120,9 +114,8 @@ void* thread_granata(void* arg) {
 
     *m1 = (messaggio){ .id = IDGRANATE,     .x = x - 1, .y = y - 1, .info = -1, .speed = velocita, .alive = true };
     *m2 = (messaggio){ .id = IDGRANATE + 1, .x = x + 1, .y = y - 1, .info = 1,  .speed = velocita, .alive = true };
-
-    pthread_create(&thread_granata[0], NULL, thread_granata, (void*)m1);
-    pthread_create(&thread_granata[1], NULL, thread_granata, (void*)m2);
+    pthread_create(NULL, NULL, thread_granata, (void*)m1);
+    pthread_create(NULL, NULL, thread_granata, (void*)m2);
 }
 
 //---------------------------------------------------------------------------------------------------------------------------
@@ -170,7 +163,7 @@ void* thread_rana(void* arg) {
                 break;
 
             case 's':  // spara granate
-                m.id = IDGRANATE + 2;  // messaggio speciale che attiva le granate
+                m.id = IDGRANATE + 2;  // messaggio  che attiva le granate
                 produttore(m);
                 break;
         }

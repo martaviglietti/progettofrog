@@ -1,5 +1,16 @@
 #include "header.h"
+// Opzioni del menu
+static const char *OPZIONI[] = {
+    "Inizia gioco", "Crediti", "Esci"
+};
 
+//sprite rana
+const char *frog_sprite[2] = {
+    "* *",
+    "   "
+};
+
+const char *coc_sprite[2][2]={{"XXXXXXX","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
 
 //funzione che crea i colori utilizzati durante il gioco
 void creazione_colori(){

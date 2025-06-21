@@ -16,11 +16,8 @@ int main(){
     creazione_colori();    
     srand(time(NULL));
    
-  
-	
     int height = LINES;
     int width = COLS;
-    
     int scelta;	     //variabile contenente la scelta dal menù principale
     int difficoltà;  //variabile contenente la difficoltà scelta dal menù delle difficoltà
     int ricomincia=1;
@@ -30,22 +27,18 @@ int main(){
     WINDOW *game = newwin(height, width, 0, 0);  //finestra dell'area gioco  
     
     pthread_mutex_t mutex_tane = PTHREAD_MUTEX_INITIALIZER;
-    pthread_t thread_granata[2];
-    int thread_granata_attivo = 0;
+    
+    
 
 
     while (true){
     	if (ricomincia) {  //se 'ricomincia' è 0 non torniamo al menu;
             scelta= menu(game,"Menu Principale", OPZIONI, 3);  //se 'ricomincia' è 0 non torniamo al menu;
         }	
-	
         if (scelta == 0) { 
-         
-   	    if (ricomincia) {  //se 'ricomincia' è 0 manteniamo la stessa difficoltà
-                difficoltà=scegliDifficolta(game);
-            }
-        
-        
+            if (ricomincia) {  //se 'ricomincia' è 0 manteniamo la stessa difficoltà
+                    difficoltà=scegliDifficolta(game);
+                }
             switch (difficoltà) {
                 case 0:  //Facile
                     stat_game.vite=10;			   //numero vite
@@ -66,9 +59,7 @@ int main(){
                     stat_game.velocità_coccodrilli=50000;
                     break;      
             }
-        
             risultato=startGame(game,stat_game);
-            
             if (risultato.game_over==1) {  //Vittoria
                 scelta=gameWin(game,risultato.score); 
             	

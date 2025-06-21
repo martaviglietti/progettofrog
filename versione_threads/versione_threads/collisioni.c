@@ -41,7 +41,7 @@ int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli){
 
 
 //funzione che controlla se la rana si trova in mappa
-int RanaInFinestra(Rana rana, Temp temp){
+int RanaInFinestra(Rana rana, messaggio temp){
     if(rana.x+temp.x>78) return 0;
     if(rana.x+temp.x<2) return 0;
     if(rana.y+temp.y>43) return 0;

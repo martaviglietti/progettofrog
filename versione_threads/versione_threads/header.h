@@ -1,4 +1,3 @@
-
 #ifndef FROGGER_THREADS_H
 #define FROGGER_THREADS_H
 #include <stdio.h>
@@ -16,7 +15,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <stdio.h>
+
 #define BUFFER_SIZE 200
 #define MAX_CROCODILES 24
 #define LARGHEZZA_GIOCO 81
@@ -38,19 +37,18 @@
 #define IDRANA 50
 #define IDGRANATE 60
 #define IDPROIETTILE 70
-#define IDMORTE -10
+#define IDMORTE -10 
 #define IDRICHIESTA 90
 // --- VARIABILI GLOBALI ---
+//serve per proteggere la stampa a schermo
 extern pthread_mutex_t mutex_ncurses;
+
+
 extern const char *OPZIONI[];
 extern const char *frog_sprite[2];
 extern const char *coc_sprite[2][2];
-extern int thread_granata_attivo;
-extern pthread_t thread_granata[2];
 
-
-
-            
+           
 typedef struct{
     int id;
     int y;
@@ -72,7 +70,6 @@ typedef struct{
     int tempo;
     int velocità_proiettili;
     int velocità_coccodrilli;
- 
 }Stat_game;
 
 typedef struct{
@@ -98,14 +95,11 @@ typedef struct{
     int alive;
 }Granata;
 
-
-
 typedef struct{
     int id;
     int x;
     int y;
 }Rana;
-
 
 typedef struct{
 	int id;
@@ -126,8 +120,6 @@ typedef struct {
     pthread_t tid;
 } messaggio;  
 
-
-
 typedef struct {
     //array di strutture di tipo messaggio 
     messaggio buffer[BUFFER_SIZE];
@@ -141,7 +133,6 @@ typedef struct {
 //creo una struttura globale condivisa 
 
 //ho la struttura buffer c  pe rimpacchettar ein un solo oggetto 7
-
 extern BufferC buffer;
 
 typedef struct {
@@ -149,12 +140,6 @@ typedef struct {
     WINDOW* game;
     int vel_proiettile;
 } ArgGrafica;
-
-
-//creo la struttura messaggio che dovra rappresentare ogni oggetto di gioco 
-//con tutte le informazioni per gli elementi del gioco 
-
-
 
 //funzioni per l'interfaccia di gioco--
 int gameWin(WINDOW *game, int score);
@@ -209,7 +194,4 @@ int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
 void punteggio_tempo(Game_struct* game_struct);
 int rand_funz(int min, int max);
-
-
-
 #endif
