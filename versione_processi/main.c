@@ -3,13 +3,11 @@
 
 #include "header.h"
 
-
-
 int main(){
     printf("\e[8;%d;%dt", 49, 81);  //ridimensioniamo il terminale
     fflush(stdout);
-    setlocale(LC_ALL, "");     // Abilita UTF-8	
-    sleep(1);	
+    setlocale(LC_ALL, "");  //abilita UTF-8	
+    sleep(1);  //pausa scelta da noi
 
     //Inizializziamo ncurses
     initscr();
@@ -17,107 +15,107 @@ int main(){
     cbreak();
     curs_set(0);
     resizeterm(49, 81);  //avvisiamo ncurses del cambio di dimensioni del terminale
-    creazione_colori();    
+    creazione_colori();  
+      
     srand(time(NULL));
     
-	
-    int height = LINES;
-    int width = COLS;
+    int scelta;	        //variabile contenente la scelta dal menù principale
+    int difficoltà;     //variabile contenente la difficoltà scelta dal menù delle difficoltà
+    int ricomincia=1;  
     
-    int scelta;	     //variabile contenente la scelta dal menù principale
-    int difficoltà;  //variabile contenente la difficoltà scelta dal menù delle difficoltà
-    int ricomincia=1;
-    
-    Stat_game stat_game={0,0,0,0};
-    Game_struct risultato;  //conterrà i risultati del game 
-    WINDOW *game = newwin(height, width, 0, 0);  //finestra dell'area gioco  
+    Parametri parametri_gioco={0,0,0,0};
+    Statistiche  risultato;  //conterrà i risultati della partita
+    WINDOW *finestra_gioco = newwin(LINES, COLS, 0, 0);  //finestra dell'area di gioco
     
 
     while (true){
     	if (ricomincia) {  //se 'ricomincia' è 0 non torniamo al menu;
-            scelta= menu(game,"Menu Principale", OPZIONI, 3);  //se 'ricomincia' è 0 non torniamo al menu;
+            scelta= menu(finestra_gioco,"Menu Principale", opzioni, 3);  //se 'ricomincia' è 0 non torniamo al menu;
         }	
 	
         if (scelta == 0) { 
          
    	    if (ricomincia) {  //se 'ricomincia' è 0 manteniamo la stessa difficoltà
-                difficoltà=scegliDifficolta(game);
+                difficoltà=scelta_difficoltà(finestra_gioco);  //richiesta di quale difficoltà affrontare
             }
         
-            impostazioni_gioco(&stat_game, difficoltà);
+            impostazioni_gioco(&parametri_gioco, difficoltà);  //impostiamo il gioco in base alla difficoltà scelta
             
-        
-        
-        
-            risultato=startGame(game, stat_game);
+            risultato=Partita(finestra_gioco, parametri_gioco);  //facciamo partire il gioco
             
-            if (risultato.game==1) {  //Vittoria
-                scelta=gameWin(game,risultato.score); 
+            if (risultato.gioco==1) {  //Vittoria
+                scelta=game_vinto(finestra_gioco,risultato.punteggio); 
             	
             	if (scelta) {	
             	    ricomincia=1;  //torna al menù principale
             	} else {
-            	    ricomincia=0;  //ricomincia il game con stessa difficoltà
+            	    ricomincia=0;  //ricomincia il game con la stessa difficoltà
             	}	
             } else {  //Sconfitta
-            	scelta=gameOver(game,risultato.score);
+            	scelta=game_perso(finestra_gioco,risultato.punteggio);
             	if (scelta) {					
             	    ricomincia=1;  //torna al menù principale
             	} else {
-            	    ricomincia=0;  //ricomincia il game con stessa difficoltà
+            	    ricomincia=0;  //ricomincia il game con la stessa difficoltà
             	} 	
             }
         
-        } else if (scelta==1) {  //crediti
-            credits(game);
+        } else if (scelta==1) {  //schermata dei crediti
+            crediti(finestra_gioco);
         	
-        } else {  //Uscita
-            wclear(game);
-            mvwprintw(game, height / 2, width / 2 - 5, "Uscita...");
-            wrefresh(game);
-            sleep(1);
-            break; // Esci dal programma
+        } else {  //richiesta di uscita dal programma
+            wclear(finestra_gioco);
+            mvwprintw(finestra_gioco, LINES / 2, COLS / 2 - 5, "Uscita...");
+            wrefresh(finestra_gioco);
+            sleep(1);  //pausa scelta da noi
+            break; 
         }
     }
 
-    delwin(game);
+    delwin(finestra_gioco);
     endwin();
     return 0;
 }
 
-void impostazioni_gioco(Stat_game* stat_game, int difficoltà ){
+void impostazioni_gioco(Parametri* parametri_gioco, int difficoltà ){
     switch (difficoltà) {
-                case 0:  //Facile
-                    stat_game->vite=10;			   //numero vite
-                    stat_game->tempo=100;		   //tempo di gioco
-                    stat_game->velocità_proiettili=30000;   //velocità proiettili
-                    stat_game->velocità_coccodrilli=100000;  //velocità coccodrilli
-                    break;
-                case 1:  //Medio
-                    stat_game->vite=10;
-                    stat_game->tempo=30;
-                    stat_game->velocità_proiettili=30000;
-                    stat_game->velocità_coccodrilli=50000;
-                    break;
-                case 2:  //Difficile
-                    stat_game->vite=10;
-                    stat_game->tempo=30;
-                    stat_game->velocità_proiettili=3000;
-                    stat_game->velocità_coccodrilli=50000;
-                    break;      
-            }
+        case 0:  //Facile
+            parametri_gioco->livello_difficoltà=1;         //livello di difficoltà
+            parametri_gioco->vite=10;			   //numero vite
+            parametri_gioco->tempo=100;		           //tempo di gioco
+            parametri_gioco->velocità_proiettili=40000;    //velocità proiettili
+            parametri_gioco->velocità_coccodrilli=120000;  //velocità coccodrilli        
+            break;
+            
+        case 1:  //Medio
+            parametri_gioco->livello_difficoltà=2;
+            parametri_gioco->vite=5;
+            parametri_gioco->tempo=50;
+            parametri_gioco->velocità_proiettili=30000;
+            parametri_gioco->velocità_coccodrilli=80000;
+            
+            break;
+        case 2:  //Difficile
+            parametri_gioco->livello_difficoltà=3;
+            parametri_gioco->vite=3;
+            parametri_gioco->tempo=30;
+            parametri_gioco->velocità_proiettili=20000;
+            parametri_gioco->velocità_coccodrilli=60000;
+            
+            break;      
+    }
 }
 
-int gameWin(WINDOW *game, int score){  //schermata in caso di vittoria
-    wclear(game);
-    box(game, ACS_VLINE, ACS_HLINE);
-    mvwprintw(game, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
-    wrefresh(game);
-    char decision = wgetch(game);
-    while (decision!= 's' && decision!='n') {
-        decision = wgetch(game);
+int game_vinto(WINDOW *finestra_gioco, int punteggio){  //schermata in caso di vittoria
+    wclear(finestra_gioco);
+    box(finestra_gioco, ACS_VLINE, ACS_HLINE);
+    mvwprintw(finestra_gioco, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", punteggio);
+    wrefresh(finestra_gioco);
+    char decisione = wgetch(finestra_gioco);
+    while (decisione!= 's' && decisione!='n') {
+        decisione = wgetch(finestra_gioco);
     }
-    if (decision == 's') {  //se rispondiamo di si ripetiamo il game (con stessa difficoltà) da capo
+    if (decisione == 's') {  //se rispondiamo di si ripetiamo il gioco (con la stessa difficoltà) da capo
         return 0;
     } else {  //altrimenti torniamo al menù
         return 1;
@@ -125,16 +123,16 @@ int gameWin(WINDOW *game, int score){  //schermata in caso di vittoria
 }
 
 
-int gameOver(WINDOW *game, int score){  //schermata in caso di perdita
-    wclear(game);
-    box(game, ACS_VLINE, ACS_HLINE);
-    mvwprintw(game, 10, 10, "GAME OVER! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
-    wrefresh(game);
-    char decision = wgetch(game);
-    while (decision!= 's' && decision!='n') {
-    	 decision = wgetch(game);
+int game_perso(WINDOW *finestra_gioco, int punteggio){  //schermata in caso di perdita
+    wclear(finestra_gioco);
+    box(finestra_gioco, ACS_VLINE, ACS_HLINE);
+    mvwprintw(finestra_gioco, 10, 10, "finestra_gioco OVER! Punteggio: %d. Vuoi giocare ancora? (s/n)", punteggio);
+    wrefresh(finestra_gioco);
+    char decisione = wgetch(finestra_gioco);
+    while (decisione!= 's' && decisione!='n') {
+    	 decisione = wgetch(finestra_gioco);
     }
-    if (decision == 's') {  //se rispondiamo di si ripetiamo il game (con stessa difficoltà) da capo
+    if (decisione == 's') {  //se rispondiamo di si ripetiamo il gioco (con la stessa difficoltà) da capo
         return 0;
     } else {  //altrimenti torniamo al menù
         return 1;
@@ -143,41 +141,7 @@ int gameOver(WINDOW *game, int score){  //schermata in caso di perdita
 
 
 
-int scegliDifficolta(WINDOW *game) {  //schermata per scelta della difficoltà
+int scelta_difficoltà(WINDOW *finestra_gioco) {  //schermata per scelta della difficoltà
     const char *difficolta[] = {"Facile", "Media", "Difficile"};
-    return menu(game, "Scegli la Difficoltà", difficolta, 3);
-}
-
-//funzione di creazione dei processi
-void creazione_processi(Flusso *flussi, int array_pid[N_PID], int pipe1[], WINDOW* game){
-	
-    for (int i=0;i<N_PID;i++) {
-	array_pid[i]=0;  //settiamo tutti i pid a 0 per cominciare a creare i processi
-    }	
-
-    array_pid[IDRANA]=fork();  //creaiamo il processo rana
-    if (array_pid[IDRANA]==-1) {
-	perror("Erorre nella fork della rana : ");
-	exit(1);
-    } else if (array_pid[IDRANA]==0) {
-	frog(game,pipe1); 
-
-    } else {  
-        array_pid[IDTIME]=fork();  //creiamo il processo del tempo
-	if (array_pid[IDTIME]==-1) {
-	    perror("Erorre nella fork della rana : ");
-	    exit(1);
-	} else if (array_pid[IDTIME]==0) {
-	    tempo(pipe1);
-	} else {
-	    array_pid[MAX_CROCODILES]=fork();  //creiamo il processo che gestisce la creazione dei coccodrilli
-	    if (array_pid[MAX_CROCODILES]==-1) {
-		perror("Errore nella fork del generatore coccodrilli: ");
-		exit(-1);
-	    } else if (array_pid[MAX_CROCODILES]==0) {
-	        funzione_gestione_coccodrilli(flussi,pipe1);
-	        exit(-1);
-	    } else return;
-	}
-    }
+    return menu(finestra_gioco, "Scegli la Difficoltà", difficolta, 3);
 }
