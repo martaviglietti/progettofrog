@@ -167,4 +167,19 @@ int rana_su_coccodrillo(Rana* rana, Coccodrillo *coccodrilli){
     return -1; 
 }
 
+//funzione che gestisce il movimento della rana su un coccodrillo
+int movimento_rana_su_coccodrillo(int id, int coccodrillo_scelto, Coccodrillo* coccodrilli, Rana* rana, Statistiche * statistiche_gioco, int giocare ) {
 
+    if (coccodrillo_scelto==coccodrilli[id].id) {  //controlliamo che il coccodrillo attuale sia anche quello su cui la rana era posata prima dello spostamento
+        if ((rana->x<=2 && coccodrilli[id].dir==-1) || (rana->x>=LARGHEZZA_GIOCO-3 && coccodrilli[id].dir==1)) {  //controlliamo se la rana si trova agli estremi della mappa			
+	    if (rana_su_coccodrillo(rana,coccodrilli)!=coccodrillo_scelto) {  //se la rana non viene considerata più sopra l'attuale coccodrillo allora è caduta in acqua sul bordo della mappa 
+	        statistiche_gioco->vite--;
+		statistiche_gioco->punteggio-=10;	    
+		return 0;
+	    }	
+	} else {  //altrimenti la rana si muove con il coccodrillo (ovvero non si trovava agli estremi della mappa)					
+	rana->x+=coccodrilli[id].dir;
+	}               			
+    }
+    return giocare;
+}
