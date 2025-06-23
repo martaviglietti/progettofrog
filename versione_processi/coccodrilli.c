@@ -157,3 +157,20 @@ void funzione_coccodrillo(Temp coccodrillo,Flusso flussi[8],int id_flusso_scelto
     }
 }
 
+//funzione che gestisce la creazione del processo proiettile
+void spara_proiettile(int id,int identificatore_coccodrillo, Coccodrillo* coccodrilli,int velocità_proiettili, int pid_array[], int pipe1[]){
+   
+    pid_array[ID_PROIETTILE+id]= fork(); // Crea un nuovo processo per la granata
+    
+    
+    if (pid_array[ID_PROIETTILE+id] < 0) {
+        perror("Errore nella creazione del processo proiettile: ");
+        exit(1);
+    }
+
+    if (pid_array[ID_PROIETTILE+id] == 0) {
+        
+        funzione_proiettile(id,coccodrilli[identificatore_coccodrillo],velocità_proiettili,pipe1);  //chiamiamo la funzione proiettile all'interno del processo figlio
+        
+    }
+}
