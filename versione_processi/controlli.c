@@ -194,3 +194,12 @@ int rana_in_finestra(Rana* rana, Temp* temp){
 }
 
 
+void uccidi_granate(Granata* granate, int array_pid[]){
+    
+    if (granate[0].vivo==0 && granate[1].vivo==0 && array_pid[ID_GRANATE]!=0) {  //se entrambe sono morte killiamo il loro processo 
+               
+	kill_processo(array_pid[ID_GRANATE]);
+    	
+	array_pid[ID_GRANATE]=0;  //liberiamo la zona dell'array relativa al processo granate 
+    }
+}
