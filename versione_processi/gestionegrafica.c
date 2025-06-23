@@ -117,7 +117,7 @@ void gestore_grafica(WINDOW* finestra_gioco,int pipe1[], int pipe2[], int array_
 			
 		//gestione dello stato di attesa dei coccodrilli
 		attesa_coccodrilli(temp.id, coccodrilli,distanze_coccodrilli,array_pid);
-		riattiva_coccodrilli(coccodrilli, distanze_coccodrilli, array_pid);
+		riattivazione_coccodrilli(coccodrilli, distanze_coccodrilli, array_pid);
 		
 	    } else {  //altrimenti aggiungiamo il pid del coccodrillo all'array dei pid
 	        array_pid[temp.id]=temp.info; //salva l id del coccodrillo creato;	
