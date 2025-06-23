@@ -1,99 +1,37 @@
-void controllo_stato_coccodrillo(int id,Coccodrillo* coccodrilli){
-
-    if ((coccodrilli[id].x>=POS_SPAWN_COC_DESTRA && coccodrilli[id].dir==1) || (coccodrilli[id].x<=POS_SPAWN_COC_SINISTRA && coccodrilli[id].dir==-1)) {	//verifichiamo se il coccodrillo è all'interno della mappa
-		    coccodrilli[id].alive=0;  //coccodrillo fuori dalla mappa = non attivo/morto
-		} else {  
-		    coccodrilli[id].alive=1;  //coccoddrillo dentro alla mappa = attivo/vivo
-		}
-
-
-}
-
-void attesa_coccodrilli(int id, Coccodrillo* coccodrilli, int distanze_coc[], int array_pid[]){
-
-    int indice_flusso;
-    //gestione dello stato di attesa 
-		if ((coccodrilli[id].x==POS_SPAWN_COC_DESTRA && coccodrilli[id].dir==-1) || (coccodrilli[id].x==POS_SPAWN_COC_SINISTRA && coccodrilli[id].dir==1)) {  //controlliamo che il coccodrillo corrente si trova a inizio tragitto			
-		    for (int i=0;i<MAX_CROCODILES;i++) {
-		        indice_flusso=(coccodrilli[i].y-37)/-3;  //individuiamo l'indice del flusso del coccoddrillo corrente
-		
-			//controlliamo se il coccodrillo attuale stia spawnando con coccodrilli troppo vicini nelle stesso flusso
-
-			if (i!=coccodrilli[id].id && coccodrilli[i].y==coccodrilli[id].y && ((coccodrilli[id].x-distanze_coc[indice_flusso]<coccodrilli[i].x && coccodrilli[id].dir==-1) || (coccodrilli[id].x+distanze_coc[indice_flusso]>coccodrilli[i].x && coccodrilli[id].dir==1)) && coccodrilli[i].wait!=1){
-			   coccodrilli[id].wait=1;    //lo mettiamo in wait perchè ci sono coccodrilli non in wait vicino a dove spawna
-
-			   kill(array_pid[id],SIGSTOP);  //lo fermiamo finchè questa situazioni permane
-
-			}
-		    }
-		}
-
-}
-
-void riattivare_coccodrilli(Coccodrillo* coccodrilli, int distanze_coc[], int array_pid[]){
-
-    int indice_flusso;
-    int riattivare;
-    for (int i=0;i<MAX_CROCODILES;i++) {  //controlliamo se dobbiamo sbloccare qualche coccodrillo
-		    if (coccodrilli[i].wait==1) {
-			indice_flusso=(coccodrilli[i].y-37)/-3;
-		        	
-			riattivare=1;
-			
-			for (int j=0;j<MAX_CROCODILES;j++) {  //per ogni coccodrillo in wait controlliamo se ci sono ancora coccodrilli nelle vicinanze (quelli in wait non contano)
-			    if(i!=j && coccodrilli[j].y==coccodrilli[i].y && ((coccodrilli[i].x-distanze_coc[indice_flusso]<coccodrilli[j].x && coccodrilli[i].dir==-1) || (coccodrilli[i].x+distanze_coc[indice_flusso]>coccodrilli[j].x && coccodrilli[i].dir==1)) && coccodrilli[j].wait!=1){
-			        riattivare=0;
-			        break; 
-			    }		
-			}
-			if (riattivare) {	  	  
-			    distanze_coc[indice_flusso]=rand_funz(13,16);    //modifichiamo la distanza da rispettare così da aggiungere diversità						
-			    	
-			    coccodrilli[i].wait=-1;    //togliamo la wait e lo facciamo ripartire;
-			    kill(array_pid[i],SIGCONT);	
-			}
-		    }
-		}
-
-
-
-
-}
-
-//funzione di controllo del coccodrillo
-void funzione_coccodrillo(Temp coccodrillo,Flusso flussi[8],int id_flusso_scelto, int pipe1[]){
-    
-    usleep(rand_funz(100000,300000));  
-    coccodrillo.info=flussi[id_flusso_scelto].dir;
-    
-    
-    while (true) {
-
+//funzione che assegna una velocità a ogni flusso
+void velocità_flussi(Flusso *flussi, int vel){
 	
-	coccodrillo.x=coccodrillo.x+flussi[id_flusso_scelto].dir;
-	write(pipe1[1], &coccodrillo, sizeof(Temp)); 
-	usleep(flussi[id_flusso_scelto].speed);
-	
-	
-	//se il coccodrillo esce fuori dalla mappa allora deve prepararsi a ricomciare il suo tragitto dall'inizio del flusso
-	if ((coccodrillo.x>=POS_SPAWN_COC_DESTRA && flussi[id_flusso_scelto].dir==1) || (coccodrillo.x<=POS_SPAWN_COC_SINISTRA && flussi[id_flusso_scelto].dir==-1)) { 
-	
-	    if (flussi[id_flusso_scelto].dir==1) {
-	        coccodrillo.x=POS_SPAWN_COC_SINISTRA-1;
-	    } else {
-	        coccodrillo.x=POS_SPAWN_COC_DESTRA+1;
-	    }
-	    usleep(rand_funz(500000,2000000));
-	}
-	    	
+    int altezza_base=37;  //posizione del primo flusso (quello più in basso)
+    int dimensione_flussi=3;  //larghezza dei flussi
+    for (int i=0;i<8;i++) {
+        flussi[i].y=altezza_base - i*dimensione_flussi;  //impostiamo anche l'altezza di ogni flusso 
+	flussi[i].velocità= numero_random(vel - 20000,vel+20000);
     }
 }
 
-//funzione gestione proiettile
-void funz_proiettile(int id, Coccodrillo coccodrillo,int vel,int pipe1[]){   
+
+
+
+//funzione che assegna una direzione ad ogni flusso
+void direzione_flussi(Flusso *flussi){
+    for (int i=0;i<8;i++) {
+	if (i>=1) {  //tutti i flussi dal secondo in poi hanno direzione opposta al flusso precedente
+	    flussi[i].dir= -flussi[i-1].dir;
+
+	} else {
+	    //impostiamo la direzione del primo flusso in modo randomico
+	    flussi[i].dir= rand()%2;
+	    if (flussi[i].dir==0) flussi[i].dir=1;
+	    else flussi[i].dir=-1;
+	}
+    }	
+}
+
+//funzione che gestisce il proiettile
+void funzione_proiettile(int id, Coccodrillo coccodrillo,int vel,int pipe1[]){   
     close(pipe1[0]);
-    Temp proiettile={IDPROIETTILE+id,0,0,0};
-	
+    Temp proiettile={ID_PROIETTILE+id,0,0,0};
+    
     //impostiamo il proiettile in base al coccodrillo che lo ha sparato
     if (coccodrillo.dir==1) proiettile.x=coccodrillo.x+5;
     else proiettile.x=coccodrillo.x-5;	
@@ -102,125 +40,120 @@ void funz_proiettile(int id, Coccodrillo coccodrillo,int vel,int pipe1[]){
     while (true) {
 
 	    
-        write(pipe1[1], &proiettile, sizeof(Temp));  			
+        write(pipe1[1], &proiettile, sizeof(Temp));  	
+        		
         proiettile.x+=coccodrillo.dir;
         usleep(vel);
 	
     }
 }
 
-//funzione che assegna una direzione ad ogni flusso
-void def_dir_flussi(Flusso *flussi){
-    for (int i=0;i<8;i++) {
-	if (i>=1) {  //tutti i flussi dal secondo in poi hanno direzione opposta al flusso precedente
-	    flussi[i].dir= -flussi[i-1].dir;
-
-	} else {
-	    //impostiamo la direzione del primo flusso in modo randomico
-	    flussi[i].dir= rand()%2;
-	    if (flussi[i].dir==0) flussi[i].dir=1;
-	    else flussi[i].dir=-1;
-	}
-    }	
-}
-
-
 //funzione di gestione dei coccodrilli
-void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[]){
+void funzione_gestione_coccodrilli(Flusso *flussi,int pipe1[],Parametri* parametri_gioco){
     close(pipe1[0]);
     
-    int numero_coc_flussi[8]={0};
-    int flusso_random;
+    int numero_coccodrilli_flussi[8]={0};  //variabile per tenere conto del numero di coccodrilli per ogni flusso
+    int flusso_scelto;  //flusso scelto per lo spawn del coccodrillo
     Temp coccodrillo;
     Temp messaggio;   
-    pid_t pid_coc;
+    pid_t pid_coccodrillo;
+    int numero_coccodrilli=0;  //numero di coccodrilli spawnati
     
-    for(int i=0;i<MAX_CROCODILES;i++){
+    for(int i=0;i<NUMERO_COCCODRILLI;i++){
     
-        do {
-            flusso_random=rand_funz(0,7);
-           
-        }while(numero_coc_flussi[flusso_random]==3);  //cerchiamo un flusso random che abbia meno di 3 coccodrilli;
-   
-   
+    	if ( numero_coccodrilli<10 ) {  //per i primi 10 coccodrilli lo spawn è completamente randomico
+    	    do {
+                flusso_scelto=numero_random(0,7);
+            
+            }while(numero_coccodrilli_flussi[flusso_scelto]==3);  //creiamo i coccodrilli in flussi casuali senza superare i 3 coccodrilli per flusso 
+    	
+    	} else {  //per i restanti 14 coccodrilli, prima dello spawn casuale controlliamo se ci sono flussi vuoti da riempire
+    	    
+    	    do {
+                flusso_scelto=numero_random(0,7);
+                for ( int j= 0; j<8; j++) {
+                    if ( numero_coccodrilli_flussi[j]==0 ) {
+                        flusso_scelto=j;
+                        break;
+            
+                    }
+                }
+            } while (numero_coccodrilli_flussi[flusso_scelto]==3);  //creiamo i coccodrilli in flussi casuali senza superare i 3 coccodrilli per flusso 
+    	}
+        
        	
-	//imposto il coccodrillo
+	//impostiamo il coccodrillo
 	coccodrillo.id=i;
 	coccodrillo.info=0;
-	coccodrillo.y=flussi[flusso_random].y;
+	coccodrillo.y=flussi[flusso_scelto].y;  //il coccodrillo prende l'altezza del flusso in cui deve spawnare
 	
-	numero_coc_flussi[flusso_random]++;  //aumentiamo di uno il numero di coccodrilli nel flusso selezionato
+	numero_coccodrilli_flussi[flusso_scelto]++;  //aumentiamo di uno il numero di coccodrilli nel flusso selezionato
+	numero_coccodrilli++;  //aumentiamo i coccodrilli totali spawnati
 	
-	if (flussi[flusso_random].dir==1) {
-	    coccodrillo.x=POS_SPAWN_COC_SINISTRA-1;   
+	//impostiamo la posizione di spawn in base alla direzione del flusso
+	if (flussi[flusso_scelto].dir==1) {
+	    coccodrillo.x=SPAWN_SX_COCCODRILLO-1;   
 	} else {
-	    coccodrillo.x=POS_SPAWN_COC_DESTRA+1;
+	    coccodrillo.x=SPAWN_DX_COCCODRILLO+1;
 	}
 	
-	pid_coc=fork();
-	if (pid_coc==-1) {
-	    perror("Errorre nella fork coccodrillo: ");
+	pid_coccodrillo=fork();
+	if (pid_coccodrillo==-1) {
+	    perror("Errore nella fork del coccodrillo: ");
 	    exit(1);
-	} else if (pid_coc==0) {
-		funzione_coccodrillo(coccodrillo,flussi,flusso_random,pipe1);
-	} else {
 	    
-	    messaggio.info=pid_coc;  //impostiamo il messsaggio fa inviare
-	    messaggio.id=i;
-	    messaggio.y=IDAGGIUNTAPID;  //serve per far capire che è un nuovo pid da aggiungere nella lista dei pid;      
-	
-	    write(pipe1[1], &messaggio,sizeof(Temp));                            
-	    usleep(rand_funz(500000,800000));}
-	    if (i== MAX_CROCODILES/2) {
-		usleep(rand_funz(2000000,3000000));  //a metà della creazione dei coc fermiamo la loro generazione per qualche secondo, così da aumentare la randomicità;
-	    }
-    } 
-}
-
-//funzione che gestisce la creazione del processo proiettile
-void sparaProiettile(int id,int identificatore_coc, Coccodrillo* coccodrilli,int velocità_proiettile, int pid_array[], int pipe1[]){
-    pid_array[IDPROIETTILE+id]= fork(); // Crea un nuovo processo per la granata
-
-    if (pid_array[IDPROIETTILE+id] < 0) {
-        perror("Errore nella creazione del processo proiettile");
-        exit(-1);
-    }
-
-    if (pid_array[IDPROIETTILE+id] == 0) {
-   
-        funz_proiettile(id,coccodrilli[identificatore_coc],velocità_proiettile,pipe1);  //chiamiamo la funzione proiettile all'interno del processo figlio
-       
-    }
-}
-
-
-
-//funzione che assegna una velocità a ogni flusso
-void def_vel_flussi(Flusso *flussi, int vel){
-	
-    
-    int altezza_base=37;  //posizione del primo flusso (quello più in basso)
-    int dimensione_flussi=3;  //larghezza dei flussi
-    for (int i=0;i<8;i++) {
-        flussi[i].y=altezza_base - i*dimensione_flussi;
-	flussi[i].speed= rand_funz(vel - 10000,vel+10000);
-    }
-}
-
-
-
-
-//funzione che assegna una direzione ad ogni flusso
-void def_dir_flussi(Flusso *flussi){
-    for (int i=0;i<8;i++) {
-	if (i>=1) {  //tutti i flussi dal secondo in poi hanno direzione opposta al flusso precedente
-	    flussi[i].dir= -flussi[i-1].dir;
-
+	} else if (pid_coccodrillo==0) {
+		funzione_coccodrillo(coccodrillo,flussi,flusso_scelto,pipe1,parametri_gioco);
+		
 	} else {
-	    //impostiamo la direzione del primo flusso in modo randomico
-	    flussi[i].dir= rand()%2;
-	    if (flussi[i].dir==0) flussi[i].dir=1;
-	    else flussi[i].dir=-1;
+	
+	    //inviamo il messaggio al gestore grafico (contenente il pid) avvisandolo che è spawnato un nuovo coccodrillo    
+	    messaggio.info=pid_coccodrillo;  
+	    messaggio.id=i;
+	    messaggio.y=ID_AGGIUNTAPID;  //serve per far capire che è un nuovo pid da aggiungere nella lista dei pid;      
+	    write(pipe1[1], &messaggio,sizeof(Temp));       
+	                   
+	    usleep(numero_random((int)(500000*((float)parametri_gioco->velocità_coccodrilli/120000)),(int)(800000*((float)parametri_gioco->velocità_coccodrilli/120000))));  //pausa tra lo spawn di un coccodrillo e l'altro 
 	}
-    }	
+	
+	//pausa per migliorare lo spawn dei coccodrilli (una volta spawnati i primi 10 e riempiti gli eventuali flussi rimasti)
+	if (i == NUMERO_COCCODRILLI/2) {
+	    usleep(numero_random((int)(2000000*((float)parametri_gioco->velocità_coccodrilli/120000)),(int)3000000*((float)parametri_gioco->velocità_coccodrilli/120000)));  //a metà della creazione dei coc fermiamo la loro generazione per qualche secondo, così da aumentare la randomicità;
+	}
+    } 
+}	
+  
+//funzione di controllo del coccodrillo
+void funzione_coccodrillo(Temp coccodrillo,Flusso flussi[8],int id_flusso_scelto, int pipe1[],Parametri* parametri_gioco){
+    
+    
+    coccodrillo.info=flussi[id_flusso_scelto].dir;
+    
+    
+    while (true) {
+
+	
+	coccodrillo.x+=coccodrillo.info;
+	write(pipe1[1], &coccodrillo, sizeof(Temp)); 
+	usleep(flussi[id_flusso_scelto].velocità);
+	
+	
+	//se il coccodrillo esce fuori dalla mappa allora deve prepararsi a ricominciare il suo tragitto dall'inizio del flusso
+	if ((coccodrillo.x>=SPAWN_DX_COCCODRILLO && coccodrillo.info==1) || (coccodrillo.x<=SPAWN_SX_COCCODRILLO && coccodrillo.info==-1)) {  
+	  
+	
+	    if (coccodrillo.info==1) {
+	    
+	        coccodrillo.x=SPAWN_SX_COCCODRILLO-1;
+	        
+	    } else {
+	    
+	        coccodrillo.x=SPAWN_DX_COCCODRILLO+1;
+	    }
+	    
+	    usleep(numero_random((int)(300000*(1-parametri_gioco->livello_difficoltà*0.15)),(int)(3000000*(1-parametri_gioco->livello_difficoltà*0.15))));  //sleep basata sul livello di difficoltà scelto
+	}
+	    	
+    }
 }
+
