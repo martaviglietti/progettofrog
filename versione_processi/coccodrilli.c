@@ -1,3 +1,9 @@
+
+
+const char *coccodrillo_sprite[2][2]={{"///////","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
+
+
+
 //funzione che assegna una velocità a ogni flusso
 void velocità_flussi(Flusso *flussi, int vel){
 	
