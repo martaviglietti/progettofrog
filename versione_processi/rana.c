@@ -1,4 +1,13 @@
 #include "header.h"
+
+
+//sprite rana
+const char *rana_sprite[2] = {
+    "* *",
+    "   "
+};
+
+
 void funzione_rana(WINDOW* finestra_gioco,int pipe1[2]){
     close(pipe1[0]);
     
