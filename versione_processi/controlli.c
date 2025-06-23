@@ -183,3 +183,14 @@ int movimento_rana_su_coccodrillo(int id, int coccodrillo_scelto, Coccodrillo* c
     }
     return giocare;
 }
+//funzione che controlla se la rana si trova in mappa
+int rana_in_finestra(Rana* rana, Temp* temp){
+
+    if (rana->x+temp->x>78) return 0;
+    if (rana->x+temp->x<2) return 0;
+    if (rana->y+temp->y>43) return 0;
+    if (rana->y+temp->y<7) return 0;
+    return 1;
+}
+
+
