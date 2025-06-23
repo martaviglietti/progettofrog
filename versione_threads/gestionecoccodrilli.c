@@ -4,7 +4,8 @@
 
 void *produttore_coccodrillo(void *arg) {
     messaggio *cocco = (messaggio *)arg;
-    Flusso flusso_scelto = flussi[cocco->id_flusso]; // Assicurati che l'id del flusso sia stato settato prima
+    Flusso* flussi = NULL;
+    Flusso flusso_scelto = flussi[cocco->info]; // Assicurati che l'id del flusso sia stato settato prima
 
     while (1) {
         cocco->x += flusso_scelto.dir;
@@ -27,16 +28,17 @@ void *produttore_coccodrillo(void *arg) {
 
 
 
+
 void crea_thread_coccodrilli(Flusso flussi[], Game_struct *game_struct) {
     for (int i = 0; i < MAX_CROCODILES; i++) {
         int id_flusso = rand_funz(0, 7);
         Flusso f = flussi[id_flusso];
 
-        game_struct->coccodrilli_args[i].id = i;
-        game_struct->coccodrilli_args[i].x = (f.dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
-        game_struct->coccodrilli_args[i].y = f.y;
-        game_struct->coccodrilli_args[i].info = f.dir;
-        game_struct->coccodrilli_args[i].speed = f.speed;
+        game_struct->Coccodrillo[i].id = i;
+        game_struct->Coccodrillo[i].x = (f.dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
+        game_struct->Coccodrillo[i].y = f.y;
+        game_struct->Coccodrillo[i].info = f.dir;
+        game_struct->Coccodrillo[i].speed = f.speed;
 
         pthread_create(&game_struct->coccodrilli[i].tid, NULL, produttore_coccodrillo, &game_struct->coccodrilli_args[i]);
     }
@@ -81,4 +83,5 @@ void sparaProiettile_daCoccodrillo(Coccodrillo coccodrillo, int vel_proiettile) 
     }
 }
 
-//--------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+

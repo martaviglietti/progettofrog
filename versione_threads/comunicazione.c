@@ -59,12 +59,12 @@ void crea_thread_gioco(Game_struct* game_struct, Flusso flussi[], int vel_proiet
     pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)arg);
 
     // Thread rana (input tastiera)
-    pthread_create(t_rana, NULL, thread_rana, (void *)game_struct);
+    pthread_create(&t_rana, NULL, thread_rana, (void *)game_struct);
 
     // Thread tempo
     int *tempo_ptr = malloc(sizeof(int));
     *tempo_ptr = tempo;
-    pthread_create(&t_tempo,, NULL, thread_tempo, tempo_ptr);
+    pthread_create(&t_tempo, NULL, thread_tempo, tempo_ptr);
     crea_thread_coccodrilli(flussi, game_struct);
     
     // NB: Thread granate e proiettili vanno creati dinamicamente quando necessario (non qui)
@@ -110,14 +110,18 @@ void* thread_granata(void* arg) {
     pthread_exit(NULL);
 }
 
+
+
    void sparaGranata(int x, int y, int velocita) {
     messaggio* m1 = malloc(sizeof(messaggio));
     messaggio* m2 = malloc(sizeof(messaggio));
 
+    pthread_t t_granata;
     *m1 = (messaggio){ .id = IDGRANATE,     .x = x - 1, .y = y - 1, .info = -1, .speed = velocita, .alive = true };
     *m2 = (messaggio){ .id = IDGRANATE + 1, .x = x + 1, .y = y - 1, .info = 1,  .speed = velocita, .alive = true };
-    pthread_create(NULL, NULL, thread_granata, (void*)m1);
-    pthread_create(NULL, NULL, thread_granata, (void*)m2);
+    //pthread_create(NULL, NULL, thread_granata, (void*)m1);
+    pthread_create(&t_granata, NULL, thread_granata, (void*)m1);
+    pthread_create(&t_granata, NULL, thread_granata, (void*)m2);
 }
 
 //---------------------------------------------------------------------------------------------------------------------------
