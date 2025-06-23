@@ -3,6 +3,14 @@
 #include <stdlib.h> // per exit
 #include <fcntl.h>  // per fcntl, F_GETFL
 
+//funzione che mostra la barra del tempo rimanente
+void barra_tempo(WINDOW* finestra_gioco,Statistiche * statistiche_gioco, int tempo){
+
+    wattron(finestra_gioco, COLOR_PAIR(7));
+    mvwhline(finestra_gioco,46,15, ' ', (int)(62*((float)statistiche_gioco->tempo/tempo)));
+    wattroff(finestra_gioco, COLOR_PAIR(7));
+}
+
 void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche * statistiche_gioco){
     
     box(finestra_gioco, ACS_VLINE, ACS_HLINE);
