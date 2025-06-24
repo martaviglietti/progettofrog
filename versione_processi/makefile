@@ -1,0 +1,38 @@
+SRC_DIR = .
+BUILD_DIR = ../build
+
+OBJ_DIR_PROCESSI = ../obj/versione_processi
+OBJ_DIR_THREADS = ../obj/versione_threads
+
+PROCESSI_SRC = $(SRC_DIR)/versione_processi
+THREADS_SRC = $(SRC_DIR)/versione_threads
+
+OBJECTS_PROCESSI = $(OBJ_DIR_PROCESSI)/coccodrilli.o \
+				$(OBJ_DIR_PROCESSI)/controlli.o \
+				$(OBJ_DIR_PROCESSI)/draws.o \
+				$(OBJ_DIR_PROCESSI)/main.o \
+				$(OBJ_DIR_PROCESSI)/funzionegioca.o \
+				$(OBJ_DIR_PROCESSI)/gestionegrafica.o \
+				$(OBJ_DIR_PROCESSI)/menu.o \
+				$(OBJ_DIR_PROCESSI)/rana.o \
+				$(OBJ_DIR_PROCESSI)/coccodrilli.o
+      
+
+CFLAGS = -g -Wall -I/usr/include  -I/usr/include/x86_64-linux-gnu # Include ncurses headers if needed
+LDFLAGS = -lncurses
+
+PROCESSI_EXEC = $(BUILD_DIR)/versione_processi/a.out
+
+
+# Default target: build both projects
+#all: $(PROCESSI_EXEC) 
+
+# Project 1 executable (build ont one executable)
+$(PROCESSI_EXEC): $(OBJECTS_PROCESSI)
+	gcc $(OBJECTS_PROCESSI) -o $(PROCESSI_EXEC) $(LDFLAGS)
+
+$(OBJ_DIR_PROCESSI)/%.o: $(PROCESSI_SRC)/%.c
+	gcc $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJ_DIR)*.o $(BUILD_DIR)/versione_processi/a.out
