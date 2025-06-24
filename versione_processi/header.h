@@ -108,8 +108,8 @@ typedef struct{
 
 
 // Dichiarazioni delle variabili globali
-extern const char *frog_sprite[2];
-extern const char *coc_sprite[2][2];
+extern const char *rana_sprite[2];
+extern const char *coccodrillo_sprite[2][2];
 
 int game_vinto(WINDOW *finestra_gioco, int punteggio);
 int game_perso(WINDOW *finestra_gioco, int punteggio);
