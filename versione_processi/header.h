@@ -1,3 +1,11 @@
+#ifndef HEADER_H     
+#define HEADER_H  
+
+
+
+
+
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -110,6 +118,7 @@ typedef struct{
 // Dichiarazioni delle variabili globali
 extern const char *rana_sprite[2];
 extern const char *coccodrillo_sprite[2][2];
+extern const char *opzioni[];
 
 int game_vinto(WINDOW *finestra_gioco, int punteggio);
 int game_perso(WINDOW *finestra_gioco, int punteggio);
@@ -163,15 +172,5 @@ void controllo_sparo_proiettile(int* pipe1, int* array_pid, Coccodrillo* coccodr
 
 
 
-#ifndef HEADER_H
-#define HEADER_H
-
-
-
-
-
-
-
-
-#endif // HEADER_H
+#endif 
 
