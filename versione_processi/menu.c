@@ -74,3 +74,4 @@ void crediti(WINDOW *finestra_gioco){
 int numero_random(int min, int max){
 
     return min + rand() % (max-min+1);
+}
