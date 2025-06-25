@@ -201,7 +201,7 @@ void kill_processo(pid_t pid){
 //funzione per killare più processi
 void kill_processi(pid_t pid[NUMERO_PID]) {
 	
-    for (int i=24; i<NUMERO_PID;i++) {
+    for (int i=0; i<NUMERO_PID;i++) {
       
 	if (pid[i]>0) {
 	    
@@ -213,6 +213,7 @@ void kill_processi(pid_t pid[NUMERO_PID]) {
 	        waitpid(pid[i], NULL, 0);	   
 	        pid[i]=0;
 	    }
-	}			
+
+	}
     }
 }
