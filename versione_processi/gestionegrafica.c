@@ -1,4 +1,4 @@
-
+#include "header.h"
 
 
 void gestore_grafica(WINDOW* finestra_gioco,int pipe1[], int pipe2[], int array_pid[],int velocità_proiettili, Statistiche * statistiche_gioco){			
