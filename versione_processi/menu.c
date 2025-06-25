@@ -1,7 +1,7 @@
 #include "header.h"
 
 // Opzioni del menu
-static const char *OPZIONI[] = {
+const char *opzioni[] = {
     "Inizia gioco", "Crediti", "Esci"
 };
 
@@ -74,6 +74,3 @@ void crediti(WINDOW *finestra_gioco){
 int numero_random(int min, int max){
 
     return min + rand() % (max-min+1);
-
-}
-
