@@ -20,7 +20,7 @@ OBJECTS_PROCESSI = $(OBJ_DIR_PROCESSI)/coccodrilli.o \
 OBJECTS_THREADS = $(OBJ_DIR_THREADS)/gestionecoccodrilli.o \
 				$(OBJ_DIR_THREADS)/collisioni.o \
 				$(OBJ_DIR_THREADS)/disegni.o \
-				$(OBJ_DIR_THREADS)/threads1.o \
+				$(OBJ_DIR_THREADS)/main.o \
 				$(OBJ_DIR_THREADS)/comunicazione.o \
 				$(OBJ_DIR_THREADS)/gestionegrafica.o \
 				$(OBJ_DIR_THREADS)/windowgeneration.o
