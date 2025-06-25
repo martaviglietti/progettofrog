@@ -1,38 +1,47 @@
-SRC_DIR = .
-BUILD_DIR = ../build
+# Compilatore
+CC = gcc
 
-OBJ_DIR_PROCESSI = ../obj/versione_processi
-OBJ_DIR_THREADS = ../obj/versione_threads
+# Flag per la compilazione
+CFLAGS = -Wall -Wextra -g
 
-PROCESSI_SRC = $(SRC_DIR)/versione_processi
-THREADS_SRC = $(SRC_DIR)/versione_threads
+# Librerie da linkare
+LIBS = -lncursesw
 
-OBJECTS_PROCESSI = $(OBJ_DIR_PROCESSI)/coccodrilli.o \
-				$(OBJ_DIR_PROCESSI)/controlli.o \
-				$(OBJ_DIR_PROCESSI)/draws.o \
-				$(OBJ_DIR_PROCESSI)/main.o \
-				$(OBJ_DIR_PROCESSI)/funzionegioca.o \
-				$(OBJ_DIR_PROCESSI)/gestionegrafica.o \
-				$(OBJ_DIR_PROCESSI)/menu.o \
-				$(OBJ_DIR_PROCESSI)/rana.o \
-				$(OBJ_DIR_PROCESSI)/coccodrilli.o
-      
+#nome del output finale
 
-CFLAGS = -g -Wall -I/usr/include  -I/usr/include/x86_64-linux-gnu # Include ncurses headers if needed
-LDFLAGS = -lncurses
+all: clean $(TARGET)
+# regola principale
+TARGET = frog_game
+    
+   
+SRCS = \
+    controlli.c \
+    draws.c \
+    main.c \
+    funzionegioca.c \
+    gestionegrafica.c \
+    menu.c \
+    rana.c \
+    coccodrilli.c
 
-PROCESSI_EXEC = $(BUILD_DIR)/versione_processi/a.out
+
+OBJS = $(SRCS:.c=.o)
+
+# Regola principale
+all: $(TARGET)
+
+#compilazione di tutti i sorgenti (senza linking)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 
-# Default target: build both projects
-#all: $(PROCESSI_EXEC) 
+# Come creare l'eseguibile
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
-# Project 1 executable (build ont one executable)
-$(PROCESSI_EXEC): $(OBJECTS_PROCESSI)
-	gcc $(OBJECTS_PROCESSI) -o $(PROCESSI_EXEC) $(LDFLAGS)
-
-$(OBJ_DIR_PROCESSI)/%.o: $(PROCESSI_SRC)/%.c
-	gcc $(CFLAGS) -c $< -o $@
-
+# Pulizia
 clean:
-	rm -f $(OBJ_DIR)*.o $(BUILD_DIR)/versione_processi/a.out
+	rm -f $(TARGET) $(OBJS)
+
+# Ricompilazione completa
+rebuild: clean all
