@@ -133,4 +133,3 @@ void funzione_granata(int inizioX, int inizioY, int velocità_proiettile, int pi
 
 
 
-
