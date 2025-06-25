@@ -383,4 +383,3 @@ void disegna_coccodrilli(WINDOW *finestra_gioco, Coccodrillo *coccodrilli){
 }
 
 
-
