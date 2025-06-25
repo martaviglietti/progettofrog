@@ -16,8 +16,10 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define BUFFER_SIZE 200
+#define BUFFER_SIZE 50
 #define MAX_CROCODILES 24
+
+//// Graphics
 #define LARGHEZZA_GIOCO 81
 #define ALTEZZA_GIOCO 49
 #define POS_SPAWN_COC_SINISTRA -4
@@ -27,11 +29,13 @@
 #define ALTEZZACOCCODRILLO 2
 #define LARGHEZZACOCCODRILLO 9
 #define DELAY 100000
-#define TANE 6
+#define NTANE 6
 #define FIUME 25
 #define PRATO 5
 #define SPONDA_SUPERIORE 5
-//definizione id da usare;
+#define NFLUSSI 8
+
+//// definizione id da usare (?)
 #define IDTIME 45
 #define IDCOC 0
 #define IDRANA 50
@@ -39,16 +43,7 @@
 #define IDPROIETTILE 70
 #define IDMORTE -10 
 #define IDRICHIESTA 90
-// --- VARIABILI GLOBALI ---
-//serve per proteggere la stampa a schermo
-extern pthread_mutex_t mutex_ncurses;
 
-
-extern const char *OPZIONI[];
-extern const char *frog_sprite[2];
-extern const char *coc_sprite[2][2];
-
-           
 typedef struct{
     int id;
     int y;
@@ -60,9 +55,9 @@ typedef struct{
     int vite;
     int score;
     int tempo;
-    int tane[5];
+    int tane[NTANE];
     int game_over; //serve per la condizione di uscita dal game
-    pthread_mutex_t mutex_game;  // mutex per modifiche sicure
+    WINDOW* game;
 }Game_struct;
 
 typedef struct{
@@ -70,7 +65,13 @@ typedef struct{
     int tempo;
     int velocità_proiettili;
     int velocità_coccodrilli;
-}Stat_game;
+    Flusso flussi[NFLUSSI];
+}gameConfig;
+
+typedef struct {
+    Game_struct* Game_struct;
+    gameConfig* gameConfig;
+} ThreadArgs;
 
 typedef struct{
     int id;
@@ -120,26 +121,28 @@ typedef struct {
     pthread_t tid;
 } messaggio;  
 
+//buffer c è un contenutor organizzata con sincronizzazione 
+//creo una struttura globale condivisa 
 typedef struct {
     //array di strutture di tipo messaggio 
     messaggio buffer[BUFFER_SIZE];
     int in;  // indice di scrittura
     int out; // indice di lettura
     pthread_mutex_t mutex; //serve per fare entrare un thread alla volta
-    sem_t empty; // quanti slot vuoti
-    sem_t full;  // quanti slot pieni
+    //sem_t empty; // quanti slot vuoti
+    //sem_t full;  // quanti slot pieni
 } BufferC; 
-//buffer c è un contenutor organizzata con sincronizzazione 
-//creo una struttura globale condivisa 
 
+// --- VARIABILI GLOBALI ---
+//serve per proteggere la stampa a schermo
+//extern pthread_mutex_t mutex_ncurses;
+
+extern const char *OPZIONI[];
+extern const char *frog_sprite[2];
+extern const char *coc_sprite[2][2];
 //ho la struttura buffer c  pe rimpacchettar ein un solo oggetto 7
 extern BufferC buffer;
 
-typedef struct {
-    Game_struct* game_struct;
-    WINDOW* game;
-    int vel_proiettile;
-} ArgGrafica;
 
 //funzioni per l'interfaccia di gioco--
 int gameWin(WINDOW *game, int score);
@@ -152,12 +155,12 @@ void creazione_colori();
 
 //inizializzazione e flussi
 void inizializza_buffer();
-void def_vel_flussi(Flusso *flussi, int velocità_coccodrillo);
+void def_vel_flussi(gameConfig gameConfig);
 void def_dir_flussi(Flusso *flussi);
 
 //funzioni di gioco
-Game_struct startGame(WINDOW *game,Stat_game stat_game);
-void crea_thread_gioco(Game_struct *game_struct, Flusso flussi[], int vel_proiettile, int tempo_totale, WINDOW* game);
+Game_struct startGame(WINDOW *game,gameConfig gameConfig);
+void crea_thread_gioco(Game_struct *game_struct, gameConfig gameConfig);
 
 void crea_thread_coccodrilli(Flusso flussi[], Game_struct *game_struct);
 

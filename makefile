@@ -17,13 +17,16 @@ OBJECTS_PROCESSI = $(OBJ_DIR_PROCESSI)/coccodrilli.o \
 				$(OBJ_DIR_PROCESSI)/rana.o \
 				$(OBJ_DIR_PROCESSI)/windowgeneration.o
 
-OBJECTS_THREADS = $(OBJ_DIR_THREADS)/gestionecoccodrilli.o \
+OBJECTS_THREADS = $(OBJ_DIR_THREADS)/CrocodileHandle.o \
 				$(OBJ_DIR_THREADS)/collisioni.o \
-				$(OBJ_DIR_THREADS)/disegni.o \
-				$(OBJ_DIR_THREADS)/main.o \
 				$(OBJ_DIR_THREADS)/comunicazione.o \
+				$(OBJ_DIR_THREADS)/disegni.o \
+				$(OBJ_DIR_THREADS)/Environment.o \
+				$(OBJ_DIR_THREADS)/FrogHandle.o \
+				$(OBJ_DIR_THREADS)/GameUtils.o \
+				$(OBJ_DIR_THREADS)/main.o \
 				$(OBJ_DIR_THREADS)/gestionegrafica.o \
-				$(OBJ_DIR_THREADS)/windowgeneration.o
+				$(OBJ_DIR_THREADS)/WindowsGen.o
 
 CFLAGS = -g -Wall -I/usr/include  -I/usr/include/x86_64-linux-gnu # Include ncurses headers if needed
 LDFLAGS = -lncurses

@@ -35,8 +35,8 @@ messaggio consumatore() {
 void inizializza_buffer() {
     buffer.in = 0;
     buffer.out = 0;
-    sem_init(&buffer.full, 0, BUFFER_SIZE);
-    sem_init(&buffer.empty, 0, 0);
+    //sem_init(&buffer.full, 0, BUFFER_SIZE);
+    //sem_init(&buffer.empty, 0, 0);
     pthread_mutex_init(&buffer.mutex, NULL);
 }
 
@@ -44,8 +44,8 @@ void inizializza_buffer() {
 
 //CREAZIONE THREAD PRINCIPALI GIOCO -------------------------------------------------------------------------
 void crea_thread_gioco(Game_struct* game_struct, Flusso flussi[], int vel_proiettile, int tempo, WINDOW* game){
-     // Thread grafica/consumatore
-     ArgGrafica* arg = malloc(sizeof(ArgGrafica));
+    // Thread grafica/consumatore
+    ArgGrafica* arg = malloc(sizeof(ArgGrafica));
     if (!arg) {
     perror("Errore malloc ArgGrafica");
     exit(EXIT_FAILURE);
