@@ -1,6 +1,6 @@
 #include "header.h"
 
-const char *coccodrillo_sprite[2][2]={{"///////","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
+const char *coccodrillo_sprite[2][2]={{"XXXXXXX","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
 
 
 
