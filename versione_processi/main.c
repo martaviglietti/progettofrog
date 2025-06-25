@@ -1,6 +1,4 @@
 
-
-
 #include "header.h"
 
 int main(){
@@ -23,7 +21,7 @@ int main(){
     int difficoltà;     //variabile contenente la difficoltà scelta dal menù delle difficoltà
     int ricomincia=1;  
     
-    Parametri parametri_gioco={0,0,0,0};
+    Parametri parametri_gioco={0,0,0,0,0};
     Statistiche  risultato;  //conterrà i risultati della partita
     WINDOW *finestra_gioco = newwin(LINES, COLS, 0, 0);  //finestra dell'area di gioco
     
