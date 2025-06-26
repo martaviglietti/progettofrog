@@ -56,7 +56,8 @@ int main(){
                     gameConfig.velocità_coccodrilli=50000;
                     break;      
             }
-            risultato=startGame(risultato.game, gameConfig);
+            startGame(&risultato, &gameConfig);
+            
             if (risultato.game_over==1) {  //Vittoria
                 scelta=gameWin(risultato.game,risultato.score); 
             	

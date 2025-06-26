@@ -16,8 +16,9 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define BUFFER_SIZE 50
+#define BUFFER_SIZE 51
 #define MAX_CROCODILES 24
+#define NFLUSSI 8
 
 //// Graphics
 #define LARGHEZZA_GIOCO 81
@@ -33,7 +34,12 @@
 #define FIUME 25
 #define PRATO 5
 #define SPONDA_SUPERIORE 5
-#define NFLUSSI 8
+
+//// Buffer positions
+#define IDX_COCCODRILLI 3
+#define IDX_RANA 0
+#define IDX_GRANATE 1
+#define IDX_PROIETTILI 27
 
 //// definizione id da usare (?)
 #define IDTIME 45
@@ -73,52 +79,14 @@ typedef struct {
     gameConfig* gameConfig;
 } ThreadArgs;
 
-typedef struct{
-    int id;
-    int y;
-    int x;
-    int dir;
-    int alive;
-    int wait;
-}Coccodrillo;
-
-typedef struct{
-    int id;
-    int y;
-    int x;
-    int alive;
-}Proiettile;
-
-typedef struct{
-    int id;
-    int y;
-    int x;
-    int alive;
-}Granata;
-
-typedef struct{
-    int id;
-    int x;
-    int y;
-}Rana;
-
-typedef struct{
-	int id;
-	int x;
-	int y;
-	int info;
-}Temp;
-
 //è il formato del contenuto del gioco, quindi è un oggetto con dentro le informazioni su ciascun oggetto
 typedef struct {
-    int id;
     int y;
     int x;
     int dir;
     int speed;
     bool alive; //serve per capire se l ente è vivo
-    int info; 
-    pthread_t tid;
+    float wait;
 } messaggio;  
 
 //buffer c è un contenutor organizzata con sincronizzazione 
@@ -155,14 +123,18 @@ void creazione_colori();
 
 //inizializzazione e flussi
 void inizializza_buffer();
-void def_vel_flussi(gameConfig gameConfig);
+void fluxInit(gameConfig *gameConfig);
 void def_dir_flussi(Flusso *flussi);
 
 //funzioni di gioco
-Game_struct startGame(WINDOW *game,gameConfig gameConfig);
-void crea_thread_gioco(Game_struct *game_struct, gameConfig gameConfig);
+void startGame(Game_struct *game_struct, gameConfig* gameConfig);
+void crea_thread_gioco(Game_struct *game_struct, gameConfig* gameConfig);
 
-void crea_thread_coccodrilli(Flusso flussi[], Game_struct *game_struct);
+//funzioni inizializzazione oggetti
+void CrocodileInit(Flusso *flussi);
+void GranateInit();
+void frogInit();
+void ProjectileInit();
 
 //produttori
 void* thread_rana(void* arg);

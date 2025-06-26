@@ -45,70 +45,72 @@ int scegliDifficolta(WINDOW *game) {
 
 //___________________________________________________________________________________________________
 //Inizializzazione del gioco
-Game_struct startGame(WINDOW *game, gameConfig gameConfig){			
+void startGame(Game_struct *game_struct, gameConfig *gameConfig){			
     //Inizializziamo variabili di gestione della partita
-    int tane_occupate=0;
-
-    Game_struct game_struct;
-    game_struct.score=0; 		//contiene lo score di tutto il game
-    game_struct.vite=gameConfig.vite;    //contiene numero di vite rimaste
-    game_struct.tempo=gameConfig.tempo;  //contiene tempo rimasto nella manche
-    game_struct.game_over=0;
+    
+    game_struct->score=0; 		//contiene lo score di tutto il game
+    game_struct->vite=gameConfig->vite;    //contiene numero di vite rimaste
+    game_struct->tempo=gameConfig->tempo;  //contiene tempo rimasto nella manche
+    game_struct->game_over=0;
     
     //inizializzazione delle tane a 0
     for (int i=0;i<NTANE-1;i++) {
-        game_struct.tane[i]=0;
+        game_struct->tane[i]=0;
     }
 
     //inizializzaizone del buffer produttore-consumatore
     inizializza_buffer();
 
     //Definizione dei flussi
-    def_vel_flussi(gameConfig); //definisco velocità di ogni flusso                
+    fluxInit(gameConfig); //definisco velocità di ogni flusso                
    
-    //creaizone dei thread principali
-    crea_thread_gioco(&game_struct, gameConfig);
-    int thread_granata_attivo = 0;
+    //creaizone dei thread principali e inizilizzazione degli oggetti
+    crea_thread_gioco(game_struct, gameConfig);
 
-    //inizio della partita
-    while (true) {
-    game_struct.tempo=gameConfig.tempo; 
-    def_dir_flussi(gameConfig.flussi);  //definisce direzione di ogni flusso					
+    //inizio della partita - loop di gioco
+    int tane_occupate=0;
+    while (true) {			
 
-  
         for (int i=0;i<5;i++) {
-            if(game_struct.tane[i]==1){
+            if(game_struct->tane[i]==1){
                 tane_occupate++;
             }
         }
         if (tane_occupate==5) {		
-            game_struct.game_over=1;
-            game_struct.score+=100;
-            return game_struct;  //uscita per tane chiuse
+            game_struct->game_over=1;
+            game_struct->score+=100;
+              //uscita per tane chiuse
         }
         tane_occupate=0;
         wclear(game);
         wrefresh(game);     
-        }
+    }
 }
 
 //______________________________________________________________________________________________________________________
 //______________________________________________________________________________________________________________________
 //CREAZIONE THREAD PRINCIPALI GIOCO -------------------------------------------------------------------------
-void crea_thread_gioco(Game_struct* game_struct, gameConfig gameConfig){
+void crea_thread_gioco(Game_struct* game_struct, gameConfig *gameConfig){
 
     // Thread grafica/consumatore
     pthread_t t_grafica, t_rana, t_tempo;
+    pthread_t t_coccodrilli, t_proiettili, t_granate;
 
-    ThreadArgs args = {game_struct, &gameConfig};
+    ThreadArgs args = {game_struct, gameConfig};
 
+    // Creazione threads
     pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)&args);
     pthread_create(&t_rana, NULL, thread_rana, (void *)&args);
     pthread_create(&t_tempo, NULL, thread_tempo, (void *)&args);
-
-    crea_thread_coccodrilli(flussi, game_struct);
+    pthread_create(&t_coccodrilli, NULL, produttore_coccodrillo, (void *)&args);
+    pthread_create(&t_granate, NULL, thread_granata, (void *)&args);
+    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)&args);
     
-    // NB: Thread granate e proiettili vanno creati dinamicamente quando necessario (non qui)
+    // Inizializzazione oggetti
+    CrocodileInit(gameConfig->flussi);
+    GranateInit();
+    frogInit();
+    ProjectileInit();
 }
 
 		

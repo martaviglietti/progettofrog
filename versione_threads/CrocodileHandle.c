@@ -1,4 +1,40 @@
 #include "header.h"
+#include <cstdlib>
+
+void CrocodileInit(Flusso *flussi) {
+    const int Ninit = rand_funz(6, 12);
+
+    for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
+
+        messaggio* this = &buffer.buffer[i];
+
+        if ((i-IDX_COCCODRILLI) <= Ninit){
+
+            const int id_flusso = rand_funz(0, NFLUSSI-1);
+            const Flusso* flux = &flussi[id_flusso];
+            
+            this->alive=1;
+            this->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
+            this->y = flux->y;
+            this->dir = flux->dir;
+            this->speed = flux->speed;
+            this->wait = -1;
+        }
+        else{
+            this->alive = 0;
+            this->wait = rand_funz(3, 15);
+
+            this->x = -1;
+            this->y = -1;
+            this->dir = -1;
+            this->speed = -1;
+        }
+    }
+}
+
+
+
+
 
 //questa funzione crea un messaggio m e lo invia nel buffer
 
@@ -28,25 +64,19 @@ void *produttore_coccodrillo(void *arg) {
 
 
 
+//GESTIONE PROIETTILI------------------------------------------------------------------
+void ProjectileInit(){
+    for (int i = IDX_PROIETTILI; i< IDX_PROIETTILI + MAX_CROCODILES; i++){
 
-void crea_thread_coccodrilli(Flusso flussi[], Game_struct *game_struct) {
-    for (int i = 0; i < MAX_CROCODILES; i++) {
-        int id_flusso = rand_funz(0, 7);
-        Flusso f = flussi[id_flusso];
-
-        game_struct->Coccodrillo[i].id = i;
-        game_struct->Coccodrillo[i].x = (f.dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
-        game_struct->Coccodrillo[i].y = f.y;
-        game_struct->Coccodrillo[i].info = f.dir;
-        game_struct->Coccodrillo[i].speed = f.speed;
-
-        pthread_create(&game_struct->coccodrilli[i].tid, NULL, produttore_coccodrillo, &game_struct->coccodrilli_args[i]);
+        if (i >= BUFFER_SIZE){
+            printf("you need a bigger buffer... we are accessing random areas of the memory!");
+        }
+        messaggio* this = &buffer.buffer[i];
+        this->x = 50;
+        this->y = -1;
+        this->alive = 0;
     }
 }
-
-
-
-//GESTIONE PROIETTILI------------------------------------------------------------------
 
 void* thread_proiettile(void* arg) {
     messaggio m = *(messaggio*)arg;

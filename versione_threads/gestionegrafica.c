@@ -19,34 +19,6 @@ void* Gestione_grafica(void* arg){
     int random=rand_funz(2,4);
 
     Temp temp={-1,0,0,0};
-    
-
-    //Inizializzazione degli elementi di gioco
-    Coccodrillo coccodrilli[MAX_CROCODILES];
-    for (int i=0; i<MAX_CROCODILES;i++) {
-        coccodrilli[i].id=i;      //id coccodrillo
-        coccodrilli[i].x=-1;	  //posizione x coccodrillo
-        coccodrilli[i].y=-1;      //posizione y coccodrillo
-        coccodrilli[i].dir=0;     //direzione coccodrillo
-        coccodrilli[i].alive=0;   //stato del coccoddrillo
-        coccodrilli[i].wait=-1;}  //variabile per stato di attesa
-
-    
-    Granata granate[2] = {
-        {.x = -1, .y = -1, .alive = 0},
-        {.x = -1, .y = -1, .alive = 0}
-    };
-
-    Rana rana;	
-    rana.id=IDRANA;
-    rana.x=40; 
-    rana.y=43;
-
-    Proiettile proiettile;
-    proiettile.id=IDPROIETTILE;
-    proiettile.x=50;
-    proiettile.y=-1;
-    proiettile.alive=0;
    
     int tempo=game_struct->tempo;
     
