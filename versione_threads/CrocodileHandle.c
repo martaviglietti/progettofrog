@@ -1,5 +1,4 @@
 #include "header.h"
-#include <cstdlib>
 
 void CrocodileInit(Flusso *flussi, Game_struct* game_struct) {
     const int Ninit = rand_funz(6, 12);
