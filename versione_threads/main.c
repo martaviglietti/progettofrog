@@ -57,8 +57,8 @@ int main(){
                     break;      
             }
             startGame(&risultato, &gameConfig);
-            
-            if (risultato.game_over==1) {  //Vittoria
+
+            if (risultato.win) {  //Vittoria
                 scelta=gameWin(risultato.game,risultato.score); 
             	
             	if (scelta) {	

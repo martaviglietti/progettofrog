@@ -1,129 +1,12 @@
 #include "header.h"
 
-//_________________________________________________________________________________________________
-//schermata in caso di vittoria
-int gameWin(WINDOW *game, int score){  
-    wclear(game);
-    box(game, ACS_VLINE, ACS_HLINE);
-    mvwprintw(game, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
-    wrefresh(game);
-    char decision = wgetch(game);
-    while (decision!= 's' && decision!='n') {
-        decision = wgetch(game);
-    }
-    if (decision == 's') {  //se rispondiamo di si ripetiamo il game (con stessa difficoltà) da capo
-        return 0;
-    } else {  //altrimenti torniamo al menù
-        return 1;
-    }
+//___________________________________________________________________________________________________
+//funzione utile per creare un numero random tra un minimo e un massimo (compresi)
+int rand_funz(int min, int max){
+    return min + rand() % (max-min+1);
 }
 
 //___________________________________________________________________________________________________
-//schermata in caso di perdita
-int gameOver(WINDOW *game, int score){  
-    wclear(game);
-    box(game, ACS_VLINE, ACS_HLINE);
-    mvwprintw(game, 10, 10, "GAME OVER! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
-    wrefresh(game);
-    char decision = wgetch(game);
-    while (decision!= 's' && decision!='n') {
-    	 decision = wgetch(game);
-    }
-    if (decision == 's') {  //se rispondiamo di si ripetiamo il game (con stessa difficoltà) da capo
-        return 0;
-    } else {  //altrimenti torniamo al menù
-        return 1;
-    }
-}
-
-//___________________________________________________________________________________________________
-//schermata per scelta della difficoltà
-int scegliDifficolta(WINDOW *game) { 
-    const char *difficolta[] = {"Facile", "Media", "Difficile"};
-    return menu(game, "Scegli la Difficoltà", difficolta, 3);
-}
-
-//___________________________________________________________________________________________________
-//Inizializzazione del gioco
-void startGame(Game_struct *game_struct, gameConfig *gameConfig){			
-    //Inizializziamo variabili di gestione della partita
-    
-    game_struct->score=0; 		//contiene lo score di tutto il game
-    game_struct->vite=gameConfig->vite;    //contiene numero di vite rimaste
-    game_struct->tempo=gameConfig->tempo;  //contiene tempo rimasto nella manche
-    game_struct->game_over=0;
-    
-    //inizializzazione delle tane a 0
-    for (int i=0;i<NTANE-1;i++) {
-        game_struct->tane[i]=0;
-    }
-
-    //inizializzaizone del buffer produttore-consumatore
-    inizializza_buffer();
-
-    //Definizione dei flussi
-    fluxInit(gameConfig); //definisco velocità di ogni flusso                
-   
-    //creaizone dei thread principali e inizilizzazione degli oggetti
-    crea_thread_gioco(game_struct, gameConfig);
-
-    //inizio della partita - loop di gioco
-    int tane_occupate=0;
-    while (true) {			
-
-        for (int i=0;i<5;i++) {
-            if(game_struct->tane[i]==1){
-                tane_occupate++;
-            }
-        }
-        if (tane_occupate==5) {		
-            game_struct->game_over=1;
-            game_struct->score+=100;
-              //uscita per tane chiuse
-        }
-        tane_occupate=0;
-        wclear(game);
-        wrefresh(game);     
-    }
-}
-
-//______________________________________________________________________________________________________________________
-//______________________________________________________________________________________________________________________
-//CREAZIONE THREAD PRINCIPALI GIOCO -------------------------------------------------------------------------
-void crea_thread_gioco(Game_struct* game_struct, gameConfig *gameConfig){
-
-    // Thread grafica/consumatore
-    pthread_t t_grafica, t_rana, t_tempo;
-    pthread_t t_coccodrilli, t_proiettili, t_granate;
-
-    ThreadArgs args = {game_struct, gameConfig};
-
-    // Creazione threads
-    pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)&args);
-    pthread_create(&t_rana, NULL, thread_rana, (void *)&args);
-    pthread_create(&t_tempo, NULL, thread_tempo, (void *)&args);
-    pthread_create(&t_coccodrilli, NULL, produttore_coccodrillo, (void *)&args);
-    pthread_create(&t_granate, NULL, thread_granata, (void *)&args);
-    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)&args);
-    
-    // Inizializzazione oggetti
-    CrocodileInit(gameConfig->flussi);
-    GranateInit();
-    frogInit();
-    ProjectileInit();
-}
-
-		
-//funzione che mostra la barra del tempo rimanente
-void print_tempo(WINDOW* game,Game_struct* game_struct, int tempo){
-    wattron(game, COLOR_PAIR(7));
-    mvwhline(game,46,15, ' ', (int)(62*((float)game_struct->tempo/tempo)));
-    wattroff(game, COLOR_PAIR(7));
-}
-
-
-
-
 int menu(WINDOW *game, const char *title, const char *options[], int num_options){
     flushinp();  // Elimina input residuo
     keypad(game, true);  // Abilita l'input da tastiera
@@ -168,6 +51,124 @@ int menu(WINDOW *game, const char *title, const char *options[], int num_options
 }
 
 
+//___________________________________________________________________________________________________
+//schermata per scelta della difficoltà
+int scegliDifficolta(WINDOW *game) { 
+    const char *difficolta[] = {"Facile", "Media", "Difficile"};
+    return menu(game, "Scegli la Difficoltà", difficolta, 3);
+}
+
+//___________________________________________________________________________________________________
+//Inizializzazione del gioco e loop di gioco
+void startGame(Game_struct *game_struct, gameConfig *gameConfig){			
+    //Inizializziamo variabili di gestione della partita
+    
+    game_struct->score=0; 		//contiene lo score di tutto il game
+    game_struct->vite=gameConfig->vite;    //contiene numero di vite rimaste
+    game_struct->tempo=gameConfig->tempo;  //contiene tempo rimasto nella manche
+    game_struct->win=0;
+    
+    //inizializzazione delle tane a 0
+    for (int i=0;i<NTANE-1;i++) {
+        game_struct->tane[i]=0;
+    }
+
+    //inizializzaizone del buffer produttore-consumatore
+    inizializza_buffer();
+
+    //Definizione dei flussi
+    fluxInit(gameConfig); //definisco velocità di ogni flusso                
+   
+    //creaizone dei thread principali e inizilizzazione degli oggetti
+    crea_thread_gioco(game_struct, gameConfig);
+
+    //inizio della partita - loop di gioco
+    int tane_occupate=0;
+    while (1) {			
+
+        if (game_struct->win) break;
+        if (game_struct->vite == 0) break;
+    
+        tane_occupate=0;
+        for (int i=0;i<NTANE;i++) {
+            if(game_struct->tane[i]==1){
+                tane_occupate++;
+            }
+        }
+        if (tane_occupate==5) {		
+            game_struct->win = 1;
+            game_struct->score += 100;
+              //uscita per tane chiuse
+        }
+        
+        wclear(game_struct->game);
+        wrefresh(game_struct->game);     
+    }
+}
+
+//______________________________________________________________________________________________________________________
+//______________________________________________________________________________________________________________________
+//CREAZIONE THREAD PRINCIPALI GIOCO -------------------------------------------------------------------------
+void crea_thread_gioco(Game_struct* game_struct, gameConfig *gameConfig){
+
+    // Thread grafica/consumatore
+    pthread_t t_grafica, t_rana, t_tempo;
+    pthread_t t_coccodrilli, t_proiettili, t_granate;
+
+    ThreadArgs args = {game_struct, gameConfig};
+
+    // Creazione threads
+    pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)&args);
+    pthread_create(&t_rana, NULL, thread_rana, (void *)&args);
+    pthread_create(&t_tempo, NULL, thread_tempo, (void *)&args);
+    pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void *)&args);
+    pthread_create(&t_granate, NULL, thread_granata, (void *)&args);
+    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)&args);
+    
+    // Inizializzazione oggetti
+    CrocodileInit(gameConfig->flussi, game_struct);
+    GranateInit(game_struct);
+    frogInit();
+    ProjectileInit();
+}
+
+//_________________________________________________________________________________________________
+//schermata in caso di vittoria
+int gameWin(WINDOW *game, int score){  
+    wclear(game);
+    box(game, ACS_VLINE, ACS_HLINE);
+    mvwprintw(game, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
+    wrefresh(game);
+    char decision = wgetch(game);
+    while (decision!= 's' && decision!='n') {
+        decision = wgetch(game);
+    }
+    if (decision == 's') {  //se rispondiamo di si ripetiamo il game (con stessa difficoltà) da capo
+        return 0;
+    } else {  //altrimenti torniamo al menù
+        return 1;
+    }
+}
+
+//___________________________________________________________________________________________________
+//schermata in caso di perdita
+int gameOver(WINDOW *game, int score){  
+    wclear(game);
+    box(game, ACS_VLINE, ACS_HLINE);
+    mvwprintw(game, 10, 10, "GAME OVER! Punteggio: %d. Vuoi giocare ancora? (s/n)", score);
+    wrefresh(game);
+    char decision = wgetch(game);
+    while (decision!= 's' && decision!='n') {
+    	 decision = wgetch(game);
+    }
+    if (decision == 's') {  //se rispondiamo di si ripetiamo il game (con stessa difficoltà) da capo
+        return 0;
+    } else {  //altrimenti torniamo al menù
+        return 1;
+    }
+}
+
+//___________________________________________________________________________________________________
 //funzione che mostra i crediti
 void credits(WINDOW *game){
     wclear(game);
@@ -182,12 +183,4 @@ void credits(WINDOW *game){
 
     wrefresh(game); 
     wgetch(game);
-}
-
-
-//funzione utile per creare un numero random tra un minimo e un massimo (compresi)
-int rand_funz(int min, int max){
-
-    return min + rand() % (max-min+1);
-
 }

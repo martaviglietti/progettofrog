@@ -34,6 +34,7 @@
 #define FIUME 25
 #define PRATO 5
 #define SPONDA_SUPERIORE 5
+#define DIM_FLUSSI 3
 
 //// Buffer positions
 #define IDX_COCCODRILLI 3
@@ -62,7 +63,7 @@ typedef struct{
     int score;
     int tempo;
     int tane[NTANE];
-    int game_over; //serve per la condizione di uscita dal game
+    int win; //serve per la condizione di uscita dal game
     WINDOW* game;
 }Game_struct;
 
@@ -86,7 +87,9 @@ typedef struct {
     int dir;
     int speed;
     bool alive; //serve per capire se l ente è vivo
-    float wait;
+    float wait;  //per i coccodrilli, quando sono offline
+    int tempo_prec;
+    int shoot;
 } messaggio;  
 
 //buffer c è un contenutor organizzata con sincronizzazione 
@@ -131,22 +134,22 @@ void startGame(Game_struct *game_struct, gameConfig* gameConfig);
 void crea_thread_gioco(Game_struct *game_struct, gameConfig* gameConfig);
 
 //funzioni inizializzazione oggetti
-void CrocodileInit(Flusso *flussi);
-void GranateInit();
+void CrocodileInit(Flusso *flussi, Game_struct* game_struct);
+void GranateInit(Game_struct* game_struct);
 void frogInit();
 void ProjectileInit();
 
 //produttori
 void* thread_rana(void* arg);
 void* thread_tempo(void* arg);
-void* produttore_coccodrillo(void* arg);
+void* thread_coccodrillo(void* arg);
 void* thread_proiettile(void* arg);
 void* thread_granata(void* arg);
 
 
 // --- Lancio dinamico di granate/proiettili ---
-void sparaGranata(int x, int y, int velocita);
-void sparaProiettile_daCoccodrillo(Coccodrillo coccodrillo, int vel_proiettile);
+void sparaGranata(Game_struct* game_struct, gameConfig* gameConfig);
+void sparaProiettile(Game_struct* game_struct, gameConfig* gameConfig, int idx);
 
 // --- Buffer ---
 void produttore(messaggio m);
@@ -155,17 +158,17 @@ messaggio consumatore();
 
 // --- Gestore grafico e logica ---
 void* Gestione_grafica(void* arg);
-void draw_proiettile(WINDOW* game, Proiettile proiettile);
-void draw_granate(WINDOW* game, Granata granate[2]);
-void draw_frog(WINDOW *game, Rana rana);
-void drawCoccodrilli(WINDOW *game, Coccodrillo *coccodrilli);
+void draw_proiettile(WINDOW* game, messaggio proiettile);
+void draw_granate(WINDOW* game, messaggio granate[2]);
+void draw_frog(WINDOW *game, messaggio rana);
+void drawCoccodrilli(WINDOW *game, messaggio *coccodrilli);
 
 
 // --- Utility di gioco e collisioni ---
-int RanaInFinestra(Rana rana, messaggio temp);
-int CollisioneRanaProiettile(Rana rana, Proiettile proiettile);
-int RanaSuTana(Rana rana, Game_struct* game_struct);
-int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli);
+int RanaInFinestra(messaggio rana, messaggio temp);
+int CollisioneRanaProiettile(messaggio rana, messaggio proiettile);
+int RanaSuTana(messaggio rana, Game_struct* game_struct);
+int RanaSuCoccodrillo(messaggio *rana, messaggio *coccodrilli);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
 void punteggio_tempo(Game_struct* game_struct);
 int rand_funz(int min, int max);

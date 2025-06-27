@@ -1,7 +1,7 @@
 #include "header.h"
 #include <cstdlib>
 
-void CrocodileInit(Flusso *flussi) {
+void CrocodileInit(Flusso *flussi, Game_struct* game_struct) {
     const int Ninit = rand_funz(6, 12);
 
     for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
@@ -19,50 +19,76 @@ void CrocodileInit(Flusso *flussi) {
             this->dir = flux->dir;
             this->speed = flux->speed;
             this->wait = -1;
+            this->tempo_prec = game_struct->tempo;
+            this->wait = rand_funz(2, 10);
         }
         else{
             this->alive = 0;
             this->wait = rand_funz(3, 15);
-
             this->x = -1;
             this->y = -1;
             this->dir = -1;
             this->speed = -1;
+            this->tempo_prec = game_struct->tempo;
         }
     }
 }
-
-
-
-
 
 //questa funzione crea un messaggio m e lo invia nel buffer
+void *thread_coccodrillo(void *arg) {
 
-void *produttore_coccodrillo(void *arg) {
-    messaggio *cocco = (messaggio *)arg;
-    Flusso* flussi = NULL;
-    Flusso flusso_scelto = flussi[cocco->info]; // Assicurati che l'id del flusso sia stato settato prima
+    ThreadArgs* args = (ThreadArgs*)arg;
+    Game_struct* game_struct = args->Game_struct;
+    gameConfig* gameConfig = args->gameConfig;
 
-    while (1) {
-        cocco->x += flusso_scelto.dir;
+    if ((game_struct->win) ||  (game_struct->vite == 0)){
+        pthread_exit(NULL);
+    }
 
-        produttore(*cocco);  // Usa la funzione generica
+    pthread_mutex_lock(&buffer.mutex);
 
-        usleep(flusso_scelto.speed);
+    for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
+        messaggio* this = &buffer.buffer[i];
 
-        // Se esce fuori dallo schermo, resettalo all’inizio
-        if ((cocco->x >= POS_SPAWN_COC_DESTRA && flusso_scelto.dir == 1) ||
-            (cocco->x <= POS_SPAWN_COC_SINISTRA && flusso_scelto.dir == -1)) {
-            
-            cocco->x = (flusso_scelto.dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
-            usleep(rand_funz(500000, 2000000));
+        if (this->alive){
+            const int newX = this->x + this->dir * this->speed * (this->tempo_prec - game_struct->tempo);
+            if (newX > POS_SPAWN_COC_SINISTRA && newX < POS_SPAWN_COC_DESTRA){    // nuova posizione valida
+                this->x = newX;
+                this->tempo_prec = game_struct->tempo;
+                if (game_struct->tempo <= (this->tempo_prec - this->wait)){       //coccodrillo spara il proiettile
+                    sparaProiettile(game_struct, gameConfig, i-IDX_COCCODRILLI);
+                }
+            }
+            else {                                                         // coccodrillo fuori mappa, quindi muore
+                this->alive = 0;
+                this->wait = rand_funz(6, 15);
+                this->x = -1;
+                this->y = -1;
+                this->dir = -1;
+                this->speed = -1;
+                this->tempo_prec = game_struct->tempo;
+            }
+        }
+        else{
+            if (game_struct->tempo <= (this->tempo_prec - this->wait)){      // creiamo il coccodrillo
+
+                const int id_flusso = rand_funz(0, NFLUSSI-1);
+                const Flusso* flux = &gameConfig->flussi[id_flusso];
+                
+                this->alive=1;
+                this->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
+                this->y = flux->y;
+                this->dir = flux->dir;
+                this->speed = flux->speed;
+                this->wait = -1;
+                this->tempo_prec = game_struct->tempo;
+            }
+            else continue;
         }
     }
 
-    return NULL;
+    pthread_mutex_unlock(&buffer.mutex); 
 }
-
-
 
 //GESTIONE PROIETTILI------------------------------------------------------------------
 void ProjectileInit(){
@@ -79,38 +105,46 @@ void ProjectileInit(){
 }
 
 void* thread_proiettile(void* arg) {
-    messaggio m = *(messaggio*)arg;
-    free(arg);  // liberi subito la memoria
+    ThreadArgs* args = (ThreadArgs*)arg;
+    Game_struct* game_struct = args->Game_struct;
 
-    while (m.x > 0 && m.x < LARGHEZZA_GIOCO - 1) {
-        produttore(m);  // invia il messaggio nel buffer condiviso
-        m.x += m.info;  // direzione: +1 o -1
-        usleep(m.speed);
+    if ((game_struct->win) ||  (game_struct->vite == 0)){
+        pthread_exit(NULL);
     }
 
-    pthread_exit(NULL);
+    pthread_mutex_lock(&buffer.mutex);
+
+    for (int i = IDX_PROIETTILI; i < IDX_PROIETTILI + MAX_CROCODILES; i++){
+        messaggio* this = &buffer.buffer[i];
+
+        if (!this->alive) continue;
+
+        int newX = this->x + this->dir * this->speed * (this->tempo_prec - game_struct->tempo);
+        if (newX > 0 && newX < LARGHEZZA_GIOCO){    // nuova posizione valida
+            this->x = newX;
+            this->tempo_prec = game_struct->tempo;
+        }
+        else {                                                         // coccodrillo fuori mappa, quindi muore
+            this->alive = 0;
+        }
+        
+    }
+    pthread_mutex_unlock(&buffer.mutex); 
 }
 
-void sparaProiettile_daCoccodrillo(Coccodrillo coccodrillo, int vel_proiettile) {
-    messaggio* arg = malloc(sizeof(messaggio));
-    if (!arg) {
-        perror("malloc fallita");
-        return;
-    }
+void sparaProiettile(Game_struct* game_struct, gameConfig* gameConfig, int idx) {
 
-    arg->id = IDPROIETTILE;
-    arg->x = (coccodrillo.dir == 1) ? coccodrillo.x + 5 : coccodrillo.x - 5;
-    arg->y = coccodrillo.y;
-    arg->info = coccodrillo.dir;
-    arg->speed = vel_proiettile;
+    messaggio* this = &buffer.buffer[IDX_PROIETTILI + idx];
+    const messaggio* cocco = &buffer.buffer[IDX_COCCODRILLI + idx];
 
-    pthread_t t;
-    if (pthread_create(&t, NULL, thread_proiettile, (void*)arg) != 0) {
-        perror("errore creazione thread proiettile");
-        free(arg);
-    } else {
-        pthread_detach(t);  // non serve fare pthread_join
-    }
+    if (this->alive) return;
+    
+    this->alive = 1;
+    this->y = cocco->y;
+    this->tempo_prec = game_struct->tempo;
+    this->dir = cocco->dir;
+    this->x = (cocco->dir == 1) ? cocco->x + 5 : cocco->x - 5;
+    this->speed = gameConfig->velocità_proiettili;
 }
 
 //---------------------------------------------------------------------------

@@ -235,5 +235,11 @@ void* Gestione_grafica(void* arg){
     pthread_mutex_unlock(&mutex_ncurses);
     pthread_exit(NULL);
     
-    }
+}
         
+//funzione che mostra la barra del tempo rimanente
+void print_tempo(WINDOW* game,Game_struct* game_struct, int tempo){
+    wattron(game, COLOR_PAIR(7));
+    mvwhline(game,46,15, ' ', (int)(62*((float)game_struct->tempo/tempo)));
+    wattroff(game, COLOR_PAIR(7));
+}

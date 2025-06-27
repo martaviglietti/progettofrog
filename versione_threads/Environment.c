@@ -4,13 +4,12 @@
 void fluxInit(gameConfig *gameConfig){
 	
     int altezza_base=37;  //posizione del primo flusso (quello più in basso)
-    int dimensione_flussi=3;  //larghezza dei flussi
 
     for (int i=0; i<NFLUSSI; i++) {
 
         Flusso* this = &gameConfig->flussi[i];
 
-        this->y=altezza_base - i*dimensione_flussi;
+        this->y=altezza_base - i*DIM_FLUSSI;
 	    this->speed= rand_funz(gameConfig->velocità_coccodrilli - 10000,gameConfig->velocità_coccodrilli+10000);
     
         if (i>=1) {  //tutti i flussi dal secondo in poi hanno direzione opposta al flusso precedente
