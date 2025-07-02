@@ -60,12 +60,21 @@ int scegliDifficolta(WINDOW *game) {
 
 //___________________________________________________________________________________________________
 //Inizializzazione del gioco e loop di gioco
-void startGame(Game_struct *game_struct, gameConfig *gameConfig){			
+Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){		
+    //inizializzaizone del buffer produttore-consumatore
+    inizializza_buffer();
+
     //Inizializziamo variabili di gestione della partita
+    buffer.buffer[IDX_GAME] = malloc(sizeof(Game_struct));
+    if (buffer.buffer[IDX_GAME]== NULL) {
+        fprintf(stderr, "malloc failed at Time Initialization at index %d\n", IDX_GAME);
+        exit(EXIT_FAILURE);
+    }
     
+    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+    game_struct->game = game;
     game_struct->score=0; 		//contiene lo score di tutto il game
     game_struct->vite=gameConfig->vite;    //contiene numero di vite rimaste
-    game_struct->tempo=gameConfig->tempo;  //contiene tempo rimasto nella manche
     game_struct->win=0;
     
     //inizializzazione delle tane a 0
@@ -73,14 +82,20 @@ void startGame(Game_struct *game_struct, gameConfig *gameConfig){
         game_struct->tane[i]=0;
     }
 
-    //inizializzaizone del buffer produttore-consumatore
-    inizializza_buffer();
+    //inizializzazione tempo
+    game_struct->tempo = gameConfig->tempo;  //contiene tempo rimasto nella manche
 
     //Definizione dei flussi
-    fluxInit(gameConfig); //definisco velocità di ogni flusso                
+    fluxInit(gameConfig); //definisco velocità di ogni flusso
+    
+    // Inizializzazione oggetti
+    CrocodileInit(gameConfig->flussi);
+    GranateInit();
+    frogInit();
+    ProjectileInit();
    
     //creaizone dei thread principali e inizilizzazione degli oggetti
-    crea_thread_gioco(game_struct, gameConfig);
+    crea_thread_gioco(gameConfig);
 
     //inizio della partita - loop di gioco
     int tane_occupate=0;
@@ -104,32 +119,26 @@ void startGame(Game_struct *game_struct, gameConfig *gameConfig){
         wclear(game_struct->game);
         wrefresh(game_struct->game);     
     }
+    return game_struct;
 }
 
 //______________________________________________________________________________________________________________________
 //______________________________________________________________________________________________________________________
 //CREAZIONE THREAD PRINCIPALI GIOCO -------------------------------------------------------------------------
-void crea_thread_gioco(Game_struct* game_struct, gameConfig *gameConfig){
+void crea_thread_gioco(gameConfig *gameConfig){
 
     // Thread grafica/consumatore
     pthread_t t_grafica, t_rana, t_tempo;
     pthread_t t_coccodrilli, t_proiettili, t_granate;
 
-    ThreadArgs args = {game_struct, gameConfig};
-
     // Creazione threads
-    pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)&args);
-    pthread_create(&t_rana, NULL, thread_rana, (void *)&args);
-    pthread_create(&t_tempo, NULL, thread_tempo, (void *)&args);
-    pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void *)&args);
-    pthread_create(&t_granate, NULL, thread_granata, (void *)&args);
-    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)&args);
+    pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
+    pthread_create(&t_rana, NULL, thread_rana, (void *)gameConfig);
+    pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
+    pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
+    pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
+    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
     
-    // Inizializzazione oggetti
-    CrocodileInit(gameConfig->flussi, game_struct);
-    GranateInit(game_struct);
-    frogInit();
-    ProjectileInit();
 }
 
 //_________________________________________________________________________________________________

@@ -4,7 +4,6 @@ extern pthread_mutex_t mutex_tane;
 
 
 void* Gestione_grafica(void* arg){
-    ArgGrafica* dati = (ArgGrafica*)arg;
     Game_struct* game_struct = dati->game_struct;
     WINDOW* game = dati->game;
     int vel_proiettile = dati->vel_proiettile;

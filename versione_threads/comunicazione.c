@@ -41,25 +41,6 @@ void inizializza_buffer() {
 }
 
 
-void* thread_tempo(void* arg) {
-    int tempo_totale = *(int*)arg;
-    int tempo_rimanente = tempo_totale;
-
-    while (tempo_rimanente >= 0) {
-        messaggio m;
-        m.id = IDTIME;
-        m.x = tempo_rimanente;  // usiamo `x` per comunicare il tempo rimasto
-        m.y = 0;
-        m.dir = 0;
-        m.speed = 0;
-        m.alive = true;  // non important
-        produttore(m);  // usa il buffer già condiviso
-        sleep(1);
-        tempo_rimanente--;
-    }
-
-    pthread_exit(NULL);
-}
 
 
 

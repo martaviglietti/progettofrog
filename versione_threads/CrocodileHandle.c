@@ -1,34 +1,40 @@
 #include "header.h"
 
-void CrocodileInit(Flusso *flussi, Game_struct* game_struct) {
+void CrocodileInit(Flusso *flussi) {
+    const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
     const int Ninit = rand_funz(6, 12);
 
     for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
 
-        messaggio* this = &buffer.buffer[i];
+        buffer.buffer[i] = malloc(sizeof(Crocodile));
+            if (buffer.buffer[i]== NULL) {
+            fprintf(stderr, "malloc failed at Crocodile Initialization at index %d\n", i);
+            exit(EXIT_FAILURE);
+        }
+
+        Crocodile* obj = (Crocodile*)buffer.buffer[i];
 
         if ((i-IDX_COCCODRILLI) <= Ninit){
 
             const int id_flusso = rand_funz(0, NFLUSSI-1);
             const Flusso* flux = &flussi[id_flusso];
             
-            this->alive=1;
-            this->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
-            this->y = flux->y;
-            this->dir = flux->dir;
-            this->speed = flux->speed;
-            this->wait = -1;
-            this->tempo_prec = game_struct->tempo;
-            this->wait = rand_funz(2, 10);
+            obj->alive=1;
+            obj->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
+            obj->y = flux->y;
+            obj->dir = flux->dir;
+            obj->speed = flux->speed;
+            obj->tempo_prec = game_struct->tempo;
+            obj->wait = rand_funz(2, 10);
         }
         else{
-            this->alive = 0;
-            this->wait = rand_funz(3, 15);
-            this->x = -1;
-            this->y = -1;
-            this->dir = -1;
-            this->speed = -1;
-            this->tempo_prec = game_struct->tempo;
+            obj->alive = 0;
+            obj->wait = rand_funz(3, 15);
+            obj->x = -1;
+            obj->y = -1;
+            obj->dir = -1;
+            obj->speed = -1;
+            obj->tempo_prec = game_struct->tempo;
         }
     }
 }
@@ -36,57 +42,61 @@ void CrocodileInit(Flusso *flussi, Game_struct* game_struct) {
 //questa funzione crea un messaggio m e lo invia nel buffer
 void *thread_coccodrillo(void *arg) {
 
-    ThreadArgs* args = (ThreadArgs*)arg;
-    Game_struct* game_struct = args->Game_struct;
-    gameConfig* gameConfig = args->gameConfig;
+    gameConfig* gameCfg = (gameConfig*)arg;
 
-    if ((game_struct->win) ||  (game_struct->vite == 0)){
-        pthread_exit(NULL);
-    }
+    while(1){
+        
+        pthread_mutex_lock(&buffer.mutex);
 
-    pthread_mutex_lock(&buffer.mutex);
+        const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
 
-    for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
-        messaggio* this = &buffer.buffer[i];
+        if ((game_struct->win) ||  (game_struct->vite == 0)){
+            break;
+        }
 
-        if (this->alive){
-            const int newX = this->x + this->dir * this->speed * (this->tempo_prec - game_struct->tempo);
-            if (newX > POS_SPAWN_COC_SINISTRA && newX < POS_SPAWN_COC_DESTRA){    // nuova posizione valida
-                this->x = newX;
-                this->tempo_prec = game_struct->tempo;
-                if (game_struct->tempo <= (this->tempo_prec - this->wait)){       //coccodrillo spara il proiettile
-                    sparaProiettile(game_struct, gameConfig, i-IDX_COCCODRILLI);
+        for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
+            Crocodile* obj = (Crocodile*)buffer.buffer[i];
+
+            if (obj->alive){
+                const int newX = obj->x + obj->dir * obj->speed * (obj->tempo_prec - game_struct->tempo);
+                if (newX > POS_SPAWN_COC_SINISTRA && newX < POS_SPAWN_COC_DESTRA){    // nuova posizione valida
+                    obj->x = newX;
+                    obj->tempo_prec = game_struct->tempo;
+                    if (game_struct->tempo <= (obj->tempo_prec - obj->wait)){       //coccodrillo spara il proiettile
+                        sparaProiettile(game_struct->tempo, gameCfg, i-IDX_COCCODRILLI);
+                    }
+                }
+                else {                                                         // coccodrillo fuori mappa, quindi muore
+                    obj->alive = 0;
+                    obj->wait = rand_funz(6, 15);
+                    obj->x = -1;
+                    obj->y = -1;
+                    obj->dir = -1;
+                    obj->speed = -1;
+                    obj->tempo_prec = game_struct->tempo;
                 }
             }
-            else {                                                         // coccodrillo fuori mappa, quindi muore
-                this->alive = 0;
-                this->wait = rand_funz(6, 15);
-                this->x = -1;
-                this->y = -1;
-                this->dir = -1;
-                this->speed = -1;
-                this->tempo_prec = game_struct->tempo;
-            }
-        }
-        else{
-            if (game_struct->tempo <= (this->tempo_prec - this->wait)){      // creiamo il coccodrillo
+            else{
+                if (game_struct->tempo <= (obj->tempo_prec - obj->wait)){      // creiamo il coccodrillo
 
-                const int id_flusso = rand_funz(0, NFLUSSI-1);
-                const Flusso* flux = &gameConfig->flussi[id_flusso];
-                
-                this->alive=1;
-                this->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
-                this->y = flux->y;
-                this->dir = flux->dir;
-                this->speed = flux->speed;
-                this->wait = -1;
-                this->tempo_prec = game_struct->tempo;
+                    const int id_flusso = rand_funz(0, NFLUSSI-1);
+                    const Flusso* flux = &gameCfg->flussi[id_flusso];
+                    
+                    obj->alive=1;
+                    obj->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
+                    obj->y = flux->y;
+                    obj->dir = flux->dir;
+                    obj->speed = flux->speed;
+                    obj->wait = -1;
+                    obj->tempo_prec = game_struct->tempo;
+                }
+                else continue;
             }
-            else continue;
         }
+
+        pthread_mutex_unlock(&buffer.mutex);
     }
-
-    pthread_mutex_unlock(&buffer.mutex); 
+    pthread_exit(NULL); 
 }
 
 //GESTIONE PROIETTILI------------------------------------------------------------------
@@ -96,54 +106,66 @@ void ProjectileInit(){
         if (i >= BUFFER_SIZE){
             printf("you need a bigger buffer... we are accessing random areas of the memory!");
         }
-        messaggio* this = &buffer.buffer[i];
-        this->x = 50;
-        this->y = -1;
-        this->alive = 0;
+
+        buffer.buffer[i] = malloc(sizeof(Projectile));
+        if (buffer.buffer[i]== NULL) {
+            fprintf(stderr, "malloc failed at Projectile Initialization at index %d\n", i);
+            exit(EXIT_FAILURE);
+        }
+        Projectile* obj = (Projectile*)buffer.buffer[i];
+        obj->x = 50;
+        obj->y = -1;
+        obj->alive = 0;
+        obj->dir = -1;
+        obj->speed =-1;
+        obj->tempo_prec = -1;
     }
 }
 
 void* thread_proiettile(void* arg) {
-    ThreadArgs* args = (ThreadArgs*)arg;
-    Game_struct* game_struct = args->Game_struct;
 
-    if ((game_struct->win) ||  (game_struct->vite == 0)){
-        pthread_exit(NULL);
-    }
+    while(1){
+        pthread_mutex_lock(&buffer.mutex);
 
-    pthread_mutex_lock(&buffer.mutex);
+        const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
 
-    for (int i = IDX_PROIETTILI; i < IDX_PROIETTILI + MAX_CROCODILES; i++){
-        messaggio* this = &buffer.buffer[i];
-
-        if (!this->alive) continue;
-
-        int newX = this->x + this->dir * this->speed * (this->tempo_prec - game_struct->tempo);
-        if (newX > 0 && newX < LARGHEZZA_GIOCO){    // nuova posizione valida
-            this->x = newX;
-            this->tempo_prec = game_struct->tempo;
+        if ((game_struct->win) ||  (game_struct->vite == 0)){
+            break;
         }
-        else {                                                         // coccodrillo fuori mappa, quindi muore
-            this->alive = 0;
+
+        for (int i = IDX_PROIETTILI; i < IDX_PROIETTILI + MAX_CROCODILES; i++){
+            Projectile* obj = (Projectile*)buffer.buffer[i];
+
+            if (!obj->alive) continue;
+
+            int newX = obj->x + obj->dir * obj->speed * (obj->tempo_prec - game_struct->tempo);
+            if (newX > 0 && newX < LARGHEZZA_GIOCO){    // nuova posizione valida
+                obj->x = newX;
+                obj->tempo_prec = game_struct->tempo;
+            }
+            else {                                                         // coccodrillo fuori mappa, quindi muore
+                obj->alive = 0;
+            }
+            
         }
-        
+        pthread_mutex_unlock(&buffer.mutex); 
     }
-    pthread_mutex_unlock(&buffer.mutex); 
+    pthread_exit(NULL);
 }
 
-void sparaProiettile(Game_struct* game_struct, gameConfig* gameConfig, int idx) {
+void sparaProiettile(const float time, const gameConfig* gameConfig, const int idx) {
 
-    messaggio* this = &buffer.buffer[IDX_PROIETTILI + idx];
-    const messaggio* cocco = &buffer.buffer[IDX_COCCODRILLI + idx];
+    Projectile* obj = (Projectile*)buffer.buffer[IDX_PROIETTILI + idx];
+    const Crocodile* crocodile = (Crocodile*)buffer.buffer[IDX_COCCODRILLI + idx];
 
-    if (this->alive) return;
+    if (obj->alive) return;
     
-    this->alive = 1;
-    this->y = cocco->y;
-    this->tempo_prec = game_struct->tempo;
-    this->dir = cocco->dir;
-    this->x = (cocco->dir == 1) ? cocco->x + 5 : cocco->x - 5;
-    this->speed = gameConfig->velocità_proiettili;
+    obj->alive = 1;
+    obj->y = crocodile->y;
+    obj->tempo_prec = time;
+    obj->dir = crocodile->dir;
+    obj->x = (crocodile->dir == 1) ? crocodile->x + 5 : crocodile->x - 5;
+    obj->speed = gameConfig->velocità_proiettili;
 }
 
 //---------------------------------------------------------------------------

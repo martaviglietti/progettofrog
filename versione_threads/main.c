@@ -25,16 +25,16 @@ int main(){
     int ricomincia=1;
     
     gameConfig gameConfig = {};
-    Game_struct risultato;  //conterrà i risultati del game 
-    risultato.game = newwin(height, width, 0, 0);  //finestra dell'area gioco  
+    ;  //conterrà i risultati del game 
+    WINDOW* game = newwin(height, width, 0, 0);  //finestra dell'area gioco  
     
     while (true){
     	if (ricomincia) {  //se 'ricomincia' è 0 non torniamo al menu;
-            scelta= menu(risultato.game,"Menu Principale", OPZIONI, 3);  //se 'ricomincia' è 0 non torniamo al menu;
+            scelta= menu(game,"Menu Principale", OPZIONI, 3);  //se 'ricomincia' è 0 non torniamo al menu;
         }	
         if (scelta == 0) { 
             if (ricomincia) {  //se 'ricomincia' è 0 manteniamo la stessa difficoltà
-                    difficoltà=scegliDifficolta(risultato.game);
+                    difficoltà=scegliDifficolta(game);
                 }
             switch (difficoltà) {
                 case 0:  //Facile
@@ -56,10 +56,10 @@ int main(){
                     gameConfig.velocità_coccodrilli=50000;
                     break;      
             }
-            startGame(&risultato, &gameConfig);
+            Game_struct* risultato = startGame(game, &gameConfig);
 
-            if (risultato.win) {  //Vittoria
-                scelta=gameWin(risultato.game,risultato.score); 
+            if (risultato->win) {  //Vittoria
+                scelta=gameWin(game,risultato->score); 
             	
             	if (scelta) {	
             	    ricomincia=1;  //torna al menù principale
@@ -67,7 +67,7 @@ int main(){
             	    ricomincia=0;  //ricomincia il game con stessa difficoltà
             	}	
             } else {  //Sconfitta
-            	scelta=gameOver(risultato.game,risultato.score);
+            	scelta=gameOver(game,risultato->score);
             	if (scelta) {					
             	    ricomincia=1;  //torna al menù principale
             	} else {
@@ -76,18 +76,18 @@ int main(){
             }
         
         } else if (scelta==1) {  //crediti
-            credits(risultato.game);
+            credits(game);
         	
         } else {  //Uscita
-            wclear(risultato.game);
-            mvwprintw(risultato.game, height / 2, width / 2 - 5, "Uscita...");
-            wrefresh(risultato.game);
+            wclear(game);
+            mvwprintw(game, height / 2, width / 2 - 5, "Uscita...");
+            wrefresh(game);
             sleep(1);
             break; // Esci dal programma
         }
     }
 
-    delwin(risultato.game);
+    delwin(game);
     endwin();
     return 0;
 }
