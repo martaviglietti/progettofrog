@@ -23,80 +23,32 @@ void fluxInit(gameConfig *gameConfig){
  
 void* thread_tempo(void* arg) {
 
-    ThreadArgs* args = (ThreadArgs*)arg;
-    Game_struct* game_struct = args->Game_struct;
-    gameConfig* gameConfig = args->gameConfig;
+    gameConfig* gameCfg = (gameConfig*)arg;
 
     while (1) {
 
+        pthread_mutex_lock(&buffer.mutex);
+
+        Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+
         if ((game_struct->win) ||  (game_struct->vite == 0)){
+            pthread_mutex_unlock(&buffer.mutex);
             break;
         }
 
-        pthread_mutex_lock(&buffer.mutex);
-
-        float* obj = (float*)buffer.buffer[IDX_TEMPO];
+        float* obj = &game_struct->tempo;
 
         if (*obj <= 0){
-            game_struct->vite--;
             game_struct->score -= 20;
-            /// riniziaizza
+            game_struct->vite--;
+            newManche(game_struct, gameCfg);
         }
-
-        *obj =
-
+        else{
+            (*obj)--;
+            
+        }
+        sleep(1);  // wait one second
+        pthread_mutex_unlock(&buffer.mutex);
     }
     pthread_exit(NULL);
-
-
-
-    pthread_mutex_lock(&buffer.mutex);
-    float* obj = (float*)buffer.buffer[IDX_TEMPO];
-
-    if ((game_struct->win) || (game_struct->vite == 0)) {
-        pthread_mutex_unlock(&buffer.mutex);
-        break;
-    }
-
-    if (*obj <= 0) {
-        game_struct->vite--;
-        game_struct->score -= 20;
-        *obj = gameConfig->tempo; // reset timer
-    } else {
-        (*obj)--;
-    }
-
-    pthread_mutex_unlock(&buffer.mutex);
-    sleep(1);  // wait one second
-}
-pthread_exit(NULL);
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int tempo_rimanente = tempo_totale;
-
-    while (tempo_rimanente >= 0) {
-        messaggio m;
-        m.id = IDTIME;
-        m.x = tempo_rimanente;  // usiamo `x` per comunicare il tempo rimasto
-        m.y = 0;
-        m.dir = 0;
-        m.speed = 0;
-        m.alive = true;  // non important
-        produttore(m);  // usa il buffer già condiviso
-        sleep(1);
-        tempo_rimanente--;
-    }
-
-    pthread_mutex_unlock(&buffer.mutex); 
 }

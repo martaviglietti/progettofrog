@@ -61,9 +61,7 @@ int scegliDifficolta(WINDOW *game) {
 //___________________________________________________________________________________________________
 //Inizializzazione del gioco e loop di gioco
 Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){		
-    //inizializzaizone del buffer produttore-consumatore
-    inizializza_buffer();
-
+    
     //Inizializziamo variabili di gestione della partita
     buffer.buffer[IDX_GAME] = malloc(sizeof(Game_struct));
     if (buffer.buffer[IDX_GAME]== NULL) {
@@ -119,13 +117,17 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
         wclear(game_struct->game);
         wrefresh(game_struct->game);     
     }
+
+    // !!!!!! funzione per eliinare gli oggetti e liberare memoria
     return game_struct;
 }
 
 //______________________________________________________________________________________________________________________
-//______________________________________________________________________________________________________________________
 //CREAZIONE THREAD PRINCIPALI GIOCO -------------------------------------------------------------------------
 void crea_thread_gioco(gameConfig *gameConfig){
+
+    //inizializzaizone del buffer produttore-consumatore
+    pthread_mutex_init(&buffer.mutex, NULL);
 
     // Thread grafica/consumatore
     pthread_t t_grafica, t_rana, t_tempo;
@@ -139,6 +141,18 @@ void crea_thread_gioco(gameConfig *gameConfig){
     pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
     pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
     
+}
+
+//___________________________________________________________________________________________________
+//funzione che rinizializza la manche
+void newManche(Game_struct* game_struct, gameConfig* gameConfig){
+    game_struct->tempo = gameConfig->tempo;
+
+    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+    frog->x = RANA_XINIT;
+    frog->y = RANA_YINIT;
+    frog->alive = true;
+
 }
 
 //_________________________________________________________________________________________________

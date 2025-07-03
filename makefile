@@ -19,7 +19,6 @@ OBJECTS_PROCESSI = $(OBJ_DIR_PROCESSI)/coccodrilli.o \
 
 OBJECTS_THREADS = $(OBJ_DIR_THREADS)/CrocodileHandle.o \
 				$(OBJ_DIR_THREADS)/collisioni.o \
-				$(OBJ_DIR_THREADS)/comunicazione.o \
 				$(OBJ_DIR_THREADS)/disegni.o \
 				$(OBJ_DIR_THREADS)/Environment.o \
 				$(OBJ_DIR_THREADS)/FrogHandle.o \

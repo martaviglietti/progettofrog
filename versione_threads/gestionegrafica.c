@@ -4,11 +4,44 @@ extern pthread_mutex_t mutex_tane;
 
 
 void* Gestione_grafica(void* arg){
-    Game_struct* game_struct = dati->game_struct;
-    WINDOW* game = dati->game;
-    int vel_proiettile = dati->vel_proiettile;
 
-    free(dati);
+    gameConfig* gameCfg = (gameConfig*)arg;
+
+    while(1){
+
+        pthread_mutex_lock(&buffer.mutex);
+
+        Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+        WINDOW* game = game_struct->game;
+
+        if ((game_struct->win) ||  (game_struct->vite == 0)){
+            pthread_mutex_unlock(&buffer.mutex);
+            break;
+        }
+
+        // Check frog position
+        const Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+        bool endManche = false;
+
+        if (frog->y < TANA_POS){
+            endManche = true;
+            if (RanaSuTana(frog, game_struct)){
+                game_struct->score += 15 + (int)(15 * (float)game_struct->tempo / 100);
+            }
+            else{
+                game_struct->vite--;
+                game_struct->score -= 10;
+            }
+        }
+        else{
+            ///check other cases
+        }
+
+        if (endManche) newManche(game_struct, gameCfg);
+                
+
+
+    
     //Variabili per gestione proiettile
     struct timeval start, end; 
     gettimeofday(&end,NULL);		
@@ -19,21 +52,9 @@ void* Gestione_grafica(void* arg){
 
     Temp temp={-1,0,0,0};
    
-    int tempo=game_struct->tempo;
-    
     int riattivare;
-    int distanze_coc[8];
-    for (int i=0; i<8;i++) {
-	distanze_coc[i]=rand_funz(13,16);  //impostiamo le distanze iniziali tra coccodrilli per ogni flusso del fiume
-    }
     int indice_flusso;
 
-    while(true){
-        messaggio temp = consumatore();  // Legge un messaggio dal buffer condiviso
-        //se l'ID è della rana						
-         if (temp.id == IDRANA && RanaInFinestra(rana, temp)) {
-            rana.x += temp.x;
-            rana.y += temp.y;
             if (rana.y < 10) {
                 if (RanaSuTana(rana, game_struct)) {
                     game_struct->score += 15 + (int)(15 * (float)game_struct->tempo / 100);
@@ -43,17 +64,6 @@ void* Gestione_grafica(void* arg){
                     game_struct->score -= 10;
                     break;
                 }
-            }
-        }
-        //se l'id è del TEMPO
-        if (temp.id==IDTIME) {	
-            game_struct->tempo-=1;
-            if (game_struct->tempo==0) {  //controllo per verificare che il tempo non sia a zero
-                game_struct->vite--;
-            game_struct->score-=20;
-            return 0;
-            }
-	    }
 
         // se l'ID è di un coccodrillo (thread produttore)
         if (temp.id >= 0 && temp.id < MAX_CROCODILES) {
@@ -201,39 +211,41 @@ void* Gestione_grafica(void* arg){
             }
         }
 
+        werase(game);
+        windowGeneration(game, COLS, LINES, game_struct);
+        drawCoccodrilli(game, coccodrilli);
+        draw_granate(game, granate);
+        draw_proiettile(game, proiettile);
+        draw_frog(game, rana);
+
+        // Punteggio
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
+        wattroff(game, COLOR_PAIR(15));
+
+        // Vite
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 50, "Vite:");
+        mvwhline(game, 2, 55, ' ', 21);
+        for (int i = 0; i < game_struct->vite; i++) {
+            mvwprintw(game, 2, 55 + i * 2, "❤️");
+        }
+        wattroff(game, COLOR_PAIR(15));
+        // Tempo
+        wattron(game, COLOR_PAIR(15));
+        mvwhline(game, 46, 2, ' ', 10);
+        mvwprintw(game, 46, 2, "Tempo: %d ", game_struct->tempo);
+        wattroff(game, COLOR_PAIR(15));
+
+        print_tempo(game, game_struct, tempo);
+        wrefresh(game);
+        pthread_mutex_unlock(&mutex_ncurses);
+
+        //////!!!!!!!1 controllo tane
+
+        pthread_mutex_unlock(&buffer.mutex);
     }
-    pthread_mutex_lock(&mutex_ncurses);
-    werase(game);
-    windowGeneration(game, COLS, LINES, game_struct);
-    drawCoccodrilli(game, coccodrilli);
-    draw_granate(game, granate);
-    draw_proiettile(game, proiettile);
-    draw_frog(game, rana);
-
-    // Punteggio
-    wattron(game, COLOR_PAIR(15));
-    mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
-    wattroff(game, COLOR_PAIR(15));
-
-    // Vite
-    wattron(game, COLOR_PAIR(15));
-    mvwprintw(game, 2, 50, "Vite:");
-    mvwhline(game, 2, 55, ' ', 21);
-    for (int i = 0; i < game_struct->vite; i++) {
-        mvwprintw(game, 2, 55 + i * 2, "❤️");
-    }
-    wattroff(game, COLOR_PAIR(15));
-    // Tempo
-    wattron(game, COLOR_PAIR(15));
-    mvwhline(game, 46, 2, ' ', 10);
-    mvwprintw(game, 46, 2, "Tempo: %d ", game_struct->tempo);
-    wattroff(game, COLOR_PAIR(15));
-
-    print_tempo(game, game_struct, tempo);
-    wrefresh(game);
-    pthread_mutex_unlock(&mutex_ncurses);
     pthread_exit(NULL);
-    
 }
         
 //funzione che mostra la barra del tempo rimanente

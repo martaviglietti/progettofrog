@@ -26,16 +26,26 @@
 #define ALTEZZA_GIOCO 49
 #define POS_SPAWN_COC_SINISTRA -4
 #define POS_SPAWN_COC_DESTRA 84
-#define ALTEZZARANA 2
-#define LARGHEZZARANA 3
-#define ALTEZZACOCCODRILLO 2
-#define LARGHEZZACOCCODRILLO 9
-#define DELAY 100000
-#define NTANE 6
 #define FIUME 25
 #define PRATO 5
 #define SPONDA_SUPERIORE 5
 #define DIM_FLUSSI 3
+
+#define ALTEZZACOCCODRILLO 2
+#define LARGHEZZACOCCODRILLO 9
+
+#define TANA_POS 10
+#define NTANE 6
+
+#define ALTEZZARANA 2
+#define LARGHEZZARANA 3
+#define RANA_XINIT 40
+#define RANA_YINIT 43
+#define RANA_XMAX 78
+#define RANA_XMIN 2
+
+#define DELAY 100000
+
 
 //// Buffer positions
 #define IDX_COCCODRILLI 4
@@ -43,15 +53,6 @@
 #define IDX_RANA 1
 #define IDX_GRANATE 2
 #define IDX_PROIETTILI 28
-
-//// definizione id da usare (?)
-#define IDTIME 45
-#define IDCOC 0
-#define IDRANA 50
-#define IDGRANATE 60
-#define IDPROIETTILE 70
-#define IDMORTE -10 
-#define IDRICHIESTA 90
 
 typedef struct{
     int id;
@@ -63,7 +64,7 @@ typedef struct{
 typedef struct{
     int vite;
     int score;
-    int tempo;
+    float tempo;
     int tane[NTANE];
     int win; //serve per la condizione di uscita dal game
     WINDOW* game;
@@ -91,7 +92,7 @@ typedef struct {
 typedef struct {
     int y;
     int x;
-    bool alive; //serve per capire se l ente è vivo
+    bool alive;
 } Frog;
 
 typedef struct {
@@ -143,6 +144,7 @@ void def_dir_flussi(Flusso *flussi);
 //funzioni di gioco
 Game_struct* startGame(WINDOW *game, gameConfig* gameConfig);
 void crea_thread_gioco(gameConfig* gameConfig);
+void newManche(Game_struct* game_struct, gameConfig* gameConfig);
 
 //funzioni inizializzazione oggetti
 void CrocodileInit(Flusso *flussi);
@@ -176,9 +178,8 @@ void drawCoccodrilli(WINDOW *game, Crocodile *coccodrilli);
 
 
 // --- Utility di gioco e collisioni ---
-int RanaInFinestra(Frog rana, float temp);
 int CollisioneRanaProiettile(Frog rana, Projectile proiettile);
-int RanaSuTana(Frog rana, Game_struct* game_struct);
+bool RanaSuTana(const Frog* frog, const Game_struct* game_struct);
 int RanaSuCoccodrillo(Frog *rana, Crocodile *coccodrilli);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
 void punteggio_tempo(Game_struct* game_struct);

@@ -1,26 +1,32 @@
 //funzione di controllo collisione rana-proiettile
 #include "header.h"
 
-extern pthread_mutex_t mutex_tane;
+
+bool RanaSuTana(const Frog* frog, const Game_struct* game_struct){
+
+    ///// aggiungere chiusura tana
+
+    for (int i = 0; i < 5; i++) {
+        if (rana.x >= 8 + (15) * i && rana.x < 8 + (15) * i + 5 && game_struct->tane[i] == 0) {        //?????///////////
+            game_struct->tane[i] = 1;
+            return 1;
+        }
+    }
+
+    
+}
+
+
+
+
+
+
+
 
 int CollisioneRanaProiettile(Rana rana,Proiettile proiettile){
 
     if((rana.x+1==proiettile.x || rana.x-1==proiettile.x) && rana.y==proiettile.y && proiettile.alive) return 1;
     else return 0;   
-}
-
-
-int RanaSuTana(Rana rana, Game_struct* game_struct){
-    pthread_mutex_lock(&mutex_tane);
-    for (int i = 0; i < 5; i++) {
-        if (rana.x >= 8 + (15) * i && rana.x < 8 + (15) * i + 5 && game_struct->tane[i] == 0) {
-            game_struct->tane[i] = 1;
-            pthread_mutex_unlock(&mutex_tane);
-            return 1;
-        }
-    }
-    pthread_mutex_unlock(&mutex_tane);
-    return 0;
 }
 
 
@@ -37,15 +43,4 @@ int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli){
         }
     }
     return -1; 
-}
-
-
-//funzione che controlla se la rana si trova in mappa
-int RanaInFinestra(Rana rana, messaggio temp){
-    if(rana.x+temp.x>78) return 0;
-    if(rana.x+temp.x<2) return 0;
-    if(rana.y+temp.y>43) return 0;
-    if(rana.y+temp.y<7) return 0;
-    return 1;
-
 }

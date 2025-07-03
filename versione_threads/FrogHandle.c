@@ -1,4 +1,5 @@
 #include"header.h"
+#include <stdbool.h>
 
 //GESTIONE RANA-------------------------------------------------------------------------------------------------------------
 void frogInit(){
@@ -9,69 +10,65 @@ void frogInit(){
         exit(EXIT_FAILURE);
     }
     
-    Frog* obj = (Frog*)buffer.buffer[IDX_RANA];
-    obj->x = 40;
-    obj->y = 43;
+    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+    frog->x = RANA_XINIT;
+    frog->y = RANA_YINIT;
+    frog->alive = true;
 }
 
 void* thread_rana(void* arg) {
-    
-    ThreadArgs* args = (ThreadArgs*)arg;
-    Game_struct* game_struct = args->Game_struct;
-    WINDOW* game = game_struct->game;
-    gameConfig* gameConfig = args->gameConfig;
+    gameConfig* gameCfg = (gameConfig*)arg;
 
     while(1){
+
+        pthread_mutex_lock(&buffer.mutex);
+
+        const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+        WINDOW* game = game_struct->game;
+
         if ((game_struct->win) ||  (game_struct->vite == 0)){
+            pthread_mutex_unlock(&buffer.mutex);
             break;
+        }
+
+        Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+        if (!frog->alive){
+            pthread_mutex_unlock(&buffer.mutex); 
+            continue;
         }
 
         keypad(game, true);  // abilita frecce
         nodelay(game, FALSE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
 
-        while (1) {
+        int key = wgetch(game);
 
-            int key = wgetch(game);
+        int newPos;
+        switch (key) {
+            case KEY_UP:
+                frog->y  -=  ALTEZZARANA;
+                if (frog->y < TANA_POS) frog->alive = false;
+                break;
 
-            pthread_mutex_lock(&buffer.mutex);
+            case KEY_DOWN:
+                newPos = frog->y + ALTEZZARANA;
+                if (newPos < RANA_YINIT) frog->y = newPos;
+                break;
 
-            const float* time = (float*)buffer.buffer[IDX_TEMPO];
+            case KEY_LEFT:
+                newPos = frog->x - LARGHEZZARANA;
+                if (newPos > RANA_XMIN) frog->x = newPos;
+                break;
 
-            Frog* obj = (Frog*)buffer.buffer[IDX_RANA];
-            if (!obj->alive) continue;
+            case KEY_RIGHT:
+                newPos = frog->x + LARGHEZZARANA;
+                if (newPos < RANA_XMAX) frog->x = newPos;
+                break;
 
-            int newPos;
-            switch (key) {
-                case KEY_UP:
-                    newPos = obj->y - ALTEZZARANA;
-                    if (newPos > 0) obj->y = newPos;
-                    else obj->alive = 0; 
-                    break;
-
-                case KEY_DOWN:
-                    newPos = obj->y + ALTEZZARANA;
-                    if (newPos < ALTEZZA_GIOCO) obj->y = newPos;
-                    else obj->alive = 0;
-                    break;
-
-                case KEY_LEFT:
-                    newPos = obj->x - LARGHEZZARANA;
-                    if (newPos > 0) obj->x = newPos;
-                    else obj->alive = 0;
-                    break;
-
-                case KEY_RIGHT:
-                    newPos = obj->x + LARGHEZZARANA;
-                    if (newPos < LARGHEZZA_GIOCO) obj->x = newPos;
-                    else obj->alive = 0;
-                    break;
-
-                case 's':  // spara granate
-                    sparaGranata(*time, gameConfig);
-                    break;
-            }
-            pthread_mutex_unlock(&buffer.mutex); 
+            case 's':  // spara granate
+                sparaGranata(game_struct->tempo, gameCfg);
+                break;
         }
+        pthread_mutex_unlock(&buffer.mutex); 
     }
     pthread_exit(NULL);
 }
@@ -85,25 +82,24 @@ void sparaGranata(const float time, const gameConfig* gameConfig) {
     }
 
     if (allowed){
-        const Frog* rana = (Frog*)buffer.buffer[IDX_RANA];
+        const Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
 
         for (int i = IDX_GRANATE; i< IDX_GRANATE + 2; i++){
-            Projectile* obj = (Projectile*)buffer.buffer[i];
+            Projectile* proj = (Projectile*)buffer.buffer[i];
             
-            obj->x = rana->x;
-            obj->y = rana->y;
-            obj->alive = 1;
-            obj->tempo_prec = time;
-            obj->dir = 2*(i%2) -1;
-            obj->speed = gameConfig->velocità_proiettili;
+            proj->x = frog->x;
+            proj->y = frog->y;
+            proj->alive = 1;
+            proj->tempo_prec = time;
+            proj->dir = 2*(i%2) -1;
+            proj->speed = gameConfig->velocità_proiettili;
         }
     }
 }
 
-
 //GESTIONE GRANATE-----------------------------------------
 void GranateInit(){
-    const float* time = (float*)buffer.buffer[IDX_TEMPO];
+    const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
 
     for (int i = IDX_GRANATE; i< IDX_GRANATE + 2; i++){
 
@@ -113,40 +109,38 @@ void GranateInit(){
             exit(EXIT_FAILURE);
         }
 
-        Projectile* obj = (Projectile*)buffer.buffer[i];
-        obj->x = -1;
-        obj->y = -1;
-        obj->alive = 0;
-        obj->tempo_prec = *time;
+        Projectile* proj = (Projectile*)buffer.buffer[i];
+        proj->x = -1;
+        proj->y = -1;
+        proj->alive = 0;
+        proj->tempo_prec = game_struct->tempo;
     }
 }
 
 void* thread_granata(void* arg) {
 
-    ThreadArgs* args = (ThreadArgs*)arg;
-    Game_struct* game_struct = args->Game_struct;
-
     while(1){
-
-        if ((game_struct->win) ||  (game_struct->vite == 0)){
-            break;
-        }
 
         pthread_mutex_lock(&buffer.mutex);
 
-        const float* time = (float*)buffer.buffer[IDX_TEMPO];
+        const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+
+        if ((game_struct->win) ||  (game_struct->vite == 0)){
+            pthread_mutex_unlock(&buffer.mutex);
+            break;
+        }
 
         for (int i = IDX_GRANATE; i < IDX_GRANATE + 2; i++){
-            Projectile* obj = (Projectile*)buffer.buffer[i];
+            Projectile* proj = (Projectile*)buffer.buffer[i];
 
-            if (!obj->alive) continue;
+            if (!proj->alive) continue;
 
-            int newX = obj->x + obj->dir * obj->speed * (obj->tempo_prec - *time);
+            int newX = proj->x + proj->dir * proj->speed * (proj->tempo_prec - game_struct->tempo);
             if (newX > 0 && newX < LARGHEZZA_GIOCO){
-                obj->x = newX;
-                obj->tempo_prec = *time;
+                proj->x = newX;
+                proj->tempo_prec = game_struct->tempo;
             }
-            else obj->alive=0;
+            else proj->alive=0;
         }
 
         pthread_mutex_unlock(&buffer.mutex); 
