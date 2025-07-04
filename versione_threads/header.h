@@ -35,7 +35,8 @@
 #define LARGHEZZACOCCODRILLO 9
 
 #define TANA_POS 10
-#define NTANE 6
+#define NTANE 5
+#define LARGHEZZA_TANA 5
 
 #define ALTEZZARANA 2
 #define LARGHEZZARANA 3
@@ -55,7 +56,6 @@
 #define IDX_PROIETTILI 28
 
 typedef struct{
-    int id;
     int y;
     int dir;
     int speed;
@@ -85,14 +85,15 @@ typedef struct {
     int dir;
     int speed;
     bool alive; //serve per capire se l ente è vivo
-    float wait;  //per i coccodrilli, quando sono offline
-    int tempo_prec;
+    int wait;  //per i coccodrilli, quando sono offline
+    float tempo_prec;
 } Crocodile;  
 
 typedef struct {
     int y;
     int x;
     bool alive;
+    float tempo_prec;
 } Frog;
 
 typedef struct {
@@ -101,7 +102,7 @@ typedef struct {
     int dir;
     int speed;
     bool alive; //serve per capire se l ente è vivo
-    int tempo_prec;
+    float tempo_prec;
 } Projectile;
 
 //buffer c è un contenutor organizzata con sincronizzazione 
@@ -179,8 +180,8 @@ void drawCoccodrilli(WINDOW *game, Crocodile *coccodrilli);
 
 // --- Utility di gioco e collisioni ---
 int CollisioneRanaProiettile(Frog rana, Projectile proiettile);
-bool RanaSuTana(const Frog* frog, const Game_struct* game_struct);
-int RanaSuCoccodrillo(Frog *rana, Crocodile *coccodrilli);
+bool RanaSuTana(const Frog* frog, Game_struct* game_struct);
+int RanaSuCoccodrillo(const Frog *frog);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
 void punteggio_tempo(Game_struct* game_struct);
 int rand_funz(int min, int max);

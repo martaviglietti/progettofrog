@@ -152,6 +152,7 @@ void newManche(Game_struct* game_struct, gameConfig* gameConfig){
     frog->x = RANA_XINIT;
     frog->y = RANA_YINIT;
     frog->alive = true;
+    frog->tempo_prec = -1;
 
 }
 

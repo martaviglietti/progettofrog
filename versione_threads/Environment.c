@@ -25,7 +25,15 @@ void* thread_tempo(void* arg) {
 
     gameConfig* gameCfg = (gameConfig*)arg;
 
+    struct timeval prev, now;
+    gettimeofday(&prev, NULL);
+
     while (1) {
+        usleep(10 * 1000);  // sleep 10 ms
+
+        gettimeofday(&now, NULL);
+        float elapsed = (now.tv_sec - prev.tv_sec) + (now.tv_usec - prev.tv_usec) / 1000000.0f;
+        prev = now;
 
         pthread_mutex_lock(&buffer.mutex);
 
@@ -36,18 +44,14 @@ void* thread_tempo(void* arg) {
             break;
         }
 
-        float* obj = &game_struct->tempo;
+        game_struct->tempo -= elapsed;
 
-        if (*obj <= 0){
+        if (game_struct->tempo <= 0){
             game_struct->score -= 20;
             game_struct->vite--;
             newManche(game_struct, gameCfg);
         }
-        else{
-            (*obj)--;
-            
-        }
-        sleep(1);  // wait one second
+
         pthread_mutex_unlock(&buffer.mutex);
     }
     pthread_exit(NULL);

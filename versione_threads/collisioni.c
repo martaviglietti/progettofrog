@@ -2,25 +2,38 @@
 #include "header.h"
 
 
-bool RanaSuTana(const Frog* frog, const Game_struct* game_struct){
+bool RanaSuTana(const Frog* frog, Game_struct* game_struct){
 
-    ///// aggiungere chiusura tana
-
-    for (int i = 0; i < 5; i++) {
-        if (rana.x >= 8 + (15) * i && rana.x < 8 + (15) * i + 5 && game_struct->tane[i] == 0) {        //?????///////////
+    for (int i = 0; i < NTANE; i++) {
+        if (frog->x >= 8 + (15) * i && frog->x < 8 + (15) * i + 5 && game_struct->tane[i] == 0) { 
             game_struct->tane[i] = 1;
             return 1;
         }
     }
 
-    
+    return 0;
 }
 
+//funzione che verifica se la rana è su un coccodrillo
+int RanaSuCoccodrillo(const Frog *frog){
+    for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
+        const Crocodile* croc = (Crocodile*)buffer.buffer[i];
+        
+        const int frog_x = frog->x;
+        const int frog_y = frog->y;
 
-
-
-
-
+        if (croc->alive) {
+            const int croc_x = croc->x;
+            const int croc_y = croc->y;
+            if(frog_y <= croc_y + DIM_FLUSSI/2 && frog_y >= croc_y - DIM_FLUSSI/2){
+                if ((frog_x-1 >= croc_x-4) && (frog_x+1 <= croc_x+4)){
+                    return i;
+                }
+            }
+        }
+    }
+    return -1; 
+}
 
 
 int CollisioneRanaProiettile(Rana rana,Proiettile proiettile){
@@ -33,14 +46,3 @@ int CollisioneRanaProiettile(Rana rana,Proiettile proiettile){
 
 
 
-//funzione che verifica se la rana è su un coccodrillo
-int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli){
-    for (int i = 0; i < MAX_CROCODILES; i++) {
-        if (coccodrilli[i].alive) {
-            if ((rana->y == coccodrilli[i].y) &&  (rana->x-1>= coccodrilli[i].x-4) && (rana->x+1 <= coccodrilli[i].x+4)) {
-                return coccodrilli[i].id; 
-            }
-        }
-    }
-    return -1; 
-}

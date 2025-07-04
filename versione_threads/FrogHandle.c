@@ -1,5 +1,4 @@
 #include"header.h"
-#include <stdbool.h>
 
 //GESTIONE RANA-------------------------------------------------------------------------------------------------------------
 void frogInit(){
@@ -14,6 +13,7 @@ void frogInit(){
     frog->x = RANA_XINIT;
     frog->y = RANA_YINIT;
     frog->alive = true;
+    frog->tempo_prec = -1;
 }
 
 void* thread_rana(void* arg) {

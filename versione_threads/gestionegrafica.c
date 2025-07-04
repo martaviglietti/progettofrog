@@ -20,7 +20,7 @@ void* Gestione_grafica(void* arg){
         }
 
         // Check frog position
-        const Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+        Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
         bool endManche = false;
 
         if (frog->y < TANA_POS){
@@ -33,48 +33,44 @@ void* Gestione_grafica(void* arg){
                 game_struct->score -= 10;
             }
         }
-        else{
-            ///check other cases
+
+        if (!endManche){
+
+            int crocId = RanaSuCoccodrillo(frog);
+            if (crocId != -1 && (crocId < IDX_COCCODRILLI || crocId >= IDX_COCCODRILLI + MAX_CROCODILES)){
+                printf("ERROR: Crocodile idx is not valid!");
+                exit(EXIT_FAILURE);
+            }
+            if(crocId == -1){            //rana fell in the water
+                endManche = true;
+                game_struct->vite--;
+                game_struct->score -= 10;
+            }
+            else{
+                const Crocodile* crocod = (Crocodile*)buffer.buffer[crocId];
+
+                const float tempo_prec = (tempo_prec != -1) ? frog->tempo_prec : crocod->tempo_prec;              //depends on if it is the first time the frog is on the crocodile  
+                const int newX = frog->x + crocod->dir * crocod->speed * (tempo_prec - game_struct->tempo);  
+                if ( newX > RANA_XMIN && newX < RANA_XMAX) frog->x = newX;     //if the new position is outside the window, the frog doesnt move. The next iteration, the crocodile will be off, and so the frog will be in the water
+
+                frog->tempo_prec = game_struct->tempo;   
+            }
+        }
+
+        if (!endManche){
+            // next collision
+
         }
 
         if (endManche) newManche(game_struct, gameCfg);
                 
 
 
-    
-    //Variabili per gestione proiettile
-    struct timeval start, end; 
-    gettimeofday(&end,NULL);		
-    gettimeofday(&start,NULL);
-
     long time_proiettile; 
-    int random=rand_funz(2,4);
-
     Temp temp={-1,0,0,0};
-   
     int riattivare;
-    int indice_flusso;
 
-            if (rana.y < 10) {
-                if (RanaSuTana(rana, game_struct)) {
-                    game_struct->score += 15 + (int)(15 * (float)game_struct->tempo / 100);
-                    break;
-                } else {
-                    game_struct->vite--;
-                    game_struct->score -= 10;
-                    break;
-                }
-
-        // se l'ID è di un coccodrillo (thread produttore)
-        if (temp.id >= 0 && temp.id < MAX_CROCODILES) {
-            int id_coc = temp.id;
-            int coc_scelto = RanaSuCoccodrillo(&rana, coccodrilli);
-            coccodrilli[id_coc].x = temp.x;
-            coccodrilli[id_coc].y = temp.y;
-            coccodrilli[id_coc].dir = temp.info;
-
-            // controllo movimento rana con il coccodrillo
-            if (coc_scelto == coccodrilli[id_coc].id) {
+     
                 if ((rana.x <= 2 && coccodrilli[id_coc].dir == -1) || 
                     (rana.x >= LARGHEZZA_GIOCO - 3 && coccodrilli[id_coc].dir == 1)) {
                     // la rana è ai bordi: verifica se è ancora sopra il coccodrillo

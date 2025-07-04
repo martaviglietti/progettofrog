@@ -59,6 +59,7 @@ void *thread_coccodrillo(void *arg) {
             Crocodile* crocod = (Crocodile*)buffer.buffer[i];
 
             if (crocod->alive){
+
                 const int newX = crocod->x + crocod->dir * crocod->speed * (crocod->tempo_prec - game_struct->tempo);
                 if (newX > POS_SPAWN_COC_SINISTRA && newX < POS_SPAWN_COC_DESTRA){    // nuova posizione valida
                     crocod->x = newX;
@@ -106,6 +107,7 @@ void ProjectileInit(){
 
         if (i >= BUFFER_SIZE){
             printf("you need a bigger buffer... we are accessing random areas of the memory!");
+            exit(EXIT_FAILURE);
         }
 
         buffer.buffer[i] = malloc(sizeof(Projectile));
