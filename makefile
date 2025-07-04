@@ -28,7 +28,7 @@ OBJECTS_THREADS = $(OBJ_DIR_THREADS)/CrocodileHandle.o \
 				$(OBJ_DIR_THREADS)/WindowsGen.o
 
 CFLAGS = -g -Wall -I/usr/include  -I/usr/include/x86_64-linux-gnu # Include ncurses headers if needed
-LDFLAGS = -lncurses
+LDFLAGS = -lncurses -lpthread
 
 PROCESSI_EXEC = $(BUILD_DIR)/versione_processi/a.out
 THREADS_EXEC = $(BUILD_DIR)/versione_threads/a.out

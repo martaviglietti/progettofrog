@@ -4,6 +4,10 @@ BufferC buffer;
 
 int main(){
 
+    const char *OPZIONI[] = {
+        "Inizia gioco", "Crediti", "Esci"
+    };
+
     printf("\e[8;%d;%dt", 49, 81);  //ridimensioniamo il terminale
     fflush(stdout);
     setlocale(LC_ALL, "");     // Abilita UTF-8	

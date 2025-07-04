@@ -35,13 +35,64 @@ int RanaSuCoccodrillo(const Frog *frog){
     return -1; 
 }
 
+bool CollRanaProiettile(const Frog* frog){
 
-int CollisioneRanaProiettile(Rana rana,Proiettile proiettile){
+    const int frog_x = frog->x;
+    const int frog_y = frog->y;
 
-    if((rana.x+1==proiettile.x || rana.x-1==proiettile.x) && rana.y==proiettile.y && proiettile.alive) return 1;
-    else return 0;   
+    for (int i = IDX_PROIETTILI; i < IDX_PROIETTILI + MAX_CROCODILES; i++) {
+        Projectile* proj = (Projectile*)buffer.buffer[i];
+
+        if (proj->alive){
+            const int proj_x = proj->x;
+            const int proj_y = proj->y;
+            if(proj_y <= frog_y + ALTEZZARANA/2 && proj_y >= frog_y - ALTEZZARANA/2){
+                if (proj_x <= frog_x + LARGHEZZARANA/2 && proj_x >= frog_x - LARGHEZZARANA/2){
+                    proj->x = -1;
+                    proj->y = -1;
+                    proj->alive = 0;
+                    proj->dir = -1;
+                    proj->speed =-1;
+                    proj->tempo_prec = -1;
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
 }
 
+bool CollGranataProiettile(Projectile* gran){
+
+    const int gran_x = gran->x;
+    const int gran_y = gran->y;
+
+    for (int i = IDX_PROIETTILI; i < IDX_PROIETTILI + MAX_CROCODILES; i++) {
+        Projectile* proj = (Projectile*)buffer.buffer[i];
+
+        if (proj->alive){
+            const int proj_x = proj->x;
+            const int proj_y = proj->y;
+            if(proj_y == gran_y  && proj_x <= gran_x + 1 && proj_x >= gran_x - 1){
+                proj->x = -1;
+                proj->y = -1;
+                proj->alive = 0;
+                proj->dir = -1;
+                proj->speed =-1;
+                proj->tempo_prec = -1;
+
+                gran->x = -1;
+                gran->y = -1;
+                gran->alive = 0;
+                gran->tempo_prec = -1;
+                gran->dir = -1;
+                gran->speed =-1;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
 
 
 

@@ -47,6 +47,8 @@ void* thread_tempo(void* arg) {
         game_struct->tempo -= elapsed;
 
         if (game_struct->tempo <= 0){
+            Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+            frog->alive = false;
             game_struct->score -= 20;
             game_struct->vite--;
             newManche(game_struct, gameCfg);

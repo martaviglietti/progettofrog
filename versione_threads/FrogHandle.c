@@ -109,11 +109,14 @@ void GranateInit(){
             exit(EXIT_FAILURE);
         }
 
-        Projectile* proj = (Projectile*)buffer.buffer[i];
-        proj->x = -1;
-        proj->y = -1;
-        proj->alive = 0;
-        proj->tempo_prec = game_struct->tempo;
+        Projectile* gran = (Projectile*)buffer.buffer[i];
+        gran->x = -1;
+        gran->y = -1;
+        gran->alive = 0;
+        gran->tempo_prec = -1;
+        gran->dir = -1;
+        gran->speed =-1;
+
     }
 }
 
@@ -131,16 +134,18 @@ void* thread_granata(void* arg) {
         }
 
         for (int i = IDX_GRANATE; i < IDX_GRANATE + 2; i++){
-            Projectile* proj = (Projectile*)buffer.buffer[i];
+            Projectile* gran = (Projectile*)buffer.buffer[i];
 
-            if (!proj->alive) continue;
+            if (!gran->alive) continue;
 
-            int newX = proj->x + proj->dir * proj->speed * (proj->tempo_prec - game_struct->tempo);
-            if (newX > 0 && newX < LARGHEZZA_GIOCO){
-                proj->x = newX;
-                proj->tempo_prec = game_struct->tempo;
+            if (CollGranataProiettile(gran)) continue;
+
+            int newX = gran->x + gran->dir * gran->speed * (gran->tempo_prec - game_struct->tempo);
+            if (newX > 0 && newX < LARGHEZZA_GIOCO && !CollGranataProiettile(gran)){
+                gran->x = newX;
+                gran->tempo_prec = game_struct->tempo;
             }
-            else proj->alive=0;
+            else gran->alive=0;
         }
 
         pthread_mutex_unlock(&buffer.mutex); 

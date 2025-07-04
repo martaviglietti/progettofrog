@@ -159,6 +159,7 @@ void* thread_tempo(void* arg);
 void* thread_coccodrillo(void* arg);
 void* thread_proiettile(void* arg);
 void* thread_granata(void* arg);
+void* Gestione_grafica(void* arg);
 
 
 // --- Lancio dinamico di granate/proiettili ---
@@ -171,15 +172,15 @@ void sparaProiettile(const float time, const gameConfig* gameConfig, const int i
 
 
 // --- Gestore grafico e logica ---
-void* Gestione_grafica(void* arg);
-void draw_proiettile(WINDOW* game, Projectile proiettile);
-void draw_granate(WINDOW* game, Projectile granate[2]);
-void draw_frog(WINDOW *game, Frog rana);
-void drawCoccodrilli(WINDOW *game, Crocodile *coccodrilli);
+void draw_proiettile(WINDOW* game);
+void draw_granate(WINDOW* game);
+void draw_frog(WINDOW *game, Frog* rana);
+void drawCoccodrilli(WINDOW *game);
 
 
 // --- Utility di gioco e collisioni ---
-int CollisioneRanaProiettile(Frog rana, Projectile proiettile);
+bool CollRanaProiettile(const Frog* frog);
+bool CollGranataProiettile(Projectile* gran);
 bool RanaSuTana(const Frog* frog, Game_struct* game_struct);
 int RanaSuCoccodrillo(const Frog *frog);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);

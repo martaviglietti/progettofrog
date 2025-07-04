@@ -116,7 +116,7 @@ void ProjectileInit(){
             exit(EXIT_FAILURE);
         }
         Projectile* proj = (Projectile*)buffer.buffer[i];
-        proj->x = 50;
+        proj->x = -1;
         proj->y = -1;
         proj->alive = 0;
         proj->dir = -1;
