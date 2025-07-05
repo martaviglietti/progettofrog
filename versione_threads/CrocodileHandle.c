@@ -2,7 +2,8 @@
 
 void CrocodileInit(Flusso *flussi) {
     const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
-    const int Ninit = rand_funz(6, 12);
+    const int Ninit = rand_funz(2, 8);
+    bool used_flusso[NFLUSSI] = { false };
 
     for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
 
@@ -16,7 +17,11 @@ void CrocodileInit(Flusso *flussi) {
 
         if ((i-IDX_COCCODRILLI) <= Ninit){
 
-            const int id_flusso = rand_funz(0, NFLUSSI-1);
+            int id_flusso;
+            do {
+                id_flusso = rand_funz(0, NFLUSSI - 1);
+            } while (used_flusso[id_flusso]);  // retry if already used
+            used_flusso[id_flusso] = true;
             const Flusso* flux = &flussi[id_flusso];
             
             crocod->alive=1;
@@ -36,6 +41,7 @@ void CrocodileInit(Flusso *flussi) {
             crocod->speed = -1;
             crocod->tempo_prec = game_struct->tempo;
         }
+        //printf("Coccodrillo %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f\n", i, crocod->alive, crocod->x, crocod->y, crocod->speed, crocod->dir, crocod->wait, crocod->tempo_prec);
     }
 }
 
@@ -64,6 +70,7 @@ void *thread_coccodrillo(void *arg) {
                 if (newX > POS_SPAWN_COC_SINISTRA && newX < POS_SPAWN_COC_DESTRA){    // nuova posizione valida
                     crocod->x = newX;
                     crocod->tempo_prec = game_struct->tempo;
+                    printf("DEBUG: crocodile %d at position %d\n", i, newX);
                     if (game_struct->tempo <= (crocod->tempo_prec - crocod->wait)){       //coccodrillo spara il proiettile
                         sparaProiettile(game_struct->tempo, gameCfg, i-IDX_COCCODRILLI);
                     }
@@ -94,9 +101,11 @@ void *thread_coccodrillo(void *arg) {
                 }
                 else continue;
             }
+            printf("Coccodrillo %d aggiornato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f, at time=%f\n", i, crocod->alive, crocod->x, crocod->y, crocod->speed, crocod->dir, crocod->wait, crocod->tempo_prec, game_struct->tempo);
         }
 
         pthread_mutex_unlock(&buffer.mutex);
+        sched_yield();
     }
     pthread_exit(NULL); 
 }
@@ -122,6 +131,7 @@ void ProjectileInit(){
         proj->dir = -1;
         proj->speed =-1;
         proj->tempo_prec = -1;
+        //printf("Proiettile %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, proj->alive, proj->x, proj->y, proj->speed, proj->dir, proj->tempo_prec);
     }
 }
 

@@ -1,4 +1,5 @@
 #include"header.h"
+#include <ncurses.h>
 
 //GESTIONE RANA-------------------------------------------------------------------------------------------------------------
 void frogInit(){
@@ -14,6 +15,7 @@ void frogInit(){
     frog->y = RANA_YINIT;
     frog->alive = true;
     frog->tempo_prec = -1;
+    //printf("Rana inizializzata con alive=%d, x=%d, y=%d, tempo_prec=%f\n", frog->alive, frog->x, frog->y, frog->tempo_prec);
 }
 
 void* thread_rana(void* arg) {
@@ -37,11 +39,11 @@ void* thread_rana(void* arg) {
             continue;
         }
 
-        keypad(game, true);  // abilita frecce
-        nodelay(game, FALSE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
+        //keypad(game, true);  // abilita frecce
+        //nodelay(game, FALSE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
 
-        int key = wgetch(game);
-
+        //int key = wgetch(game);
+        int key = KEY_UP; int old = frog->y;
         int newPos;
         switch (key) {
             case KEY_UP:
@@ -69,6 +71,8 @@ void* thread_rana(void* arg) {
                 break;
         }
         pthread_mutex_unlock(&buffer.mutex); 
+        sched_yield();
+        printf("frog moved from %d to %d, at time=%f\n", old, frog->y, game_struct->tempo);
     }
     pthread_exit(NULL);
 }
@@ -116,6 +120,8 @@ void GranateInit(){
         gran->tempo_prec = -1;
         gran->dir = -1;
         gran->speed =-1;
+
+        //printf("Granata %d inizializzata con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
 
     }
 }

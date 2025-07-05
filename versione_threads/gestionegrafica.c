@@ -4,11 +4,11 @@ extern pthread_mutex_t mutex_tane;
 
 
 void* Gestione_grafica(void* arg){
+    printf("...Inizio gest grafica...\n");
 
     gameConfig* gameCfg = (gameConfig*)arg;
 
     while(1){
-
         pthread_mutex_lock(&buffer.mutex);
 
         Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
@@ -21,6 +21,7 @@ void* Gestione_grafica(void* arg){
 
         // Check frog position
         Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+        printf("Rana: alive=%d, x=%d, y=%d, tempo_prec=%f\n", frog->alive, frog->x, frog->y, frog->tempo_prec);
         bool endManche = false;
 
         if (!frog->alive){
@@ -49,12 +50,14 @@ void* Gestione_grafica(void* arg){
                 printf("ERROR: Crocodile idx is not valid!");
                 exit(EXIT_FAILURE);
             }
-            if(crocId == -1 && frog->y < waterYlow  && frog->y > waterYtop){            //rana fell in the water
-                endManche = true;
-                game_struct->vite--;
-                game_struct->score -= 10;
-                frog->alive = false;
-            }
+            if(crocId == -1){                // rana non su un coccodrillo
+                if (frog->y < waterYlow  && frog->y > waterYtop){      //rana fell in the water
+                    endManche = true;
+                    game_struct->vite--;
+                    game_struct->score -= 10;
+                    frog->alive = false;
+                }
+            }    
             else{
                 const Crocodile* crocod = (Crocodile*)buffer.buffer[crocId];
 
@@ -77,38 +80,38 @@ void* Gestione_grafica(void* arg){
 
         if (endManche) newManche(game_struct, gameCfg);
                 
-        werase(game);
-        windowGeneration(game, COLS, LINES, game_struct);
-
-
-
-        drawCoccodrilli(game);
-        draw_granate(game);
-        draw_proiettile(game);
-        draw_frog(game, frog);
-
-        // Punteggio
-        wattron(game, COLOR_PAIR(15));
-        mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
-        wattroff(game, COLOR_PAIR(15));
-
-        // Vite
-        wattron(game, COLOR_PAIR(15));
-        mvwprintw(game, 2, 50, "Vite:");
-        mvwhline(game, 2, 55, ' ', 21);
-        for (int i = 0; i < game_struct->vite; i++) {
-            mvwprintw(game, 2, 55 + i * 2, "❤️");
-        }
-        wattroff(game, COLOR_PAIR(15));
-        // Tempo
-        wattron(game, COLOR_PAIR(15));
-        mvwhline(game, 46, 2, ' ', 10);
-        mvwprintw(game, 46, 2, "Tempo: %d ", (int)game_struct->tempo);
-        wattroff(game, COLOR_PAIR(15));
-
-        print_tempo(game, game_struct, (int)game_struct->tempo);
-        wrefresh(game);
-
+        //werase(game);
+        //windowGeneration(game, COLS, LINES, game_struct);
+//
+//
+//
+        //drawCoccodrilli(game);
+        //draw_granate(game);
+        //draw_proiettile(game);
+        //draw_frog(game, frog);
+//
+        //// Punteggio
+        //wattron(game, COLOR_PAIR(15));
+        //mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
+        //wattroff(game, COLOR_PAIR(15));
+//
+        //// Vite
+        //wattron(game, COLOR_PAIR(15));
+        //mvwprintw(game, 2, 50, "Vite:");
+        //mvwhline(game, 2, 55, ' ', 21);
+        //for (int i = 0; i < game_struct->vite; i++) {
+        //    mvwprintw(game, 2, 55 + i * 2, "❤️");
+        //}
+        //wattroff(game, COLOR_PAIR(15));
+        //// Tempo
+        //wattron(game, COLOR_PAIR(15));
+        //mvwhline(game, 46, 2, ' ', 10);
+        //mvwprintw(game, 46, 2, "Tempo: %d ", (int)game_struct->tempo);
+        //wattroff(game, COLOR_PAIR(15));
+//
+        //print_tempo(game, game_struct, (int)game_struct->tempo);
+        //wrefresh(game);
+//
         pthread_mutex_unlock(&buffer.mutex);
     }
     pthread_exit(NULL);

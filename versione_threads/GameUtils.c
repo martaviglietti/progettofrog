@@ -1,4 +1,5 @@
 #include "header.h"
+#include <stdlib.h>
 
 //___________________________________________________________________________________________________
 //funzione utile per creare un numero random tra un minimo e un massimo (compresi)
@@ -62,7 +63,7 @@ int scegliDifficolta(WINDOW *game) {
 //Inizializzazione del gioco e loop di gioco
 Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){		
     
-    //Inizializziamo variabili di gestione della partita
+    printf("Inizializziamo variabili di gestione della partita\n");
     buffer.buffer[IDX_GAME] = malloc(sizeof(Game_struct));
     if (buffer.buffer[IDX_GAME]== NULL) {
         fprintf(stderr, "malloc failed at Time Initialization at index %d\n", IDX_GAME);
@@ -74,22 +75,21 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     game_struct->score=0; 		//contiene lo score di tutto il game
     game_struct->vite=gameConfig->vite;    //contiene numero di vite rimaste
     game_struct->win=0;
+    game_struct->tempo = gameConfig->tempo;  //contiene tempo rimasto nella manche
+    printf("Inizializziamo tempo a %f\n", game_struct->tempo);
     
     //inizializzazione delle tane a 0
     for (int i=0;i<NTANE-1;i++) {
         game_struct->tane[i]=0;
     }
 
-    //inizializzazione tempo
-    game_struct->tempo = gameConfig->tempo;  //contiene tempo rimasto nella manche
-
     //Definizione dei flussi
     fluxInit(gameConfig); //definisco velocità di ogni flusso
     
     // Inizializzazione oggetti
-    CrocodileInit(gameConfig->flussi);
-    GranateInit();
     frogInit();
+    GranateInit();
+    CrocodileInit(gameConfig->flussi);
     ProjectileInit();
    
     //creaizone dei thread principali e inizilizzazione degli oggetti
@@ -97,11 +97,15 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
 
     //inizio della partita - loop di gioco
     int tane_occupate=0;
-    while (1) {			
+    while (1) {		
+        
+        pthread_mutex_lock(&buffer.mutex);
 
-        if (game_struct->win) break;
-        if (game_struct->vite == 0) break;
-    
+        if ((game_struct->win) ||  (game_struct->vite == 0)){
+            pthread_mutex_unlock(&buffer.mutex);
+            break;
+        }
+
         tane_occupate=0;
         for (int i=0;i<NTANE;i++) {
             if(game_struct->tane[i]==1){
@@ -113,11 +117,13 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
             game_struct->score += 100;
               //uscita per tane chiuse
         }
-        
-        wclear(game_struct->game);
-        wrefresh(game_struct->game);     
-    }
 
+        pthread_mutex_unlock(&buffer.mutex);
+        
+        //wclear(game_struct->game);
+        //wrefresh(game_struct->game);     
+    }
+    exit(1);
     // !!!!!! funzione per eliinare gli oggetti e liberare memoria
     return game_struct;
 }
@@ -134,12 +140,13 @@ void crea_thread_gioco(gameConfig *gameConfig){
     pthread_t t_coccodrilli, t_proiettili, t_granate;
 
     // Creazione threads
-    pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
+    printf("...lancio i threads...\n");
+    //pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
     pthread_create(&t_rana, NULL, thread_rana, (void *)gameConfig);
     pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
     pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
-    pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
-    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
+    //pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
+    //pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
     
 }
 
