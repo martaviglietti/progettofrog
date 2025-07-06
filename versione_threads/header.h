@@ -132,7 +132,7 @@ int gameOver(WINDOW *game, int score);
 int scegliDifficolta(WINDOW *game);
 int menu(WINDOW *game, const char *title, const char *options[], int num_options);
 void credits(WINDOW *game);
-void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct* game_struct);
+void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_struct);
 void creazione_colori();
 
 //inizializzazione e flussi

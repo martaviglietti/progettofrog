@@ -1,13 +1,13 @@
 #include "header.h"
 
-void windowGeneration(WINDOW *game, int maxX, int maxY, Game_struct* game_struct){
+void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_struct){
     
     box(game, ACS_VLINE, ACS_HLINE);
     int offsetSumV=0;  //variabile che tiene conto della posizione di stampa
     int offsetSumH=1;  //variabile per ignorare il bordo laterale
     
     //Definiamo la mappa di gioco
-    char tane[NTANE][LARGHEZZA_GIOCO-2]={
+    char tane[6][LARGHEZZA_GIOCO-2]={
         "     ..o..            o                   .          o                o        ",
     	"                 o               O                           .                 ",
     	"     +-------+      +-------+      +-------+      +-------+      +-------+  O  ",		          

@@ -36,18 +36,17 @@ void* thread_rana(void* arg) {
 
         LOCK_GRAPH();
         WINDOW* game = (WINDOW*)buffer.buffer[IDX_GRAPH];;
-        //keypad(game, true);  // abilita frecce
-        //nodelay(game, FALSE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
-        //int key = wgetch(game);
+        keypad(game, true);  // abilita frecce
+        nodelay(game, FALSE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
+        int key = wgetch(game);
         UNLOCK_GRAPH();
-        int key = 258 +rand_funz(0,3);
+        //int key = 258 +rand_funz(0,3);
 
         LOCK_FROG();
         frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
         UNLOCK_FROG();
 
         if (!frogLocal.alive){
-            UNLOCK_FROG();
             continue;
         }
 

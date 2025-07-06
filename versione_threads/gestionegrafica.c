@@ -27,8 +27,7 @@ void* Gestione_grafica(void* arg){
 
         // Check frog position
         LOCK_FROG();
-        Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-        frogLocal = *frog;
+        frogLocal = *(Frog*)buffer.buffer[IDX_RANA];;
         UNLOCK_FROG();
 
         printf("GestGraph: Rana: alive=%d, x=%d, y=%d, tempo_prec=%f\n", frogLocal.alive, frogLocal.x, frogLocal.y, frogLocal.tempo_prec);
@@ -112,40 +111,46 @@ void* Gestione_grafica(void* arg){
             UNLOCK_GAME();
         }
         
+        LOCK_READ_GAME();
+        gameLocal = *(Game_struct*)buffer.buffer[IDX_GAME];
+        UNLOCK_GAME();
+
+        LOCK_FROG();
+        frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
+        UNLOCK_FROG();
+
         LOCK_GRAPH();
         WINDOW* game = (WINDOW*)buffer.buffer[IDX_GRAPH];
-        //werase(game);
-        //windowGeneration(game, COLS, LINES, game_struct);
-//
-//
-//
-        //drawCoccodrilli(game);
-        //draw_granate(game);
-        //draw_proiettile(game);
-        //draw_frog(game, frog);
-//
-        //// Punteggio
-        //wattron(game, COLOR_PAIR(15));
-        //mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
-        //wattroff(game, COLOR_PAIR(15));
-//
-        //// Vite
-        //wattron(game, COLOR_PAIR(15));
-        //mvwprintw(game, 2, 50, "Vite:");
-        //mvwhline(game, 2, 55, ' ', 21);
-        //for (int i = 0; i < game_struct->vite; i++) {
-        //    mvwprintw(game, 2, 55 + i * 2, "❤️");
-        //}
-        //wattroff(game, COLOR_PAIR(15));
-        //// Tempo
-        //wattron(game, COLOR_PAIR(15));
-        //mvwhline(game, 46, 2, ' ', 10);
-        //mvwprintw(game, 46, 2, "Tempo: %d ", (int)game_struct->tempo);
-        //wattroff(game, COLOR_PAIR(15));
-//
-        //print_tempo(game, game_struct, (int)game_struct->tempo);
-        //wrefresh(game);
-//
+        werase(game);
+        windowGeneration(game, COLS, LINES, &gameLocal);
+
+        drawCoccodrilli(game);
+        draw_granate(game);
+        draw_proiettile(game);
+        draw_frog(game, &frogLocal);
+
+        // Punteggio
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 2, "Punteggio: %d ", gameLocal.score);
+        wattroff(game, COLOR_PAIR(15));
+
+        // Vite
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 50, "Vite:");
+        mvwhline(game, 2, 55, ' ', 21);
+        for (int i = 0; i < gameLocal.vite; i++) {
+            mvwprintw(game, 2, 55 + i * 2, "❤️");
+        }
+        wattroff(game, COLOR_PAIR(15));
+        // Tempo
+        wattron(game, COLOR_PAIR(15));
+        mvwhline(game, 46, 2, ' ', 10);
+        mvwprintw(game, 46, 2, "Tempo: %d ", (int)gameLocal.time);
+        wattroff(game, COLOR_PAIR(15));
+
+        print_tempo(game, &gameLocal, (int)gameLocal.time);
+        wrefresh(game);
+
         UNLOCK_GRAPH();
         usleep(3 * 1000);  // sleep 10 ms
     }

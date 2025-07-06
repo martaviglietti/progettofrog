@@ -55,8 +55,8 @@ void creazione_colori(){
 //funzione per disegnare il proiettile nella mappa
 void draw_proiettile(WINDOW* game){
 	
+    LOCK_PROJ();
     for (int i = IDX_PROIETTILI; i< IDX_PROIETTILI + MAX_CROCODILES; i++){
-        pthread_mutex_lock(&buffer.mutex[i]); 
         const Projectile* proj = (Projectile*)buffer.buffer[i];
 
         if (proj->alive) {  //mostriamo il proiettile solo se vivo		
@@ -64,8 +64,8 @@ void draw_proiettile(WINDOW* game){
             mvwaddch(game,proj->y,proj->x,'*');		
             wattroff(game,COLOR_PAIR(11));
         }
-        pthread_mutex_unlock(&buffer.mutex[i]); 
-    }		
+    }	
+    UNLOCK_PROJ();	
 }
 
 
@@ -73,8 +73,8 @@ void draw_proiettile(WINDOW* game){
 
 void draw_granate(WINDOW* game){
 	
+    LOCK_FROG();
     for (int i = IDX_GRANATE; i < IDX_GRANATE + 2; i++){
-        pthread_mutex_lock(&buffer.mutex[i]); 
         const Projectile* gran = (Projectile*)buffer.buffer[i];
 
         if (gran->alive) { //mostriamo le granate solo se vive
@@ -94,9 +94,9 @@ void draw_granate(WINDOW* game){
             mvwaddch(game,gran->y,gran->x,'O');
             wattroff(game,COLOR_PAIR(12));
                 }
-        }
-        pthread_mutex_unlock(&buffer.mutex[i]);                                                                                                                                                                                                                                                                      
+        }                                                                                                                                                                                                                                                                  
     }
+    UNLOCK_FROG();
 }
 
 //funzione che disegna la rana

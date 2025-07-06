@@ -80,8 +80,7 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
         game_struct->tane[i]=0;
     }
 
-    WINDOW* window = (WINDOW*)buffer.buffer[IDX_GRAPH];
-    window = game;
+    buffer.buffer[IDX_GRAPH] = game;
 
     //Definizione dei flussi
     fluxInit(gameConfig); //definisco velocità di ogni flusso
@@ -118,8 +117,8 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
         UNLOCK_GAME();
 
         LOCK_GRAPH();
-        //wclear(game);
-        //wrefresh(game);  
+        wclear(game);
+        wrefresh(game);  
         UNLOCK_GRAPH();
         
     }
