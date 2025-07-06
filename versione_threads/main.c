@@ -19,7 +19,7 @@ int main(){
     //fflush(stdout);
     //setlocale(LC_ALL, "");     // Abilita UTF-8	
     //sleep(1);	
-
+//
     ////Inizializziamo ncurses
     //initscr();
     //noecho();
@@ -36,7 +36,6 @@ int main(){
     int ricomincia=1;
     
     gameConfig gameConfig = {};
-    ;  //conterrà i risultati del game 
     WINDOW* game = NULL; // newwin(height, width, 0, 0);  //finestra dell'area gioco  
     
     while (true){
@@ -45,8 +44,8 @@ int main(){
         }	
         if (scelta == 0) { 
             if (ricomincia) {  //se 'ricomincia' è 0 manteniamo la stessa difficoltà
-                    //difficoltà=scegliDifficolta(game);
-                }
+                //difficoltà=scegliDifficolta(game);
+            }
             switch (difficoltà) {
                 case 0:  //Facile
                     gameConfig.vite=2;			   //numero vite

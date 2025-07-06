@@ -71,17 +71,17 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     }
     
     Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
-    game_struct->game = game;
     game_struct->score=0; 		//contiene lo score di tutto il game
     game_struct->vite=gameConfig->vite;    //contiene numero di vite rimaste
     game_struct->win=0;
-    game_struct->tempo = gameConfig->tempo;  //contiene tempo rimasto nella manche
-    printf("Inizializziamo tempo a %f\n", game_struct->tempo);
-    
-    //inizializzazione delle tane a 0
+    game_struct->time=gameConfig->tempo;    //contiene tempo rimasto nella manche    
+
     for (int i=0;i<NTANE-1;i++) {
         game_struct->tane[i]=0;
     }
+
+    WINDOW* window = (WINDOW*)buffer.buffer[IDX_GRAPH];
+    window = game;
 
     //Definizione dei flussi
     fluxInit(gameConfig); //definisco velocità di ogni flusso
@@ -98,11 +98,10 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     //inizio della partita - loop di gioco
     int tane_occupate=0;
     while (1) {		
-        
-        pthread_mutex_lock(&buffer.mutex);
+        LOCK_READ_GAME();
 
         if ((game_struct->win) ||  (game_struct->vite == 0)){
-            pthread_mutex_unlock(&buffer.mutex);
+            UNLOCK_GAME();
             break;
         }
 
@@ -112,19 +111,20 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
                 tane_occupate++;
             }
         }
-        if (tane_occupate==5) {		
+        if (tane_occupate==NTANE) {		
             game_struct->win = 1;
             game_struct->score += 100;
-              //uscita per tane chiuse
         }
+        UNLOCK_GAME();
 
-        pthread_mutex_unlock(&buffer.mutex);
+        LOCK_GRAPH();
+        //wclear(game);
+        //wrefresh(game);  
+        UNLOCK_GRAPH();
         
-        //wclear(game_struct->game);
-        //wrefresh(game_struct->game);     
     }
     exit(1);
-    // !!!!!! funzione per eliinare gli oggetti e liberare memoria
+    free(buffer.buffer);
     return game_struct;
 }
 
@@ -133,7 +133,9 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
 void crea_thread_gioco(gameConfig *gameConfig){
 
     //inizializzaizone del buffer produttore-consumatore
-    pthread_mutex_init(&buffer.mutex, NULL);
+    for (int i=0; i < BUFFER_SIZE; i++){
+        pthread_mutex_init(&buffer.mutex[i], NULL);
+    }
 
     // Thread grafica/consumatore
     pthread_t t_grafica, t_rana, t_tempo;
@@ -141,26 +143,28 @@ void crea_thread_gioco(gameConfig *gameConfig){
 
     // Creazione threads
     printf("...lancio i threads...\n");
-    //pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
+    pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
     pthread_create(&t_rana, NULL, thread_rana, (void *)gameConfig);
     pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
     pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
-    //pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
-    //pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
+    pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
+    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
     
 }
 
 //___________________________________________________________________________________________________
 //funzione che rinizializza la manche
 void newManche(Game_struct* game_struct, gameConfig* gameConfig){
-    game_struct->tempo = gameConfig->tempo;
 
+    game_struct->time = gameConfig->tempo;
+
+    LOCK_FROG();
     Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
     frog->x = RANA_XINIT;
     frog->y = RANA_YINIT;
     frog->alive = true;
     frog->tempo_prec = -1;
-
+    UNLOCK_FROG();
 }
 
 //_________________________________________________________________________________________________

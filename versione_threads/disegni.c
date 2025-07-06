@@ -56,7 +56,7 @@ void creazione_colori(){
 void draw_proiettile(WINDOW* game){
 	
     for (int i = IDX_PROIETTILI; i< IDX_PROIETTILI + MAX_CROCODILES; i++){
-
+        pthread_mutex_lock(&buffer.mutex[i]); 
         const Projectile* proj = (Projectile*)buffer.buffer[i];
 
         if (proj->alive) {  //mostriamo il proiettile solo se vivo		
@@ -64,6 +64,7 @@ void draw_proiettile(WINDOW* game){
             mvwaddch(game,proj->y,proj->x,'*');		
             wattroff(game,COLOR_PAIR(11));
         }
+        pthread_mutex_unlock(&buffer.mutex[i]); 
     }		
 }
 
@@ -73,6 +74,7 @@ void draw_proiettile(WINDOW* game){
 void draw_granate(WINDOW* game){
 	
     for (int i = IDX_GRANATE; i < IDX_GRANATE + 2; i++){
+        pthread_mutex_lock(&buffer.mutex[i]); 
         const Projectile* gran = (Projectile*)buffer.buffer[i];
 
         if (gran->alive) { //mostriamo le granate solo se vive
@@ -93,6 +95,7 @@ void draw_granate(WINDOW* game){
             wattroff(game,COLOR_PAIR(12));
                 }
         }
+        pthread_mutex_unlock(&buffer.mutex[i]);                                                                                                                                                                                                                                                                      
     }
 }
 
@@ -120,6 +123,7 @@ void drawCoccodrilli(WINDOW *game){
     wattron(game, COLOR_PAIR(10));
     
     for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
+        pthread_mutex_lock(&buffer.mutex[i]); 
         const Crocodile* crocod = (Crocodile*)buffer.buffer[i];
 
         if (crocod->alive && crocod->dir==1) { //coccodrillo vivo e direzionato verso destra
@@ -177,6 +181,7 @@ void drawCoccodrilli(WINDOW *game){
      	    	}  	    
    	        }
         }
+        pthread_mutex_unlock(&buffer.mutex[i]); 
     }
     wattroff(game, COLOR_PAIR(10));
 }

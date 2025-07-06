@@ -1,4 +1,6 @@
 #include "header.h"
+#include <ncurses.h>
+#include <stdio.h>
 
 extern pthread_mutex_t mutex_tane;
 
@@ -7,79 +9,111 @@ void* Gestione_grafica(void* arg){
     printf("...Inizio gest grafica...\n");
 
     gameConfig* gameCfg = (gameConfig*)arg;
+    Game_struct gameLocal;
+    Frog frogLocal;
+
 
     while(1){
-        pthread_mutex_lock(&buffer.mutex);
-
+        LOCK_READ_GAME();
         Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
-        WINDOW* game = game_struct->game;
 
         if ((game_struct->win) ||  (game_struct->vite == 0)){
-            pthread_mutex_unlock(&buffer.mutex);
+            UNLOCK_GAME();
             break;
         }
 
+        gameLocal = *game_struct;
+        UNLOCK_GAME();
+
         // Check frog position
+        LOCK_FROG();
         Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-        printf("Rana: alive=%d, x=%d, y=%d, tempo_prec=%f\n", frog->alive, frog->x, frog->y, frog->tempo_prec);
+        frogLocal = *frog;
+        UNLOCK_FROG();
+
+        printf("GestGraph: Rana: alive=%d, x=%d, y=%d, tempo_prec=%f\n", frogLocal.alive, frogLocal.x, frogLocal.y, frogLocal.tempo_prec);
         bool endManche = false;
 
-        if (!frog->alive){
-            endManche=true;
-        }
-
-        if (!endManche && frog->y < TANA_POS){
+        if (!endManche && frogLocal.y < TANA_POS){
             endManche = true;
-            frog->alive = false;
-            if (RanaSuTana(frog, game_struct)){
-                game_struct->score += 15 + (int)(15 * (float)game_struct->tempo / 100);
+            if (RanaSuTana(&frogLocal, &gameLocal)){
+                gameLocal.score += 15 + (int)(15 * gameLocal.time / 100);
+                printf("GestGraph: rana ha raggiunto una delle tane\n");
             }
             else{
-                game_struct->vite--;
-                game_struct->score -= 10;
+                gameLocal.vite--;
+                gameLocal.score -= 10;
+                printf("GestGraph: rana haraggiungo l'estremo superiore della mappa...\n");
             }
+            
         }
 
         if (!endManche){
 
-            int crocId = RanaSuCoccodrillo(frog);
+            int crocId = RanaSuCoccodrillo(&frogLocal);
             const int waterYtop = TANA_POS + SPONDA_SUPERIORE;
             const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
 
             if (crocId != -1 && (crocId < IDX_COCCODRILLI || crocId >= IDX_COCCODRILLI + MAX_CROCODILES)){
-                printf("ERROR: Crocodile idx is not valid!");
+                printf("ERROR: Crocodile idx is not valid!\n");
                 exit(EXIT_FAILURE);
             }
             if(crocId == -1){                // rana non su un coccodrillo
-                if (frog->y < waterYlow  && frog->y > waterYtop){      //rana fell in the water
+                if (frogLocal.y < waterYlow  && frogLocal.y > waterYtop){      //rana fell in the water
                     endManche = true;
-                    game_struct->vite--;
-                    game_struct->score -= 10;
-                    frog->alive = false;
+                    gameLocal.vite--;
+                    gameLocal.score -= 10;
+                    printf("GestGraph: la rana é cadut in acqua...\n");
                 }
+                else printf("GestGraph: la rana é sulla terraferma\n");
             }    
             else{
+                LOCK_CROCS();
                 const Crocodile* crocod = (Crocodile*)buffer.buffer[crocId];
 
-                const float tempo_prec = (frog->tempo_prec != -1) ? frog->tempo_prec : crocod->tempo_prec;              //depends on if it is the first time the frog is on the crocodile  
-                const int newX = frog->x + crocod->dir * crocod->speed * (tempo_prec - game_struct->tempo);  
-                if ( newX > RANA_XMIN && newX < RANA_XMAX) frog->x = newX;     //if the new position is outside the window, the frog doesnt move. The next iteration, the crocodile will be off, and so the frog will be in the water
+                const float tempo_prec = (frogLocal.tempo_prec != -1) ? frogLocal.tempo_prec : crocod->tempo_prec;              //depends on if it is the first time the frog is on the crocodile  
+                const int newX = frogLocal.x + crocod->dir * (int)(crocod->speed * (frogLocal.tempo_prec - gameLocal.time));
 
-                frog->tempo_prec = game_struct->tempo;   
+                UNLOCK_CROCS();
+                
+                if (newX != frogLocal.x){
+                    LOCK_FROG();
+                    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+                    if ( newX > RANA_XMIN && newX < RANA_XMAX) frog->x = newX;     //if the new position is outside the window, the frog doesnt move. The next iteration, the crocodile will be off, and so the frog will be in the water
+                    frog->tempo_prec = gameLocal.time;
+                    UNLOCK_FROG();
+                }
+                printf("GestGraph: Rana é su coccodrillo %d, newPos = %d, time_prec = %f\n", crocId, newX, tempo_prec);
+                
+                
             }
         }
 
         if (!endManche){
-            if(CollRanaProiettile(frog)){
+            if(CollRanaProiettile(&frogLocal)){
+                printf("GestGraph: rana colpita da un proiettile...\n");
                 endManche = true;
-                game_struct->vite--;
-                game_struct->score -= 15;
-                frog->alive = false;
+                gameLocal.vite--;
+                gameLocal.score -= 15;
             }
         }
 
-        if (endManche) newManche(game_struct, gameCfg);
-                
+        if (endManche) {
+            printf("Nuova manche...\n");
+            LOCK_WRITE_GAME();
+            Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+            game_struct->score = gameLocal.score;
+            game_struct->vite = gameLocal.vite;
+            for (int i=0;i<NTANE-1;i++) {
+                game_struct->tane[i]=gameLocal.tane[i];
+            }
+
+            newManche(game_struct, gameCfg);
+            UNLOCK_GAME();
+        }
+        
+        LOCK_GRAPH();
+        WINDOW* game = (WINDOW*)buffer.buffer[IDX_GRAPH];
         //werase(game);
         //windowGeneration(game, COLS, LINES, game_struct);
 //
@@ -112,7 +146,8 @@ void* Gestione_grafica(void* arg){
         //print_tempo(game, game_struct, (int)game_struct->tempo);
         //wrefresh(game);
 //
-        pthread_mutex_unlock(&buffer.mutex);
+        UNLOCK_GRAPH();
+        usleep(3 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }
@@ -120,6 +155,6 @@ void* Gestione_grafica(void* arg){
 //funzione che mostra la barra del tempo rimanente
 void print_tempo(WINDOW* game,Game_struct* game_struct, int tempo){
     wattron(game, COLOR_PAIR(7));
-    mvwhline(game,46,15, ' ', (int)(62*((float)game_struct->tempo/tempo)));
+    mvwhline(game,46,15, ' ', (int)(62*((float)game_struct->time/tempo)));
     wattroff(game, COLOR_PAIR(7));
 }

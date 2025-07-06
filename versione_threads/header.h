@@ -16,7 +16,6 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define BUFFER_SIZE 52
 #define MAX_CROCODILES 24
 #define NFLUSSI 8
 #define NGRANATE 2
@@ -49,11 +48,13 @@
 
 
 //// Buffer positions
-#define IDX_COCCODRILLI 4
 #define IDX_GAME 0
 #define IDX_RANA 1
-#define IDX_GRANATE 2
-#define IDX_PROIETTILI 28
+#define IDX_GRAPH 2
+#define IDX_GRANATE 3
+#define IDX_COCCODRILLI 5
+#define IDX_PROIETTILI 29
+#define BUFFER_SIZE 53
 
 typedef struct{
     int y;
@@ -64,10 +65,9 @@ typedef struct{
 typedef struct{
     int vite;
     int score;
-    float tempo;
     int tane[NTANE];
     int win; //serve per la condizione di uscita dal game
-    WINDOW* game;
+    float time;
 }Game_struct;
 
 typedef struct{
@@ -110,11 +110,9 @@ typedef struct {
 typedef struct {
     //array di strutture di tipo messaggio 
     void* buffer[BUFFER_SIZE];
-    //int in;  // indice di scrittura
-    //int out; // indice di lettura
-    pthread_mutex_t mutex; //serve per fare entrare un thread alla volta
-    //sem_t empty; // quanti slot vuoti
-    //sem_t full;  // quanti slot pieni
+    pthread_mutex_t mutex[4]; //serve per fare entrare un thread alla volta
+    pthread_rwlock_t mutex_gameStat;
+
 } BufferC; 
 
 // --- VARIABILI GLOBALI ---
@@ -163,7 +161,7 @@ void* Gestione_grafica(void* arg);
 
 
 // --- Lancio dinamico di granate/proiettili ---
-void sparaGranata(const float time, const gameConfig* gameConfig);
+void sparaGranata(const Frog* frog, const float time, const gameConfig* gameConfig);
 void sparaProiettile(const float time, const gameConfig* gameConfig, const int idx);
 
 // --- Buffer ---
@@ -186,4 +184,21 @@ int RanaSuCoccodrillo(const Frog *frog);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
 void punteggio_tempo(Game_struct* game_struct);
 int rand_funz(int min, int max);
+
+#define LOCK_FROG() pthread_mutex_lock(&buffer.mutex[0])
+#define UNLOCK_FROG() pthread_mutex_unlock(&buffer.mutex[0])
+
+#define LOCK_CROCS() pthread_mutex_lock(&buffer.mutex[1])
+#define UNLOCK_CROCS() pthread_mutex_unlock(&buffer.mutex[1])
+
+#define LOCK_PROJ() pthread_mutex_lock(&buffer.mutex[2])
+#define UNLOCK_PROJ() pthread_mutex_unlock(&buffer.mutex[2])
+
+#define LOCK_GRAPH() pthread_mutex_lock(&buffer.mutex[3])
+#define UNLOCK_GRAPH() pthread_mutex_unlock(&buffer.mutex[3])
+
+#define LOCK_READ_GAME() pthread_rwlock_rdlock(&buffer.mutex_gameStat)
+#define LOCK_WRITE_GAME() pthread_rwlock_wrlock(&buffer.mutex_gameStat)
+#define UNLOCK_GAME() pthread_rwlock_unlock(&buffer.mutex_gameStat)
+
 #endif

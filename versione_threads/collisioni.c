@@ -16,6 +16,7 @@ bool RanaSuTana(const Frog* frog, Game_struct* game_struct){
 
 //funzione che verifica se la rana è su un coccodrillo
 int RanaSuCoccodrillo(const Frog *frog){
+    LOCK_CROCS();
     for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
         const Crocodile* croc = (Crocodile*)buffer.buffer[i];
         
@@ -27,11 +28,13 @@ int RanaSuCoccodrillo(const Frog *frog){
             const int croc_y = croc->y;
             if(frog_y <= croc_y + DIM_FLUSSI/2 && frog_y >= croc_y - DIM_FLUSSI/2){
                 if ((frog_x-1 >= croc_x-4) && (frog_x+1 <= croc_x+4)){
+                    UNLOCK_CROCS();
                     return i;
                 }
             }
         }
     }
+    UNLOCK_CROCS();
     return -1; 
 }
 
@@ -39,6 +42,8 @@ bool CollRanaProiettile(const Frog* frog){
 
     const int frog_x = frog->x;
     const int frog_y = frog->y;
+
+    LOCK_PROJ();
 
     for (int i = IDX_PROIETTILI; i < IDX_PROIETTILI + MAX_CROCODILES; i++) {
         Projectile* proj = (Projectile*)buffer.buffer[i];
@@ -54,11 +59,13 @@ bool CollRanaProiettile(const Frog* frog){
                     proj->dir = -1;
                     proj->speed =-1;
                     proj->tempo_prec = -1;
+                    UNLOCK_PROJ();
                     return 1;
                 }
             }
         }
     }
+    UNLOCK_PROJ();
     return 0;
 }
 
@@ -66,6 +73,8 @@ bool CollGranataProiettile(Projectile* gran){
 
     const int gran_x = gran->x;
     const int gran_y = gran->y;
+
+    LOCK_PROJ();
 
     for (int i = IDX_PROIETTILI; i < IDX_PROIETTILI + MAX_CROCODILES; i++) {
         Projectile* proj = (Projectile*)buffer.buffer[i];
@@ -87,10 +96,12 @@ bool CollGranataProiettile(Projectile* gran){
                 gran->tempo_prec = -1;
                 gran->dir = -1;
                 gran->speed =-1;
+                UNLOCK_PROJ();
                 return 1;
             }
         }
     }
+    UNLOCK_PROJ();
     return 0;
 }
 
