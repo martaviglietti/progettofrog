@@ -74,13 +74,12 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     game_struct->score=0; 		//contiene lo score di tutto il game
     game_struct->vite=gameConfig->vite;    //contiene numero di vite rimaste
     game_struct->win=0;
-    game_struct->time=gameConfig->tempo;    //contiene tempo rimasto nella manche    
+    game_struct->time=gameConfig->tempo;    //contiene tempo rimasto nella manche  
 
     for (int i=0;i<NTANE-1;i++) {
         game_struct->tane[i]=0;
     }
-
-    buffer.buffer[IDX_GRAPH] = game;
+    game_struct->tane_count = 0;
 
     //Definizione dei flussi
     fluxInit(gameConfig); //definisco velocità di ogni flusso
@@ -95,31 +94,65 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     crea_thread_gioco(gameConfig);
 
     //inizio della partita - loop di gioco
-    int tane_occupate=0;
+    Game_struct gameLocal;
+    Frog frogLocal;
+
     while (1) {		
         LOCK_READ_GAME();
+        gameLocal = *game_struct;
+        UNLOCK_GAME();
 
-        if ((game_struct->win) ||  (game_struct->vite == 0)){
-            UNLOCK_GAME();
+        if ((gameLocal.win) ||  (gameLocal.vite == 0)){
             break;
         }
 
-        tane_occupate=0;
-        for (int i=0;i<NTANE;i++) {
-            if(game_struct->tane[i]==1){
-                tane_occupate++;
-            }
-        }
-        if (tane_occupate==NTANE) {		
-            game_struct->win = 1;
-            game_struct->score += 100;
-        }
-        UNLOCK_GAME();
+        LOCK_FROG();
+        frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
+        UNLOCK_FROG();
 
-        LOCK_GRAPH();
+        werase(game);
+        windowGeneration(game, COLS, LINES, &gameLocal);
+
+        drawCoccodrilli(game);
+        draw_granate(game);
+        draw_proiettile(game);
+        draw_frog(game, &frogLocal);
+
+        // Punteggio
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 2, "Punteggio: %d ", gameLocal.score);
+        wattroff(game, COLOR_PAIR(15));
+
+        // Vite
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 50, "Vite:");
+        mvwhline(game, 2, 55, ' ', 21);
+        for (int i = 0; i < gameLocal.vite; i++) {
+            mvwprintw(game, 2, 55 + i * 2, "❤️");
+        }
+        wattroff(game, COLOR_PAIR(15));
+        // Tempo
+        wattron(game, COLOR_PAIR(15));
+        mvwhline(game, 46, 2, ' ', 10);
+        mvwprintw(game, 46, 2, "Tempo: %d ", (int)gameLocal.time);
+        wattroff(game, COLOR_PAIR(15));
+
+        print_tempo(game, &gameLocal, (int)gameLocal.time);
+        wrefresh(game);
+
+        keypad(game, true);  // abilita frecce
+        nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
+        int key = wgetch(game);
+        if (key != ERR){
+            LOCK_FROG();
+            Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+            frog->key = key;
+            UNLOCK_FROG();
+        }
+        //int key = 258 +rand_funz(0,3);
+
         wclear(game);
-        wrefresh(game);  
-        UNLOCK_GRAPH();
+        wrefresh(game);
         
     }
     exit(1);
@@ -142,28 +175,13 @@ void crea_thread_gioco(gameConfig *gameConfig){
 
     // Creazione threads
     printf("...lancio i threads...\n");
-    pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
+    //pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
     pthread_create(&t_rana, NULL, thread_rana, (void *)gameConfig);
-    pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
-    pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
-    pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
-    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
+    //pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
+    //pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
+    //pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
+    //pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
     
-}
-
-//___________________________________________________________________________________________________
-//funzione che rinizializza la manche
-void newManche(Game_struct* game_struct, gameConfig* gameConfig){
-
-    game_struct->time = gameConfig->tempo;
-
-    LOCK_FROG();
-    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-    frog->x = RANA_XINIT;
-    frog->y = RANA_YINIT;
-    frog->alive = true;
-    frog->tempo_prec = -1;
-    UNLOCK_FROG();
 }
 
 //_________________________________________________________________________________________________

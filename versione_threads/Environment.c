@@ -31,7 +31,7 @@ void* thread_tempo(void* arg) {
     gettimeofday(&prev, NULL);
 
     while (1) {
-        usleep(10 * 1000);  // sleep 10 ms
+        usleep(50 * 1000);  // sleep 10 ms
 
         gettimeofday(&now, NULL);
         float elapsed = (now.tv_sec - prev.tv_sec) + (now.tv_usec - prev.tv_usec) / 1000000.0f;
@@ -48,11 +48,20 @@ void* thread_tempo(void* arg) {
         game_struct->time -= elapsed;
         printf("New time: %f\n",game_struct->time);
         
-
         if (game_struct->time <= 0){
+            printf("NewManche: time out. \n");
+
             game_struct->score -= 20;
             game_struct->vite--;
-            newManche(game_struct, gameCfg);
+            game_struct->time = gameCfg->tempo;
+
+            UNLOCK_GAME();
+
+            LOCK_FROG();
+            restartFrog();
+            UNLOCK_FROG();
+
+            continue;
         }
         UNLOCK_GAME();
     }

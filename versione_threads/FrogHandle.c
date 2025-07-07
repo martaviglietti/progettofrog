@@ -13,17 +13,24 @@ void frogInit(){
     Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
     frog->x = RANA_XINIT;
     frog->y = RANA_YINIT;
-    frog->alive = true;
-    frog->tempo_prec = -1;
+    frog->crocIdx = -1;
+    frog->key = -1;
     //printf("Rana inizializzata con alive=%d, x=%d, y=%d, tempo_prec=%f\n", frog->alive, frog->x, frog->y, frog->tempo_prec);
 }
 
 void* thread_rana(void* arg) {
     gameConfig* gameCfg = (gameConfig*)arg;
     Frog frogLocal;
+    Game_struct gameLocal;
+    int key = -1;
+
+    const int waterYtop = TANA_POS + SPONDA_SUPERIORE;
+    const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
 
     while(1){
 
+        bool newManche = 0;
+        
         LOCK_READ_GAME();
         const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
 
@@ -31,31 +38,25 @@ void* thread_rana(void* arg) {
             UNLOCK_GAME();
             break;
         }
-        const float time = game_struct->time;
+        gameLocal = *game_struct;
         UNLOCK_GAME();
-
-        LOCK_GRAPH();
-        WINDOW* game = (WINDOW*)buffer.buffer[IDX_GRAPH];;
-        keypad(game, true);  // abilita frecce
-        nodelay(game, FALSE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
-        int key = wgetch(game);
-        UNLOCK_GRAPH();
-        //int key = 258 +rand_funz(0,3);
 
         LOCK_FROG();
         frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
         UNLOCK_FROG();
 
-        if (!frogLocal.alive){
-            continue;
-        }
+        if (frogLocal.key == -1) continue;
 
         int old = frogLocal.y;
         int newPos;
-        switch (key) {
+        switch (frogLocal.key) {
             case KEY_UP:
                 frogLocal.y  -=  ALTEZZARANA;
-                if (frogLocal.y < TANA_POS) frogLocal.alive = false;
+
+                if (false && frogLocal.y < TANA_POS) {
+                    RanaSuTana(&frogLocal, gameCfg);
+                    newManche = true; 
+                }
                 break;
 
             case KEY_DOWN:
@@ -74,16 +75,40 @@ void* thread_rana(void* arg) {
                 break;
 
             case 's':  // spara granate
-                sparaGranata(&frogLocal, time, gameCfg);
+                sparaGranata(&frogLocal, gameLocal.time, gameCfg);
                 break;
         }    
-        printf("frog moved from %d to %d, at time=%f\n", old, frogLocal.y, time);    
+        
+        printf("frog moved from %d to %d, at time=%f\n", old, frogLocal.y, gameLocal.time);
+
+        //check if frog is on a crocodile
+        if (false && frogLocal.y < waterYlow  && frogLocal.y > waterYtop){     //if frog in water region
+            
+            const int crocId = RanaSuCoccodrillo(&frogLocal, gameCfg);
+
+            if(crocId == -1){              //rana fell in the water
+                newManche = true;
+                printf("GestGraph: la rana é caduta in acqua...\n");
+            }
+            else{
+                frogLocal.crocIdx = crocId;
+                printf("GestGraph: la rana é sul coccodrillo %d\n", crocId);
+            }
+        }
+
         LOCK_FROG();
-        Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-        frog->x = frogLocal.x;
-        frog->y = frogLocal.y;
-        frog->alive = frogLocal.alive; 
+        if(false && newManche){
+            restartFrog();
+        }
+        else{
+            Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+            frog->x = frogLocal.x;
+            frog->y = frogLocal.y;
+            frog->crocIdx = frogLocal.crocIdx;
+            frog->key = -1;
+        }
         UNLOCK_FROG();
+
         usleep(3 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
@@ -176,3 +201,13 @@ void* thread_granata(void* arg) {
     pthread_exit(NULL);
 }
 
+//___________________________________________________________________________________________________
+//funzione che rinizializza la rana
+void restartFrog(){
+
+    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+    frog->x = RANA_XINIT;
+    frog->y = RANA_YINIT;
+    frog->crocIdx = -1;
+    frog->key = -1;
+}

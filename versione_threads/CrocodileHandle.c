@@ -50,6 +50,7 @@ void CrocodileInit(Flusso *flussi) {
 void *thread_coccodrillo(void *arg) {
 
     gameConfig* gameCfg = (gameConfig*)arg;
+    Frog frogLocal;
 
     while(1){
         
@@ -63,13 +64,19 @@ void *thread_coccodrillo(void *arg) {
         const float time = game_struct->time;
         UNLOCK_GAME();
 
+        LOCK_FROG();
+        frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
+        UNLOCK_FROG();
+
         LOCK_CROCS();
         for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
             Crocodile* crocod = (Crocodile*)buffer.buffer[i];
 
             if (crocod->alive){
+
+                //aggiorniamo la posizione del coccodrillo
                 const int newX = crocod->x + crocod->dir * (int)(crocod->speed * (crocod->tempo_prec - time));
-                //if (i==IDX_COCCODRILLI) printf("AGGIornamneto coccodrillo: dt = %f, dx= %f, x0=%d, xnew= %d\n",(crocod->tempo_prec - time),crocod->speed * (crocod->tempo_prec - time), crocod->x, newX);
+
                 if (newX != crocod->x){       //se la nuova posizione é diversa dalla precedente
                     if (newX >= POS_SPAWN_COC_SINISTRA && newX <= POS_SPAWN_COC_DESTRA){    // nuova posizione valida
                         crocod->x = newX;
@@ -90,8 +97,16 @@ void *thread_coccodrillo(void *arg) {
                         }
                     }
                 }
+
+                if (i==frogLocal.crocIdx && newX > RANA_XMIN && newX < RANA_XMAX){
+                    LOCK_FROG();
+                    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+                    frog->x = newX;
+                    UNLOCK_FROG();
+                    printf("GestGraph: Rana é su coccodrillo %d, oldPos = %d, newPos = %d\n", i, frogLocal.x, newX);
+                }
             }
-            else{
+            else{     //coccodrillo é disattivo
                 if (time <= crocod->wait){      // creiamo il coccodrillo
 
                     const int id_flusso = rand_funz(0, NFLUSSI-1);

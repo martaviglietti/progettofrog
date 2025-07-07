@@ -2,26 +2,48 @@
 #include "header.h"
 
 
-bool RanaSuTana(const Frog* frog, Game_struct* game_struct){
+void RanaSuTana(const Frog* frog, const gameConfig* gameConfig){
 
+    bool isSucc = false;
+
+    LOCK_WRITE_GAME();
+    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+    
     for (int i = 0; i < NTANE; i++) {
         if (frog->x >= 8 + (15) * i && frog->x < 8 + (15) * i + 5 && game_struct->tane[i] == 0) { 
             game_struct->tane[i] = 1;
-            return 1;
+            game_struct->tane_count++;
+            isSucc = true;
         }
     }
+    
+    if(!isSucc){
+        printf("NewManche: rana haraggiungo l'estremo superiore della mappa ma mancando le tane...\n");
+        game_struct->vite--;
+        game_struct->score -= 10;
+    }
+    else{
+        printf("NewManche: rana ha raggiunto una delle tane\n");
+        game_struct->score += 15 + (int)(15 * game_struct->time / 100);
 
-    return 0;
+        if (game_struct->tane_count == NTANE){
+            game_struct->win = 1;
+            game_struct->score += 100;
+        }
+    }
+    game_struct->time = gameConfig->tempo;
+    UNLOCK_GAME();
 }
 
 //funzione che verifica se la rana è su un coccodrillo
-int RanaSuCoccodrillo(const Frog *frog){
+int RanaSuCoccodrillo(const Frog *frog, const gameConfig* gameConfig){
+
+    const int frog_x = frog->x;
+    const int frog_y = frog->y;
+
     LOCK_CROCS();
     for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
         const Crocodile* croc = (Crocodile*)buffer.buffer[i];
-        
-        const int frog_x = frog->x;
-        const int frog_y = frog->y;
 
         if (croc->alive) {
             const int croc_x = croc->x;
@@ -35,6 +57,14 @@ int RanaSuCoccodrillo(const Frog *frog){
         }
     }
     UNLOCK_CROCS();
+
+    LOCK_WRITE_GAME();
+    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+    game_struct->vite--;
+    game_struct->score -= 10;
+    game_struct->time = gameConfig->tempo;
+    UNLOCK_GAME();
+
     return -1; 
 }
 

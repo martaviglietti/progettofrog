@@ -50,11 +50,10 @@
 //// Buffer positions
 #define IDX_GAME 0
 #define IDX_RANA 1
-#define IDX_GRAPH 2
-#define IDX_GRANATE 3
-#define IDX_COCCODRILLI 5
-#define IDX_PROIETTILI 29
-#define BUFFER_SIZE 53
+#define IDX_GRANATE 2
+#define IDX_COCCODRILLI 4
+#define IDX_PROIETTILI 28
+#define BUFFER_SIZE 52
 
 typedef struct{
     int y;
@@ -66,6 +65,7 @@ typedef struct{
     int vite;
     int score;
     int tane[NTANE];
+    int tane_count;
     int win; //serve per la condizione di uscita dal game
     float time;
 }Game_struct;
@@ -92,8 +92,8 @@ typedef struct {
 typedef struct {
     int y;
     int x;
-    bool alive;
-    float tempo_prec;
+    int crocIdx;
+    int key;
 } Frog;
 
 typedef struct {
@@ -143,7 +143,7 @@ void def_dir_flussi(Flusso *flussi);
 //funzioni di gioco
 Game_struct* startGame(WINDOW *game, gameConfig* gameConfig);
 void crea_thread_gioco(gameConfig* gameConfig);
-void newManche(Game_struct* game_struct, gameConfig* gameConfig);
+void restartFrog();
 
 //funzioni inizializzazione oggetti
 void CrocodileInit(Flusso *flussi);
@@ -179,8 +179,8 @@ void drawCoccodrilli(WINDOW *game);
 // --- Utility di gioco e collisioni ---
 bool CollRanaProiettile(const Frog* frog);
 bool CollGranataProiettile(Projectile* gran);
-bool RanaSuTana(const Frog* frog, Game_struct* game_struct);
-int RanaSuCoccodrillo(const Frog *frog);
+void RanaSuTana(const Frog* frog, const gameConfig* gameConfig);
+int RanaSuCoccodrillo(const Frog *frog, const gameConfig* gameConfig);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
 void punteggio_tempo(Game_struct* game_struct);
 int rand_funz(int min, int max);
@@ -193,9 +193,6 @@ int rand_funz(int min, int max);
 
 #define LOCK_PROJ() pthread_mutex_lock(&buffer.mutex[2])
 #define UNLOCK_PROJ() pthread_mutex_unlock(&buffer.mutex[2])
-
-#define LOCK_GRAPH() pthread_mutex_lock(&buffer.mutex[3])
-#define UNLOCK_GRAPH() pthread_mutex_unlock(&buffer.mutex[3])
 
 #define LOCK_READ_GAME() pthread_rwlock_rdlock(&buffer.mutex_gameStat)
 #define LOCK_WRITE_GAME() pthread_rwlock_wrlock(&buffer.mutex_gameStat)
