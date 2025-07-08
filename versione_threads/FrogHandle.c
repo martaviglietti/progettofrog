@@ -22,7 +22,6 @@ void* thread_rana(void* arg) {
     gameConfig* gameCfg = (gameConfig*)arg;
     Frog frogLocal;
     Game_struct gameLocal;
-    int key = -1;
 
     const int waterYtop = TANA_POS + SPONDA_SUPERIORE;
     const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
@@ -53,7 +52,7 @@ void* thread_rana(void* arg) {
             case KEY_UP:
                 frogLocal.y  -=  ALTEZZARANA;
 
-                if (false && frogLocal.y < TANA_POS) {
+                if (frogLocal.y < TANA_POS) {
                     RanaSuTana(&frogLocal, gameCfg);
                     newManche = true; 
                 }
@@ -82,7 +81,7 @@ void* thread_rana(void* arg) {
         printf("frog moved from %d to %d, at time=%f\n", old, frogLocal.y, gameLocal.time);
 
         //check if frog is on a crocodile
-        if (false && frogLocal.y < waterYlow  && frogLocal.y > waterYtop){     //if frog in water region
+        if (frogLocal.y < waterYlow  && frogLocal.y > waterYtop){     //if frog in water region
             
             const int crocId = RanaSuCoccodrillo(&frogLocal, gameCfg);
 
@@ -97,7 +96,7 @@ void* thread_rana(void* arg) {
         }
 
         LOCK_FROG();
-        if(false && newManche){
+        if(newManche){
             restartFrog();
         }
         else{

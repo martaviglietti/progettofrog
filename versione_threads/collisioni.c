@@ -49,7 +49,7 @@ int RanaSuCoccodrillo(const Frog *frog, const gameConfig* gameConfig){
             const int croc_x = croc->x;
             const int croc_y = croc->y;
             if(frog_y <= croc_y + DIM_FLUSSI/2 && frog_y >= croc_y - DIM_FLUSSI/2){
-                if ((frog_x-1 >= croc_x-4) && (frog_x+1 <= croc_x+4)){
+                if ((frog_x >= croc_x-3) && (frog_x <= croc_x+3)){
                     UNLOCK_CROCS();
                     return i;
                 }
