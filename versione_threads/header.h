@@ -107,18 +107,16 @@ typedef struct {
 
 //buffer c è un contenutor organizzata con sincronizzazione 
 //creo una struttura globale condivisa 
+#define NMUTEX 3
 typedef struct {
     //array di strutture di tipo messaggio 
     void* buffer[BUFFER_SIZE];
-    pthread_mutex_t mutex[4]; //serve per fare entrare un thread alla volta
+    pthread_mutex_t mutex[NMUTEX]; //serve per fare entrare un thread alla volta
     pthread_rwlock_t mutex_gameStat;
 
 } BufferC; 
 
 // --- VARIABILI GLOBALI ---
-//serve per proteggere la stampa a schermo
-//extern pthread_mutex_t mutex_ncurses;
-
 extern const char *OPZIONI[];
 extern const char *frog_sprite[2];
 extern const char *coc_sprite[2][2];

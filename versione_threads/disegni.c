@@ -6,7 +6,7 @@ const char *frog_sprite[2] = {
     "   "
 };
 
-const char *coc_sprite[2][2]={{"XXXXXXX","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
+const char *coc_sprite[2][2]={{"XXXXXXXXX","XXXXXX0X0"},{"XXXXXXXXX","0X0XXXXXX"}};
 
 //funzione che crea i colori utilizzati durante il gioco
 void creazione_colori(){
@@ -58,7 +58,7 @@ void draw_proiettile(WINDOW* game){
     LOCK_PROJ();
     for (int i = IDX_PROIETTILI; i< IDX_PROIETTILI + MAX_CROCODILES; i++){
         const Projectile* proj = (Projectile*)buffer.buffer[i];
-
+        //printf("i = %d, ptr = %p\n", i, proj);
         if (proj->alive) {  //mostriamo il proiettile solo se vivo		
             wattron(game,COLOR_PAIR(11));
             mvwaddch(game,proj->y,proj->x,'*');		
@@ -68,14 +68,12 @@ void draw_proiettile(WINDOW* game){
     UNLOCK_PROJ();	
 }
 
-
-
-
 void draw_granate(WINDOW* game){
 	
     LOCK_FROG();
     for (int i = IDX_GRANATE; i < IDX_GRANATE + 2; i++){
         const Projectile* gran = (Projectile*)buffer.buffer[i];
+        //printf("i = %d, ptr = %p\n", i, gran);
 
         if (gran->alive) { //mostriamo le granate solo se vive
                     
@@ -122,8 +120,8 @@ void drawCoccodrilli(WINDOW *game){
     int h;  //variabile utilizzata per tenere conto di quale parte del coccodrillo stiamo printando (inferiore o superiore)
     wattron(game, COLOR_PAIR(10));
     
+    LOCK_CROCS();
     for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
-        pthread_mutex_lock(&buffer.mutex[i]); 
         const Crocodile* crocod = (Crocodile*)buffer.buffer[i];
 
         if (crocod->alive && crocod->dir==1) { //coccodrillo vivo e direzionato verso destra
@@ -154,7 +152,8 @@ void drawCoccodrilli(WINDOW *game){
    	            }
             }
 
-        } else if (crocod->alive && crocod->dir==-1) {   //coccodrillo vivo e direzionato verso sinistra
+        }
+        else if (crocod->alive && crocod->dir==-1) {   //coccodrillo vivo e direzionato verso sinistra
        	    
        	    h=0; 
             //printiamo la parte superiore del coccodrillo
@@ -181,8 +180,8 @@ void drawCoccodrilli(WINDOW *game){
      	    	}  	    
    	        }
         }
-        pthread_mutex_unlock(&buffer.mutex[i]); 
     }
+    UNLOCK_CROCS();
     wattroff(game, COLOR_PAIR(10));
 }
 

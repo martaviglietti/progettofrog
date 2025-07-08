@@ -3,20 +3,20 @@
 void CrocodileInit(Flusso *flussi) {
     Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
 
-    const int Ninit = rand_funz(2, 8);
+    const int Ninit = rand_funz(3, 8);
     bool used_flusso[NFLUSSI] = { false };
 
     for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
 
         buffer.buffer[i] = malloc(sizeof(Crocodile));
-            if (buffer.buffer[i]== NULL) {
+        if (buffer.buffer[i]== NULL) {
             fprintf(stderr, "malloc failed at Crocodile Initialization at index %d\n", i);
             exit(EXIT_FAILURE);
         }
 
         Crocodile* crocod = (Crocodile*)buffer.buffer[i];
 
-        if ((i-IDX_COCCODRILLI) <= Ninit){
+        if ((i-IDX_COCCODRILLI) < Ninit){
 
             int id_flusso;
             do {

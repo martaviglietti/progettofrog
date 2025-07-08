@@ -159,6 +159,9 @@ void GranateInit(){
         gran->dir = -1;
         gran->speed =-1;
 
+        printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i-IDX_GRANATE, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
+
+
         //printf("Granata %d inizializzata con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
 
     }

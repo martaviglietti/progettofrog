@@ -105,14 +105,14 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
         if ((gameLocal.win) ||  (gameLocal.vite == 0)){
             break;
         }
-
+        
         LOCK_FROG();
         frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
         UNLOCK_FROG();
-
+        
         werase(game);
         windowGeneration(game, COLS, LINES, &gameLocal);
-
+    
         drawCoccodrilli(game);
         draw_granate(game);
         draw_proiettile(game);
@@ -165,9 +165,10 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
 void crea_thread_gioco(gameConfig *gameConfig){
 
     //inizializzaizone del buffer produttore-consumatore
-    for (int i=0; i < BUFFER_SIZE; i++){
+    for (int i=0; i < NMUTEX; i++){
         pthread_mutex_init(&buffer.mutex[i], NULL);
     }
+    pthread_rwlock_init(&buffer.mutex_gameStat, NULL);
 
     // Thread grafica/consumatore
     pthread_t t_grafica, t_rana, t_tempo;
@@ -177,10 +178,10 @@ void crea_thread_gioco(gameConfig *gameConfig){
     printf("...lancio i threads...\n");
     //pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
     pthread_create(&t_rana, NULL, thread_rana, (void *)gameConfig);
-    //pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
-    //pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
-    //pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
-    //pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
+    pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
+    pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
+    pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
+    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
     
 }
 

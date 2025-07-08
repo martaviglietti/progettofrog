@@ -14,7 +14,7 @@ int main(){
     };
 
     seed_random(); 
-
+    
     printf("\e[8;%d;%dt", 49, 81);  //ridimensioniamo il terminale
     fflush(stdout);
     setlocale(LC_ALL, "");     // Abilita UTF-8	
@@ -30,11 +30,11 @@ int main(){
     srand(time(NULL));
    
     int height = LINES;
-    int width = COLS;
+    int width = COLS; 
     int scelta = 0;	     //variabile contenente la scelta dal menù principale
     int difficoltà = 0;  //variabile contenente la difficoltà scelta dal menù delle difficoltà
     int ricomincia=1;
-    
+   
     gameConfig gameConfig = {};
     WINDOW* game = newwin(height, width, 0, 0);  //finestra dell'area gioco  
     
@@ -90,15 +90,15 @@ int main(){
             credits(game);
         	
         } else {  //Uscita
-            wclear(game);
-            mvwprintw(game, height / 2, width / 2 - 5, "Uscita...");
-            wrefresh(game);
-            sleep(1);
+            //wclear(game);
+            //mvwprintw(game, height / 2, width / 2 - 5, "Uscita...");
+            //wrefresh(game);
+            //sleep(1);
             break; // Esci dal programma
         }
     }
 
-    delwin(game);
+    //delwin(game);
     endwin();
     return 0;
 }
