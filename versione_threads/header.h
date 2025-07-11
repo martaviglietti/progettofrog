@@ -175,7 +175,7 @@ void drawCoccodrilli(WINDOW *game);
 
 
 // --- Utility di gioco e collisioni ---
-bool CollRanaProiettile(const Frog* frog);
+bool CollRanaProiettile(const Frog* frog, const gameConfig* gameConfig);
 bool CollGranataProiettile(Projectile* gran);
 void RanaSuTana(const Frog* frog, const gameConfig* gameConfig);
 int RanaSuCoccodrillo(const Frog *frog, const gameConfig* gameConfig);

@@ -24,7 +24,6 @@ OBJECTS_THREADS = $(OBJ_DIR_THREADS)/CrocodileHandle.o \
 				$(OBJ_DIR_THREADS)/FrogHandle.o \
 				$(OBJ_DIR_THREADS)/GameUtils.o \
 				$(OBJ_DIR_THREADS)/main.o \
-				$(OBJ_DIR_THREADS)/gestionegrafica.o \
 				$(OBJ_DIR_THREADS)/WindowsGen.o
 
 CFLAGS = -g -Wall -I/usr/include  -I/usr/include/x86_64-linux-gnu # Include ncurses headers if needed

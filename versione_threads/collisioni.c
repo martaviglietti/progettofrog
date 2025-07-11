@@ -68,7 +68,7 @@ int RanaSuCoccodrillo(const Frog *frog, const gameConfig* gameConfig){
     return -1; 
 }
 
-bool CollRanaProiettile(const Frog* frog){
+bool CollRanaProiettile(const Frog* frog, const gameConfig* gameConfig){
 
     const int frog_x = frog->x;
     const int frog_y = frog->y;
@@ -90,6 +90,14 @@ bool CollRanaProiettile(const Frog* frog){
                     proj->speed =-1;
                     proj->tempo_prec = -1;
                     UNLOCK_PROJ();
+
+                    LOCK_WRITE_GAME();
+                    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+                    game_struct->vite--;
+                    game_struct->score -= 15;
+                    game_struct->time = gameConfig->tempo;
+                    UNLOCK_GAME();
+
                     return 1;
                 }
             }

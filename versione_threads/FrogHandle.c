@@ -80,7 +80,7 @@ void* thread_rana(void* arg) {
         
         printf("frog moved from %d to %d, at time=%f\n", old, frogLocal.y, gameLocal.time);
 
-        //check if frog is on a crocodile
+        //check if frog is on a crocodile or hit by a projectile
         if (frogLocal.y < waterYlow  && frogLocal.y > waterYtop){     //if frog in water region
             
             const int crocId = RanaSuCoccodrillo(&frogLocal, gameCfg);
@@ -92,6 +92,11 @@ void* thread_rana(void* arg) {
             else{
                 frogLocal.crocIdx = crocId;
                 printf("GestGraph: la rana é sul coccodrillo %d\n", crocId);
+            }
+
+            if(CollRanaProiettile(&frogLocal, gameCfg)){
+                printf("GestGraph: rana colpita da un proiettile...\n");
+                newManche = true;
             }
         }
 
@@ -108,7 +113,7 @@ void* thread_rana(void* arg) {
         }
         UNLOCK_FROG();
 
-        usleep(3 * 1000);  // sleep 10 ms
+        usleep(100 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }
@@ -198,7 +203,7 @@ void* thread_granata(void* arg) {
             else gran->alive=0;
         }
         UNLOCK_FROG();
-        usleep(10 * 1000);  // sleep 10 ms
+        usleep(100 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }

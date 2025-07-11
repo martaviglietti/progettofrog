@@ -106,17 +106,17 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
             break;
         }
         
-        LOCK_FROG();
-        frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
-        UNLOCK_FROG();
+        //LOCK_FROG();
+        //frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
+        //UNLOCK_FROG();
         
-        werase(game);
+        //werase(game);
         windowGeneration(game, COLS, LINES, &gameLocal);
     
-        drawCoccodrilli(game);
-        draw_granate(game);
-        draw_proiettile(game);
-        draw_frog(game, &frogLocal);
+        //drawCoccodrilli(game);
+        //draw_granate(game);
+        //draw_proiettile(game);
+        //draw_frog(game, &frogLocal);
 
         // Punteggio
         wattron(game, COLOR_PAIR(15));
@@ -137,18 +137,18 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
         mvwprintw(game, 46, 2, "Tempo: %d ", (int)gameLocal.time);
         wattroff(game, COLOR_PAIR(15));
 
-        print_tempo(game, &gameLocal, (int)gameLocal.time);
-        wrefresh(game);
+        //print_tempo(game, &gameLocal, (int)gameLocal.time);
+        //wrefresh(game);
 
-        keypad(game, true);  // abilita frecce
+        //keypad(game, true);  // abilita frecce
         nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
         int key = wgetch(game);
-        if (key != ERR){
-            LOCK_FROG();
-            Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-            frog->key = key;
-            UNLOCK_FROG();
-        }
+        //if (key != ERR && frogLocal.key == -1){
+        //    LOCK_FROG();
+        //    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+        //    frog->key = key;
+        //    UNLOCK_FROG();
+        //}
         //int key = 258 +rand_funz(0,3);
 
         wclear(game);
@@ -171,12 +171,11 @@ void crea_thread_gioco(gameConfig *gameConfig){
     pthread_rwlock_init(&buffer.mutex_gameStat, NULL);
 
     // Thread grafica/consumatore
-    pthread_t t_grafica, t_rana, t_tempo;
+    pthread_t t_rana, t_tempo;
     pthread_t t_coccodrilli, t_proiettili, t_granate;
 
     // Creazione threads
     printf("...lancio i threads...\n");
-    //pthread_create(&t_grafica, NULL, Gestione_grafica, (void*)gameConfig);
     pthread_create(&t_rana, NULL, thread_rana, (void *)gameConfig);
     pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
     pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
@@ -236,4 +235,11 @@ void credits(WINDOW *game){
 
     wrefresh(game); 
     wgetch(game);
+}
+
+//funzione che mostra la barra del tempo rimanente
+void print_tempo(WINDOW* game,Game_struct* game_struct, int tempo){
+    wattron(game, COLOR_PAIR(7));
+    mvwhline(game,46,15, ' ', (int)(62*((float)game_struct->time/tempo)));
+    wattroff(game, COLOR_PAIR(7));
 }

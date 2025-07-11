@@ -31,7 +31,7 @@ void* thread_tempo(void* arg) {
     gettimeofday(&prev, NULL);
 
     while (1) {
-        usleep(50 * 1000);  // sleep 10 ms
+        usleep(100 * 1000);  // sleep 10 ms
 
         gettimeofday(&now, NULL);
         float elapsed = (now.tv_sec - prev.tv_sec) + (now.tv_usec - prev.tv_usec) / 1000000.0f;

@@ -124,7 +124,7 @@ void *thread_coccodrillo(void *arg) {
             printf("Coccodrillo %d aggiornato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f, at time=%f\n", i-IDX_COCCODRILLI, crocod->alive, crocod->x, crocod->y, crocod->speed, crocod->dir, crocod->wait, crocod->tempo_prec, time);
         }
         UNLOCK_CROCS();
-        usleep(10 * 1000);  // sleep 10 ms
+        usleep(100 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL); 
 }
@@ -192,7 +192,7 @@ void* thread_proiettile(void* arg) {
             printf("Proiettile %d aggiornato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f, at time=%f\n", i-IDX_PROIETTILI, proj->alive, proj->x, proj->y, proj->speed, proj->dir, proj->tempo_prec, time);         
         }
         UNLOCK_PROJ();
-        usleep(10 * 1000);  // sleep 10 ms
+        usleep(100 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }
