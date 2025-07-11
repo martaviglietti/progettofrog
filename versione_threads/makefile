@@ -1,5 +1,3 @@
-# Nome dell'eseguibile finale
-TARGET = frog_game
 
 # Compilatore
 CC = gcc
@@ -8,23 +6,32 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 
 # Librerie da linkare
-LIBS = -lncurses -lpthread
+LIBS = -lncursesw -lpthread
 
-# Lista dei file sorgente
+
+#nome output
+TARGET = frog_game
+    
+   
 SRCS = \
-    threads1.c \
-    gestionegrafica.c \
-    comunicazione.c \
     collisioni.c \
-    gestionecoccodrilli.c \
     disegni.c \
-    windowsgeneration.c
+    coccodrilli.c \
+    rana.c \
+    gestionegrafica.c \
+    main.c \
+    menu.c
 
-# File oggetto generati automaticamente
+
 OBJS = $(SRCS:.c=.o)
 
 # Regola principale
-all: $(TARGET)
+all: clean $(TARGET) clean
+
+#compilazione di tutti i sorgenti (senza linking)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
 
 # Come creare l'eseguibile
 $(TARGET): $(OBJS)
