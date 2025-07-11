@@ -1,51 +1,171 @@
-//funzione di controllo collisione rana-proiettile
+
+
 #include "header.h"
 
-extern pthread_mutex_t mutex_tane;
-
-int CollisioneRanaProiettile(Rana rana,Proiettile proiettile){
-
-    if((rana.x+1==proiettile.x || rana.x-1==proiettile.x) && rana.y==proiettile.y && proiettile.alive) return 1;
-    else return 0;   
-}
 
 
-int RanaSuTana(Rana rana, Game_struct* game_struct){
-    pthread_mutex_lock(&mutex_tane);
-    for (int i = 0; i < 5; i++) {
-        if (rana.x >= 8 + (15) * i && rana.x < 8 + (15) * i + 5 && game_struct->tane[i] == 0) {
-            game_struct->tane[i] = 1;
-            pthread_mutex_unlock(&mutex_tane);
-            return 1;
-        }
+
+
+//funzione che gestisce il movimento della rana su un coccodrillo
+
+int movimento_rana_su_coccodrillo(int id, int coccodrillo_scelto, Coccodrillo* coccodrilli, Rana* rana, Statistiche * statistiche_gioco, int giocare ) {
+
+
+
+    if (coccodrillo_scelto==coccodrilli[id].id) {  //controlliamo che il coccodrillo attuale sia anche quello su cui la rana era posata prima dello spostamento
+
+        if ((rana->x<=2 && coccodrilli[id].dir==-1) || (rana->x>=LARGHEZZA_GIOCO-3 && coccodrilli[id].dir==1)) {  //controlliamo se la rana si trova agli estremi della mappa			
+
+	    if (rana_su_coccodrillo(rana,coccodrilli)!=coccodrillo_scelto) {  //se la rana non viene considerata più sopra l'attuale coccodrillo allora è caduta in acqua sul bordo della mappa 
+
+	        statistiche_gioco->vite--;
+
+		statistiche_gioco->punteggio-=10;	    
+
+		return 0;
+
+	    }	
+
+	} else {  //altrimenti la rana si muove con il coccodrillo (ovvero non si trovava agli estremi della mappa)					
+
+	rana->x+=coccodrilli[id].dir;
+
+	}               			
+
     }
-    pthread_mutex_unlock(&mutex_tane);
-    return 0;
+
+    return giocare;
+
 }
 
 
 
 
 
-//funzione che verifica se la rana è su un coccodrillo
-int RanaSuCoccodrillo(Rana *rana, Coccodrillo *coccodrilli){
-    for (int i = 0; i < MAX_CROCODILES; i++) {
-        if (coccodrilli[i].alive) {
-            if ((rana->y == coccodrilli[i].y) &&  (rana->x-1>= coccodrilli[i].x-4) && (rana->x+1 <= coccodrilli[i].x+4)) {
-                return coccodrilli[i].id; 
-            }
-        }
-    }
-    return -1; 
+
+
+
+
+
+
+
+
+//funzione che restituisce un numero numero_random tra due estremi (compresi), di tipo float
+
+float numero_random_float(float minimo, float massimo) {
+
+    return minimo + ((float)rand() / (float)RAND_MAX) * (massimo - minimo);
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//funzione che mostra la barra del tempo rimanente
+
+void barra_tempo(WINDOW* finestra_gioco,Statistiche * statistiche_gioco, int tempo){
+
+    
+
+    wattron(finestra_gioco, COLOR_PAIR(7));
+
+    mvwhline(finestra_gioco,46,15, ' ', (int)(62*((float)statistiche_gioco->tempo/tempo)));
+
+    wattroff(finestra_gioco, COLOR_PAIR(7));
+
+   
+
+}
+
+
+
 
 
 //funzione che controlla se la rana si trova in mappa
-int RanaInFinestra(Rana rana, messaggio temp){
-    if(rana.x+temp.x>78) return 0;
-    if(rana.x+temp.x<2) return 0;
-    if(rana.y+temp.y>43) return 0;
-    if(rana.y+temp.y<7) return 0;
+
+int rana_in_finestra(Rana* rana, Temp* temp){
+
+
+
+    if (rana->x+temp->x>78) return 0;
+
+    if (rana->x+temp->x<2) return 0;
+
+    if (rana->y+temp->y>43) return 0;
+
+    if (rana->y+temp->y<7) return 0;
+
     return 1;
+
+}
+
+
+
+//funzione di controllo collisione rana-proiettile
+
+int collisione_rana_proiettili(Rana*rana,Proiettile proiettili[], Statistiche * statistiche_gioco, int giocare){
+
+    
+
+    //per ogni proiettile controlla se collide con la rana
+
+    for (int i=0;i<NUMERO_PROIETTILI;i++) {
+
+ 
+
+        if ((rana->x+1==proiettili[i].x || rana->x-1==proiettili[i].x) && rana->y==proiettili[i].y && proiettili[i].vivo) {
+
+	    statistiche_gioco->vite--;
+
+	    statistiche_gioco->punteggio-=15;
+
+	    return 0;
+
+        }
+
+    }
+
+    
+
+    return giocare;    
+
+}
+
+
+
+//funzione di controllo se la rana è su una tana
+
+int rana_su_tana(Rana* rana, Statistiche * statistiche_gioco){
+
+	  
+
+    //verifica se la rana si trova su una tana aperta, altrimenti restituisce 0
+
+    for (int i=0;i<5;i++) {
+
+        if (rana->x>=8+(15)*i && rana->x<8+(15)*i+5 && statistiche_gioco->tane[i]==0) {
+
+   	    statistiche_gioco->tane[i]=1;
+
+ 	    return 1;
+
+ 	}
+
+    }
+
+    return 0;
 
 }
