@@ -15,6 +15,10 @@ Crocodile* CrocodileInit(Flusso *flussi, float time) {
 
     for (int i = 0; i < MAX_CROCODILES; i++) {
 
+        Crocodile* croc =  &crocodiles[i];
+        croc->tempo_prec = time;
+        croc->idx = i;
+
         if (i < Ninit){
 
             int id_flusso;
@@ -24,25 +28,23 @@ Crocodile* CrocodileInit(Flusso *flussi, float time) {
             used_flusso[id_flusso] = true;
             const Flusso* flux = &flussi[id_flusso];
             
-            crocodiles[i].alive=1;
-            crocodiles[i].x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
-            crocodiles[i].y = flux->y;
-            crocodiles[i].dir = flux->dir;
-            crocodiles[i].speed = flux->speed;
-            crocodiles[i].tempo_prec = time;
-            crocodiles[i].wait = time - rand_funz(2, 10);
+            croc->alive=1;
+            croc->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
+            croc->y = flux->y;
+            croc->dir = flux->dir;
+            croc->speed = flux->speed;
+            croc->wait = time - rand_funz(2, 10);
 
             pthread_create(&t_coccodrilli[i], NULL, thread_coccodrillo, (void*)&crocodiles[i]);
             pthread_detach(t_coccodrilli[i]);
         }
         else{
-            crocodiles[i].alive = 0;
-            crocodiles[i].wait = time - rand_funz(3, 10);
-            crocodiles[i].x = -1;
-            crocodiles[i].y = -1;
-            crocodiles[i].dir = -1;
-            crocodiles[i].speed = -1;
-            crocodiles[i].tempo_prec = time;
+            croc->alive = 0;
+            croc->wait = time - rand_funz(3, 10);
+            croc->x = -1;
+            croc->y = -1;
+            croc->dir = -1;
+            croc->speed = -1;
         }
         printf("Coccodrillo %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f\n", i, crocodiles[i]->alive, crocodiles[i]->x, crocodiles[i]->y, crocodiles[i]->speed, crocodiles[i]->dir, crocodiles[i]->wait, crocodiles[i]->tempo_prec);
     }
@@ -52,18 +54,11 @@ Crocodile* CrocodileInit(Flusso *flussi, float time) {
 //questa funzione crea un messaggio m e lo invia nel buffer
 void *thread_coccodrillo(void *arg) {
 
-    gameConfig* gameCfg = (gameConfig*)arg;
-    Frog frogLocal;
+    Crocodile* croc = (Crocodile*)arg;
 
-    while(1){
+    while(atomic_load(&croc->alive)){
         
-        LOCK_READ_GAME();
-        const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
 
-        if ((game_struct->win) ||  (game_struct->vite == 0)){
-            UNLOCK_GAME();
-            break;
-        }
         const float time = game_struct->time;
         UNLOCK_GAME();
 
@@ -101,13 +96,7 @@ void *thread_coccodrillo(void *arg) {
                     }
                 }
 
-                if (i==frogLocal.crocIdx && newX > RANA_XMIN && newX < RANA_XMAX){
-                    LOCK_FROG();
-                    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-                    frog->x = newX;
-                    UNLOCK_FROG();
-                    printf("GestGraph: Rana é su coccodrillo %d, oldPos = %d, newPos = %d\n", i, frogLocal.x, newX);
-                }
+                
             }
             else{     //coccodrillo é disattivo
                 if (time <= crocod->wait){      // creiamo il coccodrillo

@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdatomic.h>
 
 #define MAX_CROCODILES 24
 #define NFLUSSI 8
@@ -89,9 +90,10 @@ typedef struct {
     int x;
     int dir;
     int speed;
-    bool alive; //serve per capire se l ente è vivo
+    _Atomic bool alive; //serve per capire se l ente è vivo
     int wait;  //per i coccodrilli, quando sono offline
     float tempo_prec;
+    int idx;
 } Crocodile;  
 
 typedef struct {
@@ -99,13 +101,13 @@ typedef struct {
     int x;
     int crocIdx;
     int key;
-    bool alive;
+    _Atomic bool alive;
     pthread_mutex_t mutex; // protects head/tail and buffer access
 } Frog;
 
 typedef struct {
     float time;
-    bool alive;
+    _Atomic bool alive;
 } Time;
 
 typedef struct {
@@ -113,7 +115,7 @@ typedef struct {
     int x;
     int dir;
     int speed;
-    bool alive; //serve per capire se l ente è vivo
+    _Atomic bool alive; //serve per capire se l ente è vivo
     float tempo_prec;
 } Projectile;
 
@@ -191,10 +193,10 @@ void drawCoccodrilli(WINDOW *game);
 
 
 // --- Utility di gioco e collisioni ---
-bool CollRanaProiettile(const Frog* frog, const gameConfig* gameConfig);
+bool CollRanaProiettile(const Frog* frog, Projectile* projectiles);
 bool CollGranataProiettile(Projectile* gran);
-void RanaSuTana(const Frog* frog, const gameConfig* gameConfig);
-int RanaSuCoccodrillo(const Frog *frog, const gameConfig* gameConfig);
+bool RanaSuTana(const Frog* frog, Game_struct* game_struct);
+int RanaSuCoccodrillo(const Frog *frog, const Crocodile* croc);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
 void punteggio_tempo(Game_struct* game_struct);
 int rand_funz(int min, int max);

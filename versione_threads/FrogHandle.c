@@ -33,13 +33,9 @@ void* thread_rana(void* arg) {
     int newY = frog->y;
     int key = -1;
 
-    const int waterYtop = TANA_POS + SPONDA_SUPERIORE;
-    const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
-
-    while(1){
+    while(atomic_load(&frog->alive)){
 
         pthread_mutex_lock(&frog->mutex);
-        if(!frog->alive) break;
         key = frog->key;
         frog->key = -1;
         pthread_mutex_unlock(&frog->mutex);
@@ -69,17 +65,14 @@ void* thread_rana(void* arg) {
         
         printf("frog moved from %d,%d to %d,%d\n", oldX, oldY, newX, newY);
 
-        
+        int* msgFrog = malloc(2 * sizeof(int));
+        msgFrog[0] = newX;
+        msgFrog[1] = newY;
+        Message newMess;
+        newMess.type = FROG_STATUS;
+        newMess.data = msgFrog;
 
-
-        else{
-            Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-            frog->x = frogLocal.x;
-            frog->y = frogLocal.y;
-            frog->crocIdx = frogLocal.crocIdx;
-            
-        }
-        UNLOCK_FROG();
+        push_event(&myBuffer, &newMess);
 
         usleep(30 * 1000);  // sleep 10 ms
     }
@@ -134,7 +127,7 @@ Projectile* GranateInit(){
         gran->dir = -1;
         gran->speed =-1;
 
-        printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i-IDX_GRANATE, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
+        printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
     }
     return granates;
 }

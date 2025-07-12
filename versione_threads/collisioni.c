@@ -14,11 +14,15 @@ void* thread_grafica(void* arg) {
     Projectile* projectiles = ProjectileInit();
     Projectile* granates = GranateInit();
 
+    const int waterYtop = TANA_POS + SPONDA_SUPERIORE;
+    const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
+
     while (1) {
 
         if ((game_struct->win) ||  (game_struct->vite == 0)){
             break;
         }
+        int newX, newY, crocId;
 
         Message newMess = pop_event(&myBuffer);
         switch (newMess.type) {
@@ -28,13 +32,25 @@ void* thread_grafica(void* arg) {
                 break;
 
             case FROG_STATUS:
-                int newX = ((int*)newMess.data)[0];
-                int newY = ((int*)newMess.data)[1];
+                newX = ((int*)newMess.data)[0];
+                newY = ((int*)newMess.data)[1];
+
                 if (newY < RANA_YINIT) frog->y = newY;
                 if (newX < RANA_XMAX && newX > RANA_XMIN) frog->x = newX;
                 break;
 
             case CROC_STATUS:
+                crocId = ((int*)newMess.data)[0];
+                newX = ((int*)newMess.data)[1];
+                newY = ((int*)newMess.data)[2];
+
+                crocodiles[crocId].x = newX;
+                crocodiles[crocId].y = newY;
+                
+                if (crocId == frog->crocIdx && newX > RANA_XMIN && newX < RANA_XMAX){
+                    printf("GestGraph: Rana si muove sul coccodrillo %d, oldPos = %d, newPos = %d\n", crocId, frog->x, newX);
+                    frog->x = newX;
+                }
                 break;
 
             case PROJ_STATUS:
@@ -48,59 +64,63 @@ void* thread_grafica(void* arg) {
 
         bool newManche = 0;
 
+        // Check if there is still time
         if (time <= 0) {
             newManche = true;
             game_struct->score -= 20;
             game_struct->vite--;
         }
 
+        // Check if the frog didn't reach the region of tane
         if (!newManche && frog->y < TANA_POS){
 
-            RanaSuTana(frog, gameCfg);
             newManche = true; 
+            bool isSucc = RanaSuTana(frog, game_struct);
+            
+            if(!isSucc){
+                printf("NewManche: rana haraggiungo l'estremo superiore della mappa ma mancando le tane...\n");
+                game_struct->vite--;
+                game_struct->score -= 10;
+            }
+            else{
+                printf("NewManche: rana ha raggiunto una delle tane\n");
+                game_struct->score += 15 + (int)(15 * time->time / 100);
 
+                if (game_struct->tane_count == NTANE){
+                    game_struct->win = 1;
+                    game_struct->score += 100;
+                }
+            }
         }
-        //altri controlli
 
         //check if frog is on a crocodile or hit by a projectile
-        if (frogLocal.y < waterYlow  && frogLocal.y > waterYtop){     //if frog in water region
+        if (!newManche && frog->y < waterYlow  && frog->y > waterYtop){     //if frog in water region
             
-            const int crocId = RanaSuCoccodrillo(&frogLocal, gameCfg);
+            const int crocId = RanaSuCoccodrillo(frog, crocodiles);
 
             if(crocId == -1){              //rana fell in the water
                 newManche = true;
                 printf("GestGraph: la rana é caduta in acqua...\n");
+                game_struct->vite--;
+                game_struct->score -= 10;
             }
             else{
-                frogLocal.crocIdx = crocId;
-                printf("GestGraph: la rana é sul coccodrillo %d\n", crocId);
+                frog->crocIdx = crocId;
+                printf("GestGraph: la rana é arrivata sul coccodrillo %d\n", crocId);
             }
 
-            if(CollRanaProiettile(&frogLocal, gameCfg)){
+            if(CollRanaProiettile(frog, projectiles)){
                 printf("GestGraph: rana colpita da un proiettile...\n");
                 newManche = true;
+                game_struct->vite--;
+                game_struct->score -= 15;
             }
         }
 
 
-        if(newManche){
+        
 
-            time->alive = false;
-            frog->alive = false;
-            
-            usleep(100 * 1000);  // sleep 10 ms
-
-            free(time);
-
-            if (game_struct->win != 1 && game_struct->vite > 0){
-
-                time = timeInit(game_struct->gameCfg);
-
-
-                restartFrog();
-
-            }
-        }
+        
 
         //Check objects are inside h window
         
@@ -152,87 +172,77 @@ void* thread_grafica(void* arg) {
         wclear(game);
         wrefresh(game);
 
+
+
+
+
+
+
+
+
+        if(newManche){
+
+            time->alive = false;
+            frog->alive = false;
+            
+            usleep(100 * 1000);  // sleep 10 ms
+
+            free(time);
+
+            if (game_struct->win != 1 && game_struct->vite > 0){
+
+                time = timeInit(game_struct->gameCfg);
+
+
+                restartFrog();
+
+            }
+        }
     }
 
 
 
 }
 
-void RanaSuTana(const Frog* frog, const gameConfig* gameConfig){
-
-    bool isSucc = false;
-
-    LOCK_WRITE_GAME();
-    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+bool RanaSuTana(const Frog* frog, Game_struct* game_struct){
     
     for (int i = 0; i < NTANE; i++) {
         if (frog->x >= 8 + (15) * i && frog->x < 8 + (15) * i + 5 && game_struct->tane[i] == 0) { 
             game_struct->tane[i] = 1;
             game_struct->tane_count++;
-            isSucc = true;
+            return true;
         }
     }
-    
-    if(!isSucc){
-        printf("NewManche: rana haraggiungo l'estremo superiore della mappa ma mancando le tane...\n");
-        game_struct->vite--;
-        game_struct->score -= 10;
-    }
-    else{
-        printf("NewManche: rana ha raggiunto una delle tane\n");
-        game_struct->score += 15 + (int)(15 * game_struct->time / 100);
-
-        if (game_struct->tane_count == NTANE){
-            game_struct->win = 1;
-            game_struct->score += 100;
-        }
-    }
-    game_struct->time = gameConfig->tempo;
-    UNLOCK_GAME();
+    return false;
 }
 
 //funzione che verifica se la rana è su un coccodrillo
-int RanaSuCoccodrillo(const Frog *frog, const gameConfig* gameConfig){
+int RanaSuCoccodrillo(const Frog *frog, const Crocodile* croc){
 
     const int frog_x = frog->x;
     const int frog_y = frog->y;
 
-    LOCK_CROCS();
-    for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
-        const Crocodile* croc = (Crocodile*)buffer.buffer[i];
-
-        if (croc->alive) {
-            const int croc_x = croc->x;
-            const int croc_y = croc->y;
+    for (int i = 0; i < MAX_CROCODILES; i++) {
+        if (croc[i].alive) {
+            const int croc_x = croc[i].x;
+            const int croc_y = croc[i].y;
             if(frog_y <= croc_y + DIM_FLUSSI/2 && frog_y >= croc_y - DIM_FLUSSI/2){
                 if ((frog_x >= croc_x-3) && (frog_x <= croc_x+3)){
-                    UNLOCK_CROCS();
                     return i;
                 }
             }
         }
     }
-    UNLOCK_CROCS();
-
-    LOCK_WRITE_GAME();
-    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
-    game_struct->vite--;
-    game_struct->score -= 10;
-    game_struct->time = gameConfig->tempo;
-    UNLOCK_GAME();
-
     return -1; 
 }
 
-bool CollRanaProiettile(const Frog* frog, const gameConfig* gameConfig){
+bool CollRanaProiettile(const Frog* frog, Projectile* projectiles){
 
     const int frog_x = frog->x;
     const int frog_y = frog->y;
 
-    LOCK_PROJ();
-
-    for (int i = IDX_PROIETTILI; i < IDX_PROIETTILI + MAX_CROCODILES; i++) {
-        Projectile* proj = (Projectile*)buffer.buffer[i];
+    for (int i = 0; i < MAX_CROCODILES; i++) {
+        Projectile* proj = &projectiles[i];
 
         if (proj->alive){
             const int proj_x = proj->x;
@@ -245,21 +255,11 @@ bool CollRanaProiettile(const Frog* frog, const gameConfig* gameConfig){
                     proj->dir = -1;
                     proj->speed =-1;
                     proj->tempo_prec = -1;
-                    UNLOCK_PROJ();
-
-                    LOCK_WRITE_GAME();
-                    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
-                    game_struct->vite--;
-                    game_struct->score -= 15;
-                    game_struct->time = gameConfig->tempo;
-                    UNLOCK_GAME();
-
                     return 1;
                 }
             }
         }
     }
-    UNLOCK_PROJ();
     return 0;
 }
 

@@ -31,7 +31,7 @@ void* thread_tempo(void* arg) {
     struct timeval prev, now;
     gettimeofday(&prev, NULL);
 
-    while (time->alive) {
+    while (atomic_load(&time->alive)) {
         usleep(50 * 1000);  // sleep 10 ms
 
         gettimeofday(&now, NULL);
