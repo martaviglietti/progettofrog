@@ -185,3 +185,9 @@ void drawCoccodrilli(WINDOW *game){
     wattroff(game, COLOR_PAIR(10));
 }
 
+//funzione che mostra la barra del tempo rimanente
+void print_tempo(WINDOW* game,Game_struct* game_struct, int tempo){
+    wattron(game, COLOR_PAIR(7));
+    mvwhline(game,46,15, ' ', (int)(62*((float)game_struct->time/tempo)));
+    wattroff(game, COLOR_PAIR(7));
+}

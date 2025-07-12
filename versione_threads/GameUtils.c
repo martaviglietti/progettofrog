@@ -1,10 +1,38 @@
 #include "header.h"
+#include <pthread.h>
 #include <stdlib.h>
 
 //___________________________________________________________________________________________________
 //funzione utile per creare un numero random tra un minimo e un massimo (compresi)
 int rand_funz(int min, int max){
     return min + rand() % (max-min+1);
+}
+
+void push_event(messageBuffer* b, Message* m) {
+    sem_wait(&b->empty); // wait for free slot
+    pthread_mutex_lock(&b->mutex);
+
+    b->buffer[b->head] = *m;
+    b->head = (b->head + 1) % BUFFER_SIZE;
+
+    pthread_mutex_unlock(&b->mutex);
+    sem_post(&b->full); // signal new message
+}
+
+Message pop_event(messageBuffer* b) {
+
+    Message found_message;
+    bool found = false;
+    
+    sem_wait(&b->full); // wait for available message
+    pthread_mutex_lock(&b->mutex);
+
+    Message m = b->buffer[b->tail];
+    b->tail = (b->tail + 1) % BUFFER_SIZE;
+
+    pthread_mutex_unlock(&b->mutex);
+    sem_post(&b->empty); // signal one more free slot
+    return m;
 }
 
 //___________________________________________________________________________________________________
@@ -62,126 +90,58 @@ int scegliDifficolta(WINDOW *game) {
 //___________________________________________________________________________________________________
 //Inizializzazione del gioco e loop di gioco
 Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){		
-    
-    printf("Inizializziamo variabili di gestione della partita\n");
-    buffer.buffer[IDX_GAME] = malloc(sizeof(Game_struct));
-    if (buffer.buffer[IDX_GAME]== NULL) {
-        fprintf(stderr, "malloc failed at Time Initialization at index %d\n", IDX_GAME);
-        exit(EXIT_FAILURE);
-    }
-    
-    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
-    game_struct->score=0; 		//contiene lo score di tutto il game
-    game_struct->vite=gameConfig->vite;    //contiene numero di vite rimaste
-    game_struct->win=0;
-    game_struct->time=gameConfig->tempo;    //contiene tempo rimasto nella manche  
 
+    //Definizione dei flussi
+    fluxInit(gameConfig); //definisco velocità di ogni flusso
+
+    //Buffer initialization
+    bufferInit();
+    
+    // Initializzazione stato di gioco
+    printf("Inizializziamo variabili di gestione della partita\n");
+    Game_struct* game_struct =  malloc(sizeof(Game_struct));
+    
+    game_struct->score=0; 		          //contiene lo score di tutto il game
+    game_struct->vite = gameConfig->vite;    //contiene numero di vite rimaste
+    game_struct->win=0;
+    game_struct->gameCfg = gameConfig;
+    game_struct->game = game;
+    
     for (int i=0;i<NTANE-1;i++) {
         game_struct->tane[i]=0;
     }
     game_struct->tane_count = 0;
 
-    //Definizione dei flussi
-    fluxInit(gameConfig); //definisco velocità di ogni flusso
-    
-    // Inizializzazione oggetti
-    frogInit();
-    GranateInit();
-    CrocodileInit(gameConfig->flussi);
-    ProjectileInit();
-   
-    //creaizone dei thread principali e inizilizzazione degli oggetti
-    crea_thread_gioco(gameConfig);
+    //Initilization of the buffer
+    bufferInit();
 
     //inizio della partita - loop di gioco
-    Game_struct gameLocal;
-    Frog frogLocal;
+    pthread_t t_graph;
+    pthread_create(&t_graph, NULL, thread_grafica, (void *)&game_struct);
+    pthread_join(t_graph, NULL);
 
-    while (1) {		
-        LOCK_READ_GAME();
-        gameLocal = *game_struct;
-        UNLOCK_GAME();
-
-        if ((gameLocal.win) ||  (gameLocal.vite == 0)){
-            break;
-        }
-        
-        //LOCK_FROG();
-        //frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
-        //UNLOCK_FROG();
-        
-        //werase(game);
-        windowGeneration(game, COLS, LINES, &gameLocal);
-    
-        //drawCoccodrilli(game);
-        //draw_granate(game);
-        //draw_proiettile(game);
-        //draw_frog(game, &frogLocal);
-
-        // Punteggio
-        wattron(game, COLOR_PAIR(15));
-        mvwprintw(game, 2, 2, "Punteggio: %d ", gameLocal.score);
-        wattroff(game, COLOR_PAIR(15));
-
-        // Vite
-        wattron(game, COLOR_PAIR(15));
-        mvwprintw(game, 2, 50, "Vite:");
-        mvwhline(game, 2, 55, ' ', 21);
-        for (int i = 0; i < gameLocal.vite; i++) {
-            mvwprintw(game, 2, 55 + i * 2, "❤️");
-        }
-        wattroff(game, COLOR_PAIR(15));
-        // Tempo
-        wattron(game, COLOR_PAIR(15));
-        mvwhline(game, 46, 2, ' ', 10);
-        mvwprintw(game, 46, 2, "Tempo: %d ", (int)gameLocal.time);
-        wattroff(game, COLOR_PAIR(15));
-
-        //print_tempo(game, &gameLocal, (int)gameLocal.time);
-        //wrefresh(game);
-
-        //keypad(game, true);  // abilita frecce
-        nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
-        int key = wgetch(game);
-        //if (key != ERR && frogLocal.key == -1){
-        //    LOCK_FROG();
-        //    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-        //    frog->key = key;
-        //    UNLOCK_FROG();
-        //}
-        //int key = 258 +rand_funz(0,3);
-
-        wclear(game);
-        wrefresh(game);
-        
-    }
     exit(1);
-    free(buffer.buffer);
+    free(myBuffer.buffer);
     return game_struct;
 }
 
 //______________________________________________________________________________________________________________________
 //CREAZIONE THREAD PRINCIPALI GIOCO -------------------------------------------------------------------------
-void crea_thread_gioco(gameConfig *gameConfig){
+void bufferInit(){
 
-    //inizializzaizone del buffer produttore-consumatore
-    for (int i=0; i < NMUTEX; i++){
-        pthread_mutex_init(&buffer.mutex[i], NULL);
-    }
-    pthread_rwlock_init(&buffer.mutex_gameStat, NULL);
+    myBuffer.head = 0;
+    myBuffer.tail = 0;
 
-    // Thread grafica/consumatore
-    pthread_t t_rana, t_tempo;
-    pthread_t t_coccodrilli, t_proiettili, t_granate;
+    // Initialize semaphores
+    // empty = BUFFER_SIZE slots free at start
+    sem_init(&myBuffer.empty, 0, BUFFER_SIZE);
 
-    // Creazione threads
-    printf("...lancio i threads...\n");
-    pthread_create(&t_rana, NULL, thread_rana, (void *)gameConfig);
-    pthread_create(&t_tempo, NULL, thread_tempo, (void *)gameConfig);
-    pthread_create(&t_coccodrilli, NULL, thread_coccodrillo, (void*)gameConfig);
-    pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
-    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
-    
+    // full = 0 items available initially
+    sem_init(&myBuffer.full, 0, 0);
+
+    // Initialize the mutex
+    pthread_mutex_init(&myBuffer.mutex, NULL);
+
 }
 
 //_________________________________________________________________________________________________
@@ -237,9 +197,4 @@ void credits(WINDOW *game){
     wgetch(game);
 }
 
-//funzione che mostra la barra del tempo rimanente
-void print_tempo(WINDOW* game,Game_struct* game_struct, int tempo){
-    wattron(game, COLOR_PAIR(7));
-    mvwhline(game,46,15, ' ', (int)(62*((float)game_struct->time/tempo)));
-    wattroff(game, COLOR_PAIR(7));
-}
+

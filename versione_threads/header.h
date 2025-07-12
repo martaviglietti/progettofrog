@@ -46,14 +46,18 @@
 
 #define DELAY 100000
 
+typedef enum {
+    FROG_STATUS,
+    TIME_STATUS,
+    PROJ_STATUS,
+    GRAN_STATUS,
+    CROC_STATUS,
+} MessageType;
 
-//// Buffer positions
-#define IDX_GAME 0
-#define IDX_RANA 1
-#define IDX_GRANATE 2
-#define IDX_COCCODRILLI 4
-#define IDX_PROIETTILI 28
-#define BUFFER_SIZE 52
+typedef struct {
+    MessageType type;
+    void* data; // dynamically allocated content
+} Message;
 
 typedef struct{
     int y;
@@ -63,20 +67,21 @@ typedef struct{
 
 typedef struct{
     int vite;
-    int score;
-    int tane[NTANE];
-    int tane_count;
-    int win; //serve per la condizione di uscita dal game
-    float time;
-}Game_struct;
-
-typedef struct{
-    int vite;
     float tempo;
     int velocità_proiettili;
     int velocità_coccodrilli;
     Flusso flussi[NFLUSSI];
 }gameConfig;
+
+typedef struct{
+    int vite;
+    int score;
+    int tane[NTANE];
+    int tane_count;
+    int win; //serve per la condizione di uscita dal game
+    gameConfig* gameCfg;
+    WINDOW *game;
+}Game_struct;
 
 //è il formato del contenuto del gioco, quindi è un oggetto con dentro le informazioni su ciascun oggetto
 typedef struct {
@@ -94,7 +99,14 @@ typedef struct {
     int x;
     int crocIdx;
     int key;
+    bool alive;
+    pthread_mutex_t mutex; // protects head/tail and buffer access
 } Frog;
+
+typedef struct {
+    float time;
+    bool alive;
+} Time;
 
 typedef struct {
     int y;
@@ -106,22 +118,25 @@ typedef struct {
 } Projectile;
 
 //buffer c è un contenutor organizzata con sincronizzazione 
-//creo una struttura globale condivisa 
-#define NMUTEX 3
-typedef struct {
-    //array di strutture di tipo messaggio 
-    void* buffer[BUFFER_SIZE];
-    pthread_mutex_t mutex[NMUTEX]; //serve per fare entrare un thread alla volta
-    pthread_rwlock_t mutex_gameStat;
+//creo una struttura globale condivisa
+#define BUFFER_SIZE 200 
 
-} BufferC; 
+typedef struct {
+    Message buffer[BUFFER_SIZE];
+    int head;   // index to insert next event
+    int tail;   // index to remove next event
+    sem_t full; // counts how many items are available to consume
+    sem_t empty; // counts how many slots are free for writing
+    pthread_mutex_t mutex; // protects head/tail and buffer access
+} messageBuffer;
+
 
 // --- VARIABILI GLOBALI ---
 extern const char *OPZIONI[];
 extern const char *frog_sprite[2];
 extern const char *coc_sprite[2][2];
 //ho la struttura buffer c  pe rimpacchettar ein un solo oggetto 7
-extern BufferC buffer;
+extern messageBuffer myBuffer;
 
 
 //funzioni per l'interfaccia di gioco--
@@ -134,7 +149,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_
 void creazione_colori();
 
 //inizializzazione e flussi
-void inizializza_buffer();
+void bufferInit();
 void fluxInit(gameConfig *gameConfig);
 void def_dir_flussi(Flusso *flussi);
 
@@ -144,10 +159,11 @@ void crea_thread_gioco(gameConfig* gameConfig);
 void restartFrog();
 
 //funzioni inizializzazione oggetti
-void CrocodileInit(Flusso *flussi);
-void GranateInit();
-void frogInit();
-void ProjectileInit();
+Time* timeInit(gameConfig *gameConfig);
+Crocodile* CrocodileInit(Flusso *flussi, float time);
+Projectile* GranateInit();
+Frog* frogInit();
+Projectile* ProjectileInit();
 
 //produttori
 void* thread_rana(void* arg);
@@ -155,7 +171,7 @@ void* thread_tempo(void* arg);
 void* thread_coccodrillo(void* arg);
 void* thread_proiettile(void* arg);
 void* thread_granata(void* arg);
-void* Gestione_grafica(void* arg);
+void* thread_grafica(void* arg);
 
 
 // --- Lancio dinamico di granate/proiettili ---
@@ -183,17 +199,6 @@ void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
 void punteggio_tempo(Game_struct* game_struct);
 int rand_funz(int min, int max);
 
-#define LOCK_FROG() pthread_mutex_lock(&buffer.mutex[0])
-#define UNLOCK_FROG() pthread_mutex_unlock(&buffer.mutex[0])
-
-#define LOCK_CROCS() pthread_mutex_lock(&buffer.mutex[1])
-#define UNLOCK_CROCS() pthread_mutex_unlock(&buffer.mutex[1])
-
-#define LOCK_PROJ() pthread_mutex_lock(&buffer.mutex[2])
-#define UNLOCK_PROJ() pthread_mutex_unlock(&buffer.mutex[2])
-
-#define LOCK_READ_GAME() pthread_rwlock_rdlock(&buffer.mutex_gameStat)
-#define LOCK_WRITE_GAME() pthread_rwlock_wrlock(&buffer.mutex_gameStat)
-#define UNLOCK_GAME() pthread_rwlock_unlock(&buffer.mutex_gameStat)
-
+void push_event(messageBuffer* b, Message* m);
+Message pop_event(messageBuffer* b);
 #endif

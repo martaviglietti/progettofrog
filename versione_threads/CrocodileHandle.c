@@ -1,22 +1,21 @@
 #include "header.h"
 
-void CrocodileInit(Flusso *flussi) {
-    Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+Crocodile* CrocodileInit(Flusso *flussi, float time) {
+
+    Crocodile* crocodiles = malloc(MAX_CROCODILES * sizeof(Crocodile));
+    if (crocodiles == NULL) {
+        fprintf(stderr, "malloc failed at Crocodile Initialization\n");
+        exit(EXIT_FAILURE);
+    }
 
     const int Ninit = rand_funz(3, 8);
+    pthread_t t_coccodrilli[Ninit];
+
     bool used_flusso[NFLUSSI] = { false };
 
-    for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++) {
+    for (int i = 0; i < MAX_CROCODILES; i++) {
 
-        buffer.buffer[i] = malloc(sizeof(Crocodile));
-        if (buffer.buffer[i]== NULL) {
-            fprintf(stderr, "malloc failed at Crocodile Initialization at index %d\n", i);
-            exit(EXIT_FAILURE);
-        }
-
-        Crocodile* crocod = (Crocodile*)buffer.buffer[i];
-
-        if ((i-IDX_COCCODRILLI) < Ninit){
+        if (i < Ninit){
 
             int id_flusso;
             do {
@@ -25,25 +24,29 @@ void CrocodileInit(Flusso *flussi) {
             used_flusso[id_flusso] = true;
             const Flusso* flux = &flussi[id_flusso];
             
-            crocod->alive=1;
-            crocod->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
-            crocod->y = flux->y;
-            crocod->dir = flux->dir;
-            crocod->speed = flux->speed;
-            crocod->tempo_prec = game_struct->time;
-            crocod->wait = game_struct->time - rand_funz(2, 10);
+            crocodiles[i].alive=1;
+            crocodiles[i].x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
+            crocodiles[i].y = flux->y;
+            crocodiles[i].dir = flux->dir;
+            crocodiles[i].speed = flux->speed;
+            crocodiles[i].tempo_prec = time;
+            crocodiles[i].wait = time - rand_funz(2, 10);
+
+            pthread_create(&t_coccodrilli[i], NULL, thread_coccodrillo, (void*)&crocodiles[i]);
+            pthread_detach(t_coccodrilli[i]);
         }
         else{
-            crocod->alive = 0;
-            crocod->wait = game_struct->time - rand_funz(3, 10);
-            crocod->x = -1;
-            crocod->y = -1;
-            crocod->dir = -1;
-            crocod->speed = -1;
-            crocod->tempo_prec = game_struct->time;
+            crocodiles[i].alive = 0;
+            crocodiles[i].wait = time - rand_funz(3, 10);
+            crocodiles[i].x = -1;
+            crocodiles[i].y = -1;
+            crocodiles[i].dir = -1;
+            crocodiles[i].speed = -1;
+            crocodiles[i].tempo_prec = time;
         }
-        printf("Coccodrillo %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f\n", i-IDX_COCCODRILLI, crocod->alive, crocod->x, crocod->y, crocod->speed, crocod->dir, crocod->wait, crocod->tempo_prec);
+        printf("Coccodrillo %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f\n", i, crocodiles[i]->alive, crocodiles[i]->x, crocodiles[i]->y, crocodiles[i]->speed, crocodiles[i]->dir, crocodiles[i]->wait, crocodiles[i]->tempo_prec);
     }
+    return crocodiles;
 }
 
 //questa funzione crea un messaggio m e lo invia nel buffer
@@ -130,20 +133,17 @@ void *thread_coccodrillo(void *arg) {
 }
 
 //GESTIONE PROIETTILI------------------------------------------------------------------
-void ProjectileInit(){
-    for (int i = IDX_PROIETTILI; i< IDX_PROIETTILI + MAX_CROCODILES; i++){
+Projectile* ProjectileInit(){
 
-        if (i >= BUFFER_SIZE){
-            printf("you need a bigger buffer... we are accessing random areas of the memory!");
-            exit(EXIT_FAILURE);
-        }
+    Projectile* projectiles = malloc(MAX_CROCODILES * sizeof(Projectile));
+    if (projectiles == NULL) {
+        fprintf(stderr, "malloc failed at Projectile Initialization\n");
+        exit(EXIT_FAILURE);
+    }
 
-        buffer.buffer[i] = malloc(sizeof(Projectile));
-        if (buffer.buffer[i]== NULL) {
-            fprintf(stderr, "malloc failed at Projectile Initialization at index %d\n", i);
-            exit(EXIT_FAILURE);
-        }
-        Projectile* proj = (Projectile*)buffer.buffer[i];
+    for (int i = 0; i < MAX_CROCODILES; i++){
+
+        Projectile* proj = &projectiles[i];
         proj->x = -1;
         proj->y = -1;
         proj->alive = 0;
@@ -152,6 +152,8 @@ void ProjectileInit(){
         proj->tempo_prec = -1;
         //printf("Proiettile %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, proj->alive, proj->x, proj->y, proj->speed, proj->dir, proj->tempo_prec);
     }
+
+    return projectiles;
 }
 
 void* thread_proiettile(void* arg) {
@@ -217,6 +219,8 @@ void sparaProiettile(const float time, const gameConfig* gameConfig, const int i
     proj->speed = gameConfig->velocità_proiettili;
 
     UNLOCK_PROJ();
+
+    pthread_create(&t_proiettili, NULL, thread_proiettile, (void *)gameConfig);
 }
 
 //---------------------------------------------------------------------------

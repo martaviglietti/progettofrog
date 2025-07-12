@@ -25,45 +25,41 @@ void fluxInit(gameConfig *gameConfig){
  
 void* thread_tempo(void* arg) {
 
-    gameConfig* gameCfg = (gameConfig*)arg;
+    Time* time = (Time*)arg;
+    float newTime = time->time;
 
     struct timeval prev, now;
     gettimeofday(&prev, NULL);
 
-    while (1) {
-        usleep(100 * 1000);  // sleep 10 ms
+    while (time->alive) {
+        usleep(50 * 1000);  // sleep 10 ms
 
         gettimeofday(&now, NULL);
         float elapsed = (now.tv_sec - prev.tv_sec) + (now.tv_usec - prev.tv_usec) / 1000000.0f;
         prev = now;
 
-        LOCK_WRITE_GAME();
-        Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+        newTime -= elapsed;
+        printf("New time: %f\n",newTime);
 
-        if ((game_struct->win) ||  (game_struct->vite == 0)){
-            UNLOCK_GAME();
-            break;
-        }
+        float* msgTime = malloc(sizeof(float));
+        *msgTime = newTime;
+        Message newMess;
+        newMess.type = TIME_STATUS;
+        newMess.data = msgTime;
 
-        game_struct->time -= elapsed;
-        printf("New time: %f\n",game_struct->time);
-        
-        if (game_struct->time <= 0){
-            printf("NewManche: time out. \n");
-
-            game_struct->score -= 20;
-            game_struct->vite--;
-            game_struct->time = gameCfg->tempo;
-
-            UNLOCK_GAME();
-
-            LOCK_FROG();
-            restartFrog();
-            UNLOCK_FROG();
-
-            continue;
-        }
-        UNLOCK_GAME();
+        push_event(&myBuffer, &newMess);
     }
     pthread_exit(NULL);
+}
+
+Time* timeInit(gameConfig *gameConfig){
+    Time* time = malloc(sizeof(Time));
+    time->time =  gameConfig->tempo;
+    time->alive = 1;
+
+    pthread_t t_tempo;
+    pthread_create(&t_tempo, NULL, thread_tempo, (void *)time);
+    pthread_detach(t_tempo);
+
+    return time;
 }

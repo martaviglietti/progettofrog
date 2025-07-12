@@ -1,11 +1,11 @@
 #include "header.h"
 #include <ncurses.h>
 
-BufferC buffer;
-
 void seed_random() {
     srand((unsigned int)time(NULL));
 }
+
+messageBuffer mybuffer;
 
 int main(){
 

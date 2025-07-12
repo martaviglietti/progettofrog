@@ -1,119 +1,87 @@
 #include"header.h"
 #include <ncurses.h>
+#include <pthread.h>
 
 //GESTIONE RANA-------------------------------------------------------------------------------------------------------------
-void frogInit(){
+Frog* frogInit(){
 
-    buffer.buffer[IDX_RANA] = malloc(sizeof(Frog));
-    if (buffer.buffer[IDX_RANA]== NULL) {
-        fprintf(stderr, "malloc failed at Frog Initialization at index %d\n", IDX_RANA);
+    Frog* frog = malloc(sizeof(Frog));
+    if (frog == NULL) {
+        fprintf(stderr, "malloc failed at Frog Initialization\n");
         exit(EXIT_FAILURE);
     }
     
-    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
     frog->x = RANA_XINIT;
     frog->y = RANA_YINIT;
     frog->crocIdx = -1;
     frog->key = -1;
+    frog->alive = 1;
+    pthread_mutex_init(&frog->mutex, NULL);
     //printf("Rana inizializzata con alive=%d, x=%d, y=%d, tempo_prec=%f\n", frog->alive, frog->x, frog->y, frog->tempo_prec);
+
+    pthread_t t_rana;
+    pthread_create(&t_rana, NULL, thread_rana, (void *)frog);
+    pthread_detach(t_rana);
+
+    return frog;
 }
 
 void* thread_rana(void* arg) {
-    gameConfig* gameCfg = (gameConfig*)arg;
-    Frog frogLocal;
-    Game_struct gameLocal;
+    
+    Frog* frog = (Frog*)arg;
+    int newX = frog->x;
+    int newY = frog->y;
+    int key = -1;
 
     const int waterYtop = TANA_POS + SPONDA_SUPERIORE;
     const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
 
     while(1){
 
-        bool newManche = 0;
-        
-        LOCK_READ_GAME();
-        const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+        pthread_mutex_lock(&frog->mutex);
+        if(!frog->alive) break;
+        key = frog->key;
+        frog->key = -1;
+        pthread_mutex_unlock(&frog->mutex);
 
-        if ((game_struct->win) ||  (game_struct->vite == 0)){
-            UNLOCK_GAME();
-            break;
-        }
-        gameLocal = *game_struct;
-        UNLOCK_GAME();
 
-        LOCK_FROG();
-        frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
-        UNLOCK_FROG();
+        if (key == -1) continue;
 
-        if (frogLocal.key == -1) continue;
-
-        int old = frogLocal.y;
-        int newPos;
-        switch (frogLocal.key) {
+        int oldX = newX;
+        int oldY = newY;
+        switch (key) {
             case KEY_UP:
-                frogLocal.y  -=  ALTEZZARANA;
-
-                if (frogLocal.y < TANA_POS) {
-                    RanaSuTana(&frogLocal, gameCfg);
-                    newManche = true; 
-                }
+                newY  -=  ALTEZZARANA;
                 break;
 
             case KEY_DOWN:
-                newPos = frogLocal.y + ALTEZZARANA;
-                if (newPos < RANA_YINIT) frogLocal.y = newPos;
+                newY += ALTEZZARANA;
                 break;
 
             case KEY_LEFT:
-                newPos = frogLocal.x - LARGHEZZARANA;
-                if (newPos > RANA_XMIN) frogLocal.x = newPos;
+                newX -= LARGHEZZARANA;
                 break;
 
             case KEY_RIGHT:
-                newPos = frogLocal.x + LARGHEZZARANA;
-                if (newPos < RANA_XMAX) frogLocal.x = newPos;
-                break;
-
-            case 's':  // spara granate
-                sparaGranata(&frogLocal, gameLocal.time, gameCfg);
+                newX += LARGHEZZARANA;
                 break;
         }    
         
-        printf("frog moved from %d to %d, at time=%f\n", old, frogLocal.y, gameLocal.time);
+        printf("frog moved from %d,%d to %d,%d\n", oldX, oldY, newX, newY);
 
-        //check if frog is on a crocodile or hit by a projectile
-        if (frogLocal.y < waterYlow  && frogLocal.y > waterYtop){     //if frog in water region
-            
-            const int crocId = RanaSuCoccodrillo(&frogLocal, gameCfg);
+        
 
-            if(crocId == -1){              //rana fell in the water
-                newManche = true;
-                printf("GestGraph: la rana é caduta in acqua...\n");
-            }
-            else{
-                frogLocal.crocIdx = crocId;
-                printf("GestGraph: la rana é sul coccodrillo %d\n", crocId);
-            }
 
-            if(CollRanaProiettile(&frogLocal, gameCfg)){
-                printf("GestGraph: rana colpita da un proiettile...\n");
-                newManche = true;
-            }
-        }
-
-        LOCK_FROG();
-        if(newManche){
-            restartFrog();
-        }
         else{
             Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
             frog->x = frogLocal.x;
             frog->y = frogLocal.y;
             frog->crocIdx = frogLocal.crocIdx;
-            frog->key = -1;
+            
         }
         UNLOCK_FROG();
 
-        usleep(100 * 1000);  // sleep 10 ms
+        usleep(30 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }
@@ -129,7 +97,8 @@ void sparaGranata(const Frog* frog, const float time, const gameConfig* gameConf
     }
 
     if (allowed){
-
+        GranateInit();
+        pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
         for (int i = IDX_GRANATE; i< IDX_GRANATE + 2; i++){
             
             Projectile* gran = (Projectile*)buffer.buffer[i];
@@ -142,20 +111,22 @@ void sparaGranata(const Frog* frog, const float time, const gameConfig* gameConf
             gran->speed = gameConfig->velocità_proiettili;
         }
     }
+
+    
 }
 
 //GESTIONE GRANATE-----------------------------------------
-void GranateInit(){
+Projectile* GranateInit(){
 
-    for (int i = IDX_GRANATE; i< IDX_GRANATE + 2; i++){
+    Projectile* granates = malloc(MAX_CROCODILES * sizeof(Projectile));
+    if (granates == NULL) {
+        fprintf(stderr, "malloc failed at Projectile Initialization\n");
+        exit(EXIT_FAILURE);
+    }
 
-        buffer.buffer[i] = malloc(sizeof(Projectile));
-        if (buffer.buffer[i]== NULL) {
-            fprintf(stderr, "malloc failed at Granade Initialization at index %d\n", i);
-            exit(EXIT_FAILURE);
-        }
+    for (int i = 0; i < 2; i++){
 
-        Projectile* gran = (Projectile*)buffer.buffer[i];
+        Projectile* gran = (Projectile*)&granates[i];
         gran->x = -1;
         gran->y = -1;
         gran->alive = 0;
@@ -164,11 +135,8 @@ void GranateInit(){
         gran->speed =-1;
 
         printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i-IDX_GRANATE, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
-
-
-        //printf("Granata %d inizializzata con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
-
     }
+    return granates;
 }
 
 void* thread_granata(void* arg) {

@@ -1,6 +1,162 @@
 //funzione di controllo collisione rana-proiettile
 #include "header.h"
 
+void* thread_grafica(void* arg) {
+    Game_struct* game_struct = (Game_struct*)arg;
+    WINDOW *game = game_struct->game;
+
+    //Inizializzazione tempo
+    Time* time = timeInit(game_struct->gameCfg);
+
+    // Inizializzazione oggetti
+    Frog* frog = frogInit();
+    Crocodile* crocodiles = CrocodileInit(game_struct->gameCfg->flussi, time->time);
+    Projectile* projectiles = ProjectileInit();
+    Projectile* granates = GranateInit();
+
+    while (1) {
+
+        if ((game_struct->win) ||  (game_struct->vite == 0)){
+            break;
+        }
+
+        Message newMess = pop_event(&myBuffer);
+        switch (newMess.type) {
+
+            case TIME_STATUS:
+                time->time = *((float*)newMess.data);
+                break;
+
+            case FROG_STATUS:
+                int newX = ((int*)newMess.data)[0];
+                int newY = ((int*)newMess.data)[1];
+                if (newY < RANA_YINIT) frog->y = newY;
+                if (newX < RANA_XMAX && newX > RANA_XMIN) frog->x = newX;
+                break;
+
+            case CROC_STATUS:
+                break;
+
+            case PROJ_STATUS:
+                break;
+
+            case GRAN_STATUS:
+                break;
+        
+        }
+        free(newMess.data);
+
+        bool newManche = 0;
+
+        if (time <= 0) {
+            newManche = true;
+            game_struct->score -= 20;
+            game_struct->vite--;
+        }
+
+        if (!newManche && frog->y < TANA_POS){
+
+            RanaSuTana(frog, gameCfg);
+            newManche = true; 
+
+        }
+        //altri controlli
+
+        //check if frog is on a crocodile or hit by a projectile
+        if (frogLocal.y < waterYlow  && frogLocal.y > waterYtop){     //if frog in water region
+            
+            const int crocId = RanaSuCoccodrillo(&frogLocal, gameCfg);
+
+            if(crocId == -1){              //rana fell in the water
+                newManche = true;
+                printf("GestGraph: la rana é caduta in acqua...\n");
+            }
+            else{
+                frogLocal.crocIdx = crocId;
+                printf("GestGraph: la rana é sul coccodrillo %d\n", crocId);
+            }
+
+            if(CollRanaProiettile(&frogLocal, gameCfg)){
+                printf("GestGraph: rana colpita da un proiettile...\n");
+                newManche = true;
+            }
+        }
+
+
+        if(newManche){
+
+            time->alive = false;
+            frog->alive = false;
+            
+            usleep(100 * 1000);  // sleep 10 ms
+
+            free(time);
+
+            if (game_struct->win != 1 && game_struct->vite > 0){
+
+                time = timeInit(game_struct->gameCfg);
+
+
+                restartFrog();
+
+            }
+        }
+
+        //Check objects are inside h window
+        
+
+        werase(game);
+        windowGeneration(game, COLS, LINES, game_struct);
+    
+        drawCoccodrilli(game);
+        draw_granate(game);
+        draw_proiettile(game);
+        draw_frog(game, frog);
+
+        // Punteggio
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
+        wattroff(game, COLOR_PAIR(15));
+
+        // Vite
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 50, "Vite:");
+        mvwhline(game, 2, 55, ' ', 21);
+        for (int i = 0; i < game_struct->vite; i++) {
+            mvwprintw(game, 2, 55 + i * 2, "❤️");
+        }
+        wattroff(game, COLOR_PAIR(15));
+        // Tempo
+        wattron(game, COLOR_PAIR(15));
+        mvwhline(game, 46, 2, ' ', 10);
+        mvwprintw(game, 46, 2, "Tempo: %d ", (int)time->time);
+        wattroff(game, COLOR_PAIR(15));
+
+        print_tempo(game,game_struct, (int)time->time);
+        wrefresh(game);
+
+        keypad(game, true);  // abilita frecce
+        nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
+        int key = wgetch(game);
+        if (key != ERR && frogLocal.key == -1){
+            LOCK_FROG();
+            Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
+            frog->key = key;
+            UNLOCK_FROG();
+            case 's':  // spara granate
+                sparaGranata(&frogLocal, gameLocal.time, gameCfg);
+                break;
+        }
+        //int key = 258 +rand_funz(0,3);
+
+        wclear(game);
+        wrefresh(game);
+
+    }
+
+
+
+}
 
 void RanaSuTana(const Frog* frog, const gameConfig* gameConfig){
 
