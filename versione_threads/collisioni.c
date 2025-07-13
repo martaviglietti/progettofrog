@@ -1,5 +1,6 @@
 //funzione di controllo collisione rana-proiettile
 #include "header.h"
+#include <string.h>
 
 void* thread_grafica(void* arg) {
     Game_struct* game_struct = (Game_struct*)arg;
@@ -12,7 +13,7 @@ void* thread_grafica(void* arg) {
     Frog* frog = frogInit();
     Crocodile* crocodiles = CrocodileInit(game_struct->gameCfg->flussi, time->time);
     Projectile* projectiles = ProjectileInit();
-    Projectile* granates = GranateInit();
+    Projectile* granates = NULL;
 
     const int waterYtop = TANA_POS + SPONDA_SUPERIORE;
     const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
@@ -42,10 +43,8 @@ void* thread_grafica(void* arg) {
             case CROC_STATUS:
                 crocId = ((int*)newMess.data)[0];
                 newX = ((int*)newMess.data)[1];
-                newY = ((int*)newMess.data)[2];
 
                 crocodiles[crocId].x = newX;
-                crocodiles[crocId].y = newY;
                 
                 if (crocId == frog->crocIdx && newX > RANA_XMIN && newX < RANA_XMAX){
                     printf("GestGraph: Rana si muove sul coccodrillo %d, oldPos = %d, newPos = %d\n", crocId, frog->x, newX);
@@ -117,13 +116,88 @@ void* thread_grafica(void* arg) {
             }
         }
 
+        //If the manche is not ended, check that every object is inside the window 
+        if (!newManche){
+
+            //coccodrilli
+            for (int i = 0; i < MAX_CROCODILES; i++){
+                Crocodile* crocod = &crocodiles[i]; 
+
+                if (atomic_load(&crocod->alive)){   // if the crocodile is alive, we check the position and eventually we turn it off
+                    if ((crocod->x < POS_SPAWN_COC_SINISTRA  && crocod->dir == -1) || (crocod->x > POS_SPAWN_COC_DESTRA  && crocod->dir == 1)){
+                        atomic_store(&crocod->alive, false);
+                        crocod->wait = time->time - rand_funz(3, 10);
+                        crocod->x = -1;
+                        crocod->y = -1;
+                        crocod->dir = -1;
+                        crocod->speed = -1;
+                        crocod->tempo_prec = time->time;
+                    }
+                }
+                else{                              // if the crocodile is NOT alive, we check if they can spawn or not
+
+                }
+                
+            }
+
+
+
+        }
+
+
+
 
         
-
+        if (!gran->alive || CollGranataProiettile(gran)){
+                continue;
+            }
         
 
         //Check objects are inside h window
+        for granates like: if (newX > 0 && newX < LARGHEZZA_GIOCO){   else gran->alive=0;
         
+            fro croc: if (newX >= POS_SPAWN_COC_SINISTRA && newX <= POS_SPAWN_COC_DESTRA){    // nuova posizione valida
+
+        else {
+                        if ((newX < POS_SPAWN_COC_SINISTRA  && crocod->dir == -1) || (newX > POS_SPAWN_COC_DESTRA  && crocod->dir == 1)){                                               // coccodrillo fuori mappa, quindi muore
+                            crocod->alive = 0;
+                            crocod->wait = time - rand_funz(3, 10);
+                            crocod->x = -1;
+                            crocod->y = -1;
+                            crocod->dir = -1;
+                            crocod->speed = -1;
+                            crocod->tempo_prec = time;
+                        }
+                    }
+
+                    
+
+
+        // far spownare nuovi coccodrrilli
+        for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
+            Crocodile* crocod = (Crocodile*)buffer.buffer[i];
+
+            if (crocod->alive){
+                else{     //coccodrillo é disattivo
+                if (time <= crocod->wait){      // creiamo il coccodrillo
+
+                    const int id_flusso = rand_funz(0, NFLUSSI-1);
+                    const Flusso* flux = &gameCfg->flussi[id_flusso];
+                    
+                    crocod->alive=1;
+                    crocod->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
+                    crocod->y = flux->y;
+                    crocod->dir = flux->dir;
+                    crocod->speed = flux->speed;
+                    crocod->wait = time - rand_funz(3, 10);
+                    crocod->tempo_prec = time;
+                }
+            }
+        // Far sparare i proiettili
+        if (time <= crocod->wait){       //coccodrillo spara il proiettile
+                            sparaProiettile(time, gameCfg, i-IDX_COCCODRILLI);
+                        }
+
 
         werase(game);
         windowGeneration(game, COLS, LINES, game_struct);
@@ -158,15 +232,19 @@ void* thread_grafica(void* arg) {
         keypad(game, true);  // abilita frecce
         nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
         int key = wgetch(game);
-        if (key != ERR && frogLocal.key == -1){
-            LOCK_FROG();
-            Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-            frog->key = key;
-            UNLOCK_FROG();
-            case 's':  // spara granate
-                sparaGranata(&frogLocal, gameLocal.time, gameCfg);
-                break;
+
+        pthread_mutex_lock(&frog->mutex);
+        if (key != ERR && frog->key == -1){
+
+            if(key == 's' && granates == NULL){
+                granates = GranateInit();
+                GranateInit(frog, time->time, game_struct->gameCfg);
+            }
+            else{
+                frog->key = key;
+            }
         }
+        pthread_mutex_unlock(&frog->mutex);
         //int key = 258 +rand_funz(0,3);
 
         wclear(game);

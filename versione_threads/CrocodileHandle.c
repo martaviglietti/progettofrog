@@ -55,68 +55,37 @@ Crocodile* CrocodileInit(Flusso *flussi, float time) {
 void *thread_coccodrillo(void *arg) {
 
     Crocodile* croc = (Crocodile*)arg;
+    int crocX = croc->x;
+    float crocTime_prec = croc->tempo_prec;
+    int crocDir = croc->dir;
+    int crocSpeed = croc->speed;
+    int crocIdx = croc->idx;
+
+    struct timeval now;
 
     while(atomic_load(&croc->alive)){
+        usleep(50 * 1000);  // sleep 100 ms
+
+        gettimeofday(&now, NULL);
+
+        const float newTime = (float)now.tv_sec + (float)now.tv_usec  / 1e6f;
+        const int newX = crocX + crocDir * (int)(crocSpeed * (newTime - crocTime_prec));
+
+        if (newX == crocX) continue;
         
+        printf("Crocodile %d moved from %d to %d\n", crocIdx, crocX, newX);
 
-        const float time = game_struct->time;
-        UNLOCK_GAME();
+        crocIdx = newX;
+        crocTime_prec = newTime;
+            
+        int* msgCroc = malloc(2 * sizeof(int));
+        msgCroc[0] = crocIdx;
+        msgCroc[1] = newX;
+        Message newMess;
+        newMess.type = CROC_STATUS;
+        newMess.data = msgCroc;
 
-        LOCK_FROG();
-        frogLocal = *(Frog*)buffer.buffer[IDX_RANA];
-        UNLOCK_FROG();
-
-        LOCK_CROCS();
-        for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
-            Crocodile* crocod = (Crocodile*)buffer.buffer[i];
-
-            if (crocod->alive){
-
-                //aggiorniamo la posizione del coccodrillo
-                const int newX = crocod->x + crocod->dir * (int)(crocod->speed * (crocod->tempo_prec - time));
-
-                if (newX != crocod->x){       //se la nuova posizione é diversa dalla precedente
-                    if (newX >= POS_SPAWN_COC_SINISTRA && newX <= POS_SPAWN_COC_DESTRA){    // nuova posizione valida
-                        crocod->x = newX;
-                        crocod->tempo_prec = time;
-                        if (time <= crocod->wait){       //coccodrillo spara il proiettile
-                            sparaProiettile(time, gameCfg, i-IDX_COCCODRILLI);
-                        }
-                    }
-                    else {
-                        if ((newX < POS_SPAWN_COC_SINISTRA  && crocod->dir == -1) || (newX > POS_SPAWN_COC_DESTRA  && crocod->dir == 1)){                                               // coccodrillo fuori mappa, quindi muore
-                            crocod->alive = 0;
-                            crocod->wait = time - rand_funz(3, 10);
-                            crocod->x = -1;
-                            crocod->y = -1;
-                            crocod->dir = -1;
-                            crocod->speed = -1;
-                            crocod->tempo_prec = time;
-                        }
-                    }
-                }
-
-                
-            }
-            else{     //coccodrillo é disattivo
-                if (time <= crocod->wait){      // creiamo il coccodrillo
-
-                    const int id_flusso = rand_funz(0, NFLUSSI-1);
-                    const Flusso* flux = &gameCfg->flussi[id_flusso];
-                    
-                    crocod->alive=1;
-                    crocod->x = (flux->dir == 1) ? POS_SPAWN_COC_SINISTRA - 1 : POS_SPAWN_COC_DESTRA + 1;
-                    crocod->y = flux->y;
-                    crocod->dir = flux->dir;
-                    crocod->speed = flux->speed;
-                    crocod->wait = time - rand_funz(3, 10);
-                    crocod->tempo_prec = time;
-                }
-            }
-            printf("Coccodrillo %d aggiornato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f, at time=%f\n", i-IDX_COCCODRILLI, crocod->alive, crocod->x, crocod->y, crocod->speed, crocod->dir, crocod->wait, crocod->tempo_prec, time);
-        }
-        UNLOCK_CROCS();
-        usleep(100 * 1000);  // sleep 10 ms
+        push_event(&myBuffer, &newMess);
     }
     pthread_exit(NULL); 
 }

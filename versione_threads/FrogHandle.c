@@ -79,103 +79,80 @@ void* thread_rana(void* arg) {
     pthread_exit(NULL);
 }
 
-void sparaGranata(const Frog* frog, const float time, const gameConfig* gameConfig) {
-
-    bool allowed = true;
-
-    for (int i = IDX_GRANATE; i< IDX_GRANATE + 2; i++){
-
-        const Projectile* gran = (Projectile*)buffer.buffer[i];
-        if(gran->alive) allowed = false;
-    }
-
-    if (allowed){
-        GranateInit();
-        pthread_create(&t_granate, NULL, thread_granata, (void *)gameConfig);
-        for (int i = IDX_GRANATE; i< IDX_GRANATE + 2; i++){
-            
-            Projectile* gran = (Projectile*)buffer.buffer[i];
-            
-            gran->x = frog->x;
-            gran->y = frog->y;
-            gran->alive = 1;
-            gran->tempo_prec = time;
-            gran->dir = 2*(i%2) -1;
-            gran->speed = gameConfig->velocità_proiettili;
-        }
-    }
-
-    
-}
-
 //GESTIONE GRANATE-----------------------------------------
-Projectile* GranateInit(){
+Projectile* GranateInit(const Frog* frog, const float time, const gameConfig* gameConfig){
 
-    Projectile* granates = malloc(MAX_CROCODILES * sizeof(Projectile));
+    Projectile* granates = malloc(2 * sizeof(Projectile));
     if (granates == NULL) {
-        fprintf(stderr, "malloc failed at Projectile Initialization\n");
+        fprintf(stderr, "malloc failed at Granate Initialization\n");
         exit(EXIT_FAILURE);
     }
 
     for (int i = 0; i < 2; i++){
 
         Projectile* gran = (Projectile*)&granates[i];
-        gran->x = -1;
-        gran->y = -1;
-        gran->alive = 0;
-        gran->tempo_prec = -1;
-        gran->dir = -1;
-        gran->speed =-1;
+        gran->x = frog->x;
+        gran->y = frog->y;
+        gran->alive = 1;
+        gran->tempo_prec = time;
+        gran->dir = 2*(i%2) -1;
+        gran->speed = gameConfig->velocità_proiettili;
 
         printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
     }
+    pthread_t t_granate;
+    pthread_create(&t_granate, NULL, thread_granata, (void *)granates);
+    pthread_detach(t_granate);
     return granates;
 }
 
 void* thread_granata(void* arg) {
 
-    while(1){
+    Projectile* granates = (Projectile*)arg;
+    int granX[2];
+    float granTime_prec[2];
+    int granDir[2];
+    int granSpeed[2];
+    bool alive[2];
+    for (int i = 0; i < 2; i++){
+        granX[i] = granates[i].x;
+        granTime_prec[i] = granates[i].tempo_prec;
+        granDir[i] = granates[i].dir;
+        granSpeed[i] = granates[i].speed;
+        alive[i] = true;
+    }
+    struct timeval now;
 
-        LOCK_READ_GAME();
-        const Game_struct* game_struct = (Game_struct*)buffer.buffer[IDX_GAME];
+    while(alive[0] || alive[1]){  
+        usleep(50 * 1000);  // sleep 100 ms
 
-        if ((game_struct->win) ||  (game_struct->vite == 0)){
-            UNLOCK_GAME();
-            break;
-        }
-        const float time = game_struct->time;
-        UNLOCK_GAME();
+        for (int i = 0; i < 2; i++){
 
-        LOCK_FROG();
-        for (int i = IDX_GRANATE; i < IDX_GRANATE + 2; i++){
-
-            Projectile* gran = (Projectile*)buffer.buffer[i];
-
-            if (!gran->alive || CollGranataProiettile(gran)){
+            if(!atomic_load(&granates[i].alive)){
+                alive[i] = false;
                 continue;
             }
 
-            const int newX = gran->x + gran->dir * (int)(gran->speed * (gran->tempo_prec - time));
-            if (newX == gran->x) continue;
-            if (newX > 0 && newX < LARGHEZZA_GIOCO && !CollGranataProiettile(gran)){
-                gran->x = newX;
-                gran->tempo_prec = time;
-            }
-            else gran->alive=0;
+            gettimeofday(&now, NULL);
+            const float newTime = (float)now.tv_sec + (float)now.tv_usec  / 1e6f;
+            const int newX = granX[i] + granDir[i] * (int)(granSpeed[i] * (newTime - granTime_prec[i]));
+
+            if (newX == granX[i]) continue;
+            
+            printf("granade %d moved from %d to %d\n", i, granX[i], newX);
+
+            granX[i] = newX;
+            granTime_prec[i] = newTime;   
         }
-        UNLOCK_FROG();
-        usleep(100 * 1000);  // sleep 10 ms
+        int* msgGran = malloc(2 * sizeof(int));
+        msgGran[0] = granX[0];
+        msgGran[1] = granX[1];
+        Message newMess;
+        newMess.type = GRAN_STATUS;
+        newMess.data = msgGran;
+
+        push_event(&myBuffer, &newMess);
     }
+
     pthread_exit(NULL);
-}
-
-//___________________________________________________________________________________________________
-//funzione che rinizializza la rana
-void restartFrog(){
-
-    Frog* frog = (Frog*)buffer.buffer[IDX_RANA];
-    frog->x = RANA_XINIT;
-    frog->y = RANA_YINIT;
-    frog->crocIdx = -1;
-    frog->key = -1;
 }

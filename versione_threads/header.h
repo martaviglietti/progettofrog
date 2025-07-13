@@ -158,12 +158,11 @@ void def_dir_flussi(Flusso *flussi);
 //funzioni di gioco
 Game_struct* startGame(WINDOW *game, gameConfig* gameConfig);
 void crea_thread_gioco(gameConfig* gameConfig);
-void restartFrog();
 
 //funzioni inizializzazione oggetti
 Time* timeInit(gameConfig *gameConfig);
 Crocodile* CrocodileInit(Flusso *flussi, float time);
-Projectile* GranateInit();
+Projectile* GranateInit(const Frog* frog, const float time, const gameConfig* gameConfig);
 Frog* frogInit();
 Projectile* ProjectileInit();
 
@@ -177,7 +176,6 @@ void* thread_grafica(void* arg);
 
 
 // --- Lancio dinamico di granate/proiettili ---
-void sparaGranata(const Frog* frog, const float time, const gameConfig* gameConfig);
 void sparaProiettile(const float time, const gameConfig* gameConfig, const int idx);
 
 // --- Buffer ---
