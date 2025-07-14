@@ -1,4 +1,5 @@
 #include "header.h"
+#include <stdatomic.h>
 
 //sprite rana
 const char *frog_sprite[2] = {
@@ -60,7 +61,7 @@ void draw_proiettile(WINDOW* game, const Projectile* projectiles){
     for (int i = 0; i < MAX_CROCODILES; i++){
         const Projectile* proj = &projectiles[i];
         //printf("i = %d, ptr = %p\n", i, proj);
-        if (proj->alive) {  //mostriamo il proiettile solo se vivo		
+        if (atomic_load(&proj->alive)) {  //mostriamo il proiettile solo se vivo		
             wattron(game,COLOR_PAIR(11));
             mvwaddch(game,proj->y,proj->x,'*');		
             wattroff(game,COLOR_PAIR(11));
@@ -76,7 +77,7 @@ void draw_granate(WINDOW* game, const Projectile* granates){
         const Projectile* gran = &granates[i];
         //printf("i = %d, ptr = %p\n", i, gran);
 
-        if (gran->alive) { //mostriamo le granate solo se vive
+        if (atomic_load(&gran->alive)) { //mostriamo le granate solo se vive
                     
             if (gran->y<15 && gran->y>=10) {  //granata sul marciapiede
             wattron(game,COLOR_PAIR(6));
@@ -126,7 +127,7 @@ void drawCoccodrilli(WINDOW *game, const Crocodile* crocodiles){
     for (int i = 0; i < MAX_CROCODILES; i++){
         const Crocodile* crocod = &crocodiles[i];
 
-        if (crocod->alive && crocod->dir==1) { //coccodrillo vivo e direzionato verso destra
+        if (atomic_load(&crocod->alive) && crocod->dir==1) { //coccodrillo vivo e direzionato verso destra
           
             h=0; 
 	        //printiamo la parte superiore del coccodrillo
@@ -155,7 +156,7 @@ void drawCoccodrilli(WINDOW *game, const Crocodile* crocodiles){
             }
 
         }
-        else if (crocod->alive && crocod->dir==-1) {   //coccodrillo vivo e direzionato verso sinistra
+        else if (atomic_load(&crocod->alive) && crocod->dir==-1) {   //coccodrillo vivo e direzionato verso sinistra
        	    
        	    h=0; 
             //printiamo la parte superiore del coccodrillo

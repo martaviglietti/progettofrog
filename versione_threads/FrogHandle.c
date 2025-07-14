@@ -17,7 +17,7 @@ Frog* frogInit(){
     frog->key = -1;
     atomic_store(&frog->alive, true);
     pthread_mutex_init(&frog->mutex, NULL);
-    printf("Rana inizializzata con alive=%d, x=%d, y=%d, key=%d\n", frog->alive, frog->x, frog->y, frog->key);
+    //printf("Rana inizializzata con alive=%d, x=%d, y=%d, key=%d\n", frog->alive, frog->x, frog->y, frog->key);
 
     pthread_t t_rana;
     pthread_create(&t_rana, NULL, thread_rana, (void *)frog);
@@ -63,7 +63,7 @@ void* thread_rana(void* arg) {
                 break;
         }    
         
-        printf("frog moved from %d,%d to %d,%d\n", oldX, oldY, newX, newY);
+        //printf("frog moved from %d,%d to %d,%d\n", oldX, oldY, newX, newY);
 
         int* msgFrog = malloc(2 * sizeof(int));
         msgFrog[0] = newX;
@@ -74,7 +74,7 @@ void* thread_rana(void* arg) {
 
         push_event(&myBuffer, &newMess);
 
-        usleep(500 * 1000);  // sleep 10 ms
+        usleep(30 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }
@@ -98,7 +98,7 @@ Projectile* GranateInit(const Frog* frog, const float time, const gameConfig* ga
         gran->dir = 2*(i%2) -1;
         gran->speed = gameConfig->velocità_proiettili;
 
-        printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, time);
+        //printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, time);
     }
     pthread_t t_granate;
     pthread_create(&t_granate, NULL, thread_granata, (void *)granates);
@@ -133,7 +133,7 @@ void* thread_granata(void* arg) {
 
             if (dx == 0) continue;
             
-            printf("granade %d moved from %d to %d\n", i, localGran[i].x, localGran[i].x + dx);
+            //printf("granade %d moved from %d to %d\n", i, localGran[i].x, localGran[i].x + dx);
 
             localGran[i].x += dx;
             localGran[i].prev = now;  

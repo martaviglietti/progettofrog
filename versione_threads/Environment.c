@@ -38,7 +38,7 @@ void* thread_tempo(void* arg) {
         prev = now;
 
         newTime += elapsed;
-        printf("New time: %f\n",newTime);
+        //printf("New time: %f\n",newTime);
 
         float* msgTime = malloc(sizeof(float));
         *msgTime = newTime;

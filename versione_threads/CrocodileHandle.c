@@ -1,4 +1,5 @@
 #include "header.h"
+#include <stdatomic.h>
 
 Crocodile* CrocodileInit(Flusso *flussi, const float time) {
 
@@ -33,20 +34,20 @@ Crocodile* CrocodileInit(Flusso *flussi, const float time) {
             croc->y = flux->y;
             croc->dir = flux->dir;
             croc->speed = flux->speed;
-            croc->wait = time + rand_funz(2, 10);
+            croc->wait = time + rand_funz(2, 6);
 
             pthread_create(&t_coccodrilli[i], NULL, thread_coccodrillo, (void*)&crocodiles[i]);
             pthread_detach(t_coccodrilli[i]);
         }
         else{
             atomic_store(&croc->alive, false);
-            croc->wait = time + rand_funz(3, 10);
+            croc->wait = time + rand_funz(0, 3);
             croc->x = -1;
             croc->y = -1;
             croc->dir = -1;
             croc->speed = -1;
         }
-        printf("Coccodrillo %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f\n", i, atomic_load(&croc->alive), croc->x, croc->y, croc->speed, croc->dir, croc->wait,time);
+        //printf("Coccodrillo %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, wait=%d, tempo_prec=%f\n", i, atomic_load(&croc->alive), croc->x, croc->y, croc->speed, croc->dir, croc->wait,time);
     }
     return crocodiles;
 }
@@ -69,7 +70,7 @@ void *thread_coccodrillo(void *arg) {
 
         if (dx == 0) continue;
 
-        printf("Crocodile %d moved from %d to %d\n", localCroc.idx, localCroc.x, localCroc.x + dx);
+        //printf("Crocodile %d moved from %d to %d\n", localCroc.idx, localCroc.x, localCroc.x + dx);
         localCroc.x += dx;
         localCroc.prev = now;
         
@@ -116,11 +117,11 @@ Projectile* ProjectileInit(const Crocodile* croc, const float time, const gameCo
             gettimeofday(&proj->prev, NULL);
         }
         
-        printf("Proiettile %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, proj->alive, proj->x, proj->y, proj->speed, proj->dir, time);
+        //printf("Proiettile %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, proj->alive, proj->x, proj->y, proj->speed, proj->dir, time);
     }
 
     pthread_t t_proiettili;
-    pthread_create(&t_proiettili, NULL, thread_coccodrillo, (void*)projectiles);
+    pthread_create(&t_proiettili, NULL, thread_proiettile, (void*)projectiles);
     pthread_detach(t_proiettili);
 
     return projectiles;
@@ -134,7 +135,7 @@ void* thread_proiettile(void* arg) {
 
     for (int i = 0; i < MAX_CROCODILES; i++){
         localProj[i] = projectiles[i];
-        active++;
+        if (atomic_load(&projectiles[i].alive)) active++;
     }
     struct timeval now;
 
@@ -145,9 +146,13 @@ void* thread_proiettile(void* arg) {
 
         for (int i = 0; i < MAX_CROCODILES; i++){
 
-            if(!atomic_load(&projectiles[i].alive)){
+            bool flag = atomic_load(&projectiles[i].alive);
+            if(!flag){
                 active--;
                 continue;
+            }
+            if (flag != localProj[i].alive){
+                localProj[i] = projectiles[i];
             }
 
             gettimeofday(&now, NULL);
@@ -156,7 +161,7 @@ void* thread_proiettile(void* arg) {
 
             if (dx == 0) continue;
             
-            printf("Projectile %d moved from %d to %d\n", i, localProj[i].x, localProj[i].x + dx);
+            //printf("Projectile %d moved from %d to %d\n", i, localProj[i].x, localProj[i].x + dx);
 
             localProj[i].x += dx;
             localProj[i].prev = now;   
@@ -181,7 +186,7 @@ void sparaProiettile(Projectile* proj, const Crocodile* croc, const float time, 
         
     if (atomic_load(&proj->alive)) return;
 
-    printf("Stiamo sparando un proiettile da coccodrillo %d\n", croc->idx);
+    //printf("Stiamo sparando un proiettile da coccodrillo %d\n", croc->idx);
 
     proj->x = (croc->dir == 1) ? croc->x + 5 : croc->x - 5;;
     proj->y = croc->y;

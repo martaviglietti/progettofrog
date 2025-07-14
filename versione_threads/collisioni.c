@@ -5,17 +5,20 @@
 #include <string.h>
 
 void* thread_grafica(void* arg) {
-    int keys[] = { KEY_DOWN, KEY_UP, KEY_LEFT, KEY_RIGHT };
+
     Game_struct* game_struct = (Game_struct*)arg;
     WINDOW *game = game_struct->game;
 
     //Inizializzazione tempo
-    Time* time = timeInit();
-    printf("Tempo inizializzato a %f\n", time->time);
+    //Time* time = timeInit();
+    struct timeval now, prev;
+    gettimeofday(&prev, NULL);
+    float time = 0.;
+    //printf("Tempo inizializzato a %f\n", time->time);
 
     // Inizializzazione oggetti
     Frog* frog = frogInit();
-    Crocodile* crocodiles = CrocodileInit(game_struct->gameCfg->flussi, time->time);
+    Crocodile* crocodiles = CrocodileInit(game_struct->gameCfg->flussi, time);
     Projectile* projectiles = NULL;
     Projectile* granates = NULL;
 
@@ -23,16 +26,21 @@ void* thread_grafica(void* arg) {
     const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
 
     while (1) {
+
+        gettimeofday(&now, NULL);
+        time += (now.tv_sec - prev.tv_sec) + (now.tv_usec - prev.tv_usec) / 1000000.0f;
+        prev = now;
+
         //printf("new iteration of graphics...\n");
         int newX, newY, crocId;
 
         Message newMess = pop_event(&myBuffer);
-        printf("We are reading a message of type %d.\n", newMess.type);
+        //printf("We are reading a message of type %d.\n", newMess.type);
         switch (newMess.type) {
 
             case TIME_STATUS:
-                printf("Updating time from %f to %f\n", time->time, *((float*)newMess.data));
-                time->time = *((float*)newMess.data);
+                //printf("Updating time from %f to %f\n", time->time, *((float*)newMess.data));
+                //time->time = *((float*)newMess.data);
                 break;
 
             case FROG_STATUS:
@@ -50,7 +58,7 @@ void* thread_grafica(void* arg) {
                 crocodiles[crocId].x = newX;
                 
                 if (crocId == frog->crocIdx && newX > RANA_XMIN && newX < RANA_XMAX){
-                    printf("GestGraph: Rana si muove sul coccodrillo %d, oldPos = %d, newPos = %d\n", crocId, frog->x, newX);
+                    //printf("GestGraph: Rana si muove sul coccodrillo %d, oldPos = %d, newPos = %d\n", crocId, frog->x, newX);
                     frog->x = newX;
                 }
                 break;
@@ -77,7 +85,7 @@ void* thread_grafica(void* arg) {
 
         // Check if there is still time
         //printf("Checking time limit...\n");
-        if (time->time > game_struct->gameCfg->tempo) {
+        if (time > game_struct->gameCfg->tempo) {
             newManche = true;
             game_struct->score -= 20;
             game_struct->vite--;
@@ -91,13 +99,13 @@ void* thread_grafica(void* arg) {
             bool isSucc = RanaSuTana(frog, game_struct);
             
             if(!isSucc){
-                printf("NewManche: rana haraggiungo l'estremo superiore della mappa ma mancando le tane...\n");
+                //printf("NewManche: rana haraggiungo l'estremo superiore della mappa ma mancando le tane...\n");
                 game_struct->vite--;
                 game_struct->score -= 10;
             }
             else{
-                printf("NewManche: rana ha raggiunto una delle tane\n");
-                game_struct->score += 15 + (int)(15 * time->time / 100);
+                //printf("NewManche: rana ha raggiunto una delle tane\n");
+                game_struct->score += 15 + (int)(15 * time / 100);
 
                 if (game_struct->tane_count == NTANE){
                     game_struct->win = 1;
@@ -114,17 +122,17 @@ void* thread_grafica(void* arg) {
 
             if(crocId == -1){              //rana fell in the water
                 newManche = true;
-                printf("GestGraph: la rana é caduta in acqua...\n");
+                //printf("GestGraph: la rana é caduta in acqua...\n");
                 game_struct->vite--;
                 game_struct->score -= 10;
             }
             else{
                 frog->crocIdx = crocId;
-                printf("GestGraph: la rana é arrivata sul coccodrillo %d\n", crocId);
+                //printf("GestGraph: la rana é arrivata sul coccodrillo %d\n", crocId);
             }
 
             if(CollRanaProiettile(frog, projectiles)){
-                printf("GestGraph: rana colpita da un proiettile...\n");
+                //printf("GestGraph: rana colpita da un proiettile...\n");
                 newManche = true;
                 game_struct->vite--;
                 game_struct->score -= 15;
@@ -141,9 +149,9 @@ void* thread_grafica(void* arg) {
 
                 if (atomic_load(&crocod->alive)){   // if the crocodile is alive, we check the position and eventually we turn it off
                     if ((crocod->x < POS_SPAWN_COC_SINISTRA  && crocod->dir == -1) || (crocod->x > POS_SPAWN_COC_DESTRA  && crocod->dir == 1)){     // coccodrillo fuori mappa, quindi muore
-                        printf(" is out of map\n");
+                        //printf(" is out of map\n");
                         atomic_store(&crocod->alive, false);
-                        crocod->wait = time->time + rand_funz(3, 10);
+                        crocod->wait = time + rand_funz(0, 3);
                         crocod->x = -1;
                         crocod->y = -1;
                         crocod->dir = -1;
@@ -153,20 +161,21 @@ void* thread_grafica(void* arg) {
                     }
 
                     //controllo se Far sparare i proiettili
-                    if (time->time >= crocod->wait){       //coccodrillo spara il proiettile
-                        printf("Crocodile %d is shooting a projectile\n", i);
+                    if (time >= crocod->wait){       //coccodrillo spara il proiettile
+                        //printf("Crocodile %d is shooting a projectile\n", i);
                         if (projectiles == NULL){          // se é il primo proiettile sparato
-                            projectiles = ProjectileInit(crocod, time->time, game_struct->gameCfg);
+                            projectiles = ProjectileInit(crocod,  time, game_struct->gameCfg);
                         }
-                        else sparaProiettile(&projectiles[crocod->idx], crocod, time->time, game_struct->gameCfg);
+                        else sparaProiettile(&projectiles[crocod->idx], crocod, time, game_struct->gameCfg);
 
-                        crocod->wait = time->time + rand_funz(3, 10);
+                        crocod->wait = time + rand_funz(0, 3);
+                        usleep(5 * 1000);  // sleep 10 ms
                         continue;
                     }
                 }
                 else{                              // if the crocodile is NOT alive, we check if they can spawn or not
-                    if (time->time >= crocod->wait){      // creiamo il coccodrillo
-                        printf(" is spawning\n");
+                    if (time >= crocod->wait){      // creiamo il coccodrillo
+                        //printf(" is spawning\n");
 
                         const int id_flusso = rand_funz(0, NFLUSSI-1);
                         const Flusso* flux = &game_struct->gameCfg->flussi[id_flusso];
@@ -176,7 +185,7 @@ void* thread_grafica(void* arg) {
                         crocod->y = flux->y;
                         crocod->dir = flux->dir;
                         crocod->speed = flux->speed;
-                        crocod->wait = time->time + rand_funz(3, 10);
+                        crocod->wait = time + rand_funz(3, 10);
                         gettimeofday(&crocod->prev, NULL);
 
                         pthread_t t_coccod;
@@ -249,46 +258,46 @@ void* thread_grafica(void* arg) {
             }
         }    
         
-        //werase(game);
-        //windowGeneration(game, COLS, LINES, game_struct);
+        werase(game);
+        windowGeneration(game, COLS, LINES, game_struct);
     
-        //drawCoccodrilli(game, crocodiles);
-        //draw_granate(game, granates);
-        //draw_proiettile(game, projectiles);
-        //draw_frog(game, frog);
+        drawCoccodrilli(game, crocodiles);
+        draw_granate(game, granates);
+        draw_proiettile(game, projectiles);
+        draw_frog(game, frog);
 
         // Punteggio
-        //wattron(game, COLOR_PAIR(15));
-        //mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
-        //wattroff(game, COLOR_PAIR(15));
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
+        wattroff(game, COLOR_PAIR(15));
 
         // Vite
-        //wattron(game, COLOR_PAIR(15));
-        //mvwprintw(game, 2, 50, "Vite:");
-        //mvwhline(game, 2, 55, ' ', 21);
-        //for (int i = 0; i < game_struct->vite; i++) {
-        //    mvwprintw(game, 2, 55 + i * 2, "❤️");
-        //}
-        //wattroff(game, COLOR_PAIR(15));
+        wattron(game, COLOR_PAIR(15));
+        mvwprintw(game, 2, 50, "Vite:");
+        mvwhline(game, 2, 55, ' ', 21);
+        for (int i = 0; i < game_struct->vite; i++) {
+            mvwprintw(game, 2, 55 + i * 2, "❤️");
+        }
+        wattroff(game, COLOR_PAIR(15));
         // Tempo
-        //wattron(game, COLOR_PAIR(15));
-        //mvwhline(game, 46, 2, ' ', 10);
-        //mvwprintw(game, 46, 2, "Tempo: %d ", (int)time->time);
-        //wattroff(game, COLOR_PAIR(15));
+        wattron(game, COLOR_PAIR(15));
+        mvwhline(game, 46, 2, ' ', 10);
+        mvwprintw(game, 46, 2, "Tempo: %d ", (int)time);
+        wattroff(game, COLOR_PAIR(15));
 
-        //print_tempo(game,game_struct, (int)time->time);
-        //wrefresh(game);
+        print_tempo(game,game_struct, (int)time);
+        wrefresh(game);
 
-        // /keypad(game, true);  // abilita frecce
-        // /nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
-        // /int key = wgetch(game);
-        int key = 258 +rand_funz(0,3);
+        keypad(game, true);  // abilita frecce
+        nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
+        int key = wgetch(game);
+        //int key = 258 +rand_funz(0,3);
 
         pthread_mutex_lock(&frog->mutex);
         if (key != ERR && frog->key == -1){
-            printf("Key pressed: %d\n", key);
+            //printf("Key pressed: %d\n", key);
             if(key == 's' && granates == NULL){
-                granates = GranateInit(frog, time->time, game_struct->gameCfg);
+                granates = GranateInit(frog, time, game_struct->gameCfg);
             }
             else{
                 frog->key = key;
@@ -301,9 +310,9 @@ void* thread_grafica(void* arg) {
         // /wrefresh(game);
 
         if(newManche){
-            printf("New manche...\n");
+            //printf("New manche...\n");
 
-            atomic_store(&time->alive, false);
+            //atomic_store(&time->alive, false);
             atomic_store(&frog->alive, false);
             for (int i = 0; i < MAX_CROCODILES; i++){
                 atomic_store(&crocodiles[i].alive, false);
@@ -329,9 +338,9 @@ void* thread_grafica(void* arg) {
 
             if (game_struct->win != 1 && game_struct->vite > 0){
 
-                time = timeInit();
+                time = 0.;// timeInit();
                 frog = frogInit();
-                crocodiles = CrocodileInit(game_struct->gameCfg->flussi, time->time);
+                crocodiles = CrocodileInit(game_struct->gameCfg->flussi, time);
                 projectiles = NULL;
                 granates = NULL;
             }
