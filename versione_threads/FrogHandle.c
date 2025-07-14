@@ -38,6 +38,7 @@ void* thread_rana(void* arg) {
         pthread_mutex_lock(&frog->mutex);
         key = frog->key;
         frog->key = -1;
+        newX = frog->x;
         pthread_mutex_unlock(&frog->mutex);
 
 
@@ -118,7 +119,7 @@ void* thread_granata(void* arg) {
     struct timeval now;
 
     while(localGran[0].alive || localGran[1].alive){  
-        usleep(50 * 1000);  // sleep 100 ms
+        usleep(1 * 1000);  // sleep 100 ms
 
         for (int i = 0; i < 2; i++){
 

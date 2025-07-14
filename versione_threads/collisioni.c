@@ -46,9 +46,10 @@ void* thread_grafica(void* arg) {
             case FROG_STATUS:
                 newX = ((int*)newMess.data)[0];
                 newY = ((int*)newMess.data)[1];
-
+                pthread_mutex_lock(&frog->mutex);
                 if (newY < RANA_YINIT) frog->y = newY;
                 if (newX < RANA_XMAX && newX > RANA_XMIN) frog->x = newX;
+                pthread_mutex_unlock(&frog->mutex);
                 break;
 
             case CROC_STATUS:
@@ -56,11 +57,6 @@ void* thread_grafica(void* arg) {
                 newX = ((int*)newMess.data)[1];
 
                 crocodiles[crocId].x = newX;
-                
-                if (crocId == frog->crocIdx && newX > RANA_XMIN && newX < RANA_XMAX){
-                    //printf("GestGraph: Rana si muove sul coccodrillo %d, oldPos = %d, newPos = %d\n", crocId, frog->x, newX);
-                    frog->x = newX;
-                }
                 break;
 
             case PROJ_STATUS:
@@ -127,8 +123,14 @@ void* thread_grafica(void* arg) {
                 game_struct->score -= 10;
             }
             else{
-                frog->crocIdx = crocId;
+                //frog->crocIdx = crocId;
                 //printf("GestGraph: la rana é arrivata sul coccodrillo %d\n", crocId);
+                //if (crocId == frog->crocIdx && newX > RANA_XMIN && newX < RANA_XMAX){
+                    //printf("GestGraph: Rana si muove sul coccodrillo %d, oldPos = %d, newPos = %d\n", crocId, frog->x, newX);
+                pthread_mutex_lock(&frog->mutex);
+                frog->x = crocodiles[crocId].x;
+                pthread_mutex_unlock(&frog->mutex);
+                //}
             }
 
             if(CollRanaProiettile(frog, projectiles)){
@@ -138,6 +140,7 @@ void* thread_grafica(void* arg) {
                 game_struct->score -= 15;
             }
         }
+        else frog->crocIdx = -1;
         
         //If the manche is not ended, check that every object is inside the window 
         if (!newManche){
