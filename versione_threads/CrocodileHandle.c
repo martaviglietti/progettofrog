@@ -99,22 +99,21 @@ Projectile* ProjectileInit(const Crocodile* croc, const float time, const gameCo
     for (int i = 0; i < MAX_CROCODILES; i++){
 
         Projectile* proj = &projectiles[i];
-        
+        gettimeofday(&proj->prev, NULL);
+        //pthread_mutex_init(&proj->mutex, NULL);
+        proj->speed = gameCfg->velocità_proiettili;
+
         if(i == croc->idx){
             proj->x = (croc->dir == 1) ? croc->x + 5 : croc->x - 5;;
             proj->y = croc->y;
             atomic_store(&proj->alive, true);
             proj->dir = croc->dir;
-            gettimeofday(&proj->prev, NULL);
-            proj->speed = gameCfg->velocità_proiettili;
         }
         else{
             proj->x = -1;
             proj->y = -1;
             atomic_store(&proj->alive, false);
             proj->dir = -1;
-            proj->speed =-1;
-            gettimeofday(&proj->prev, NULL);
         }
         
         //printf("Proiettile %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, proj->alive, proj->x, proj->y, proj->speed, proj->dir, time);
@@ -147,7 +146,10 @@ void* thread_proiettile(void* arg) {
 
         for (int i = 0; i < MAX_CROCODILES; i++){
 
-            if(!atomic_load(&projectiles[i].alive)) continue;
+            if(!atomic_load(&projectiles[i].alive)){
+                localProj[i].alive = false;
+                continue;
+            }
 
             all_dead = false;
             if (!localProj[i].alive) localProj[i] = projectiles[i];
@@ -191,7 +193,6 @@ void sparaProiettile(Projectile* proj, const Crocodile* croc, const float time, 
     atomic_store(&proj->alive, true);
     proj->dir = croc->dir;
     gettimeofday(&proj->prev, NULL);
-    proj->speed = gameCfg->velocità_proiettili;
 }
 
 //---------------------------------------------------------------------------
