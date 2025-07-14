@@ -119,7 +119,7 @@ void* thread_granata(void* arg) {
     struct timeval now;
 
     while(localGran[0].alive || localGran[1].alive){  
-        usleep(1 * 1000);  // sleep 100 ms
+        if (granates == NULL) break;
 
         for (int i = 0; i < 2; i++){
 
@@ -148,6 +148,5 @@ void* thread_granata(void* arg) {
 
         push_event(&myBuffer, &newMess);
     }
-
     pthread_exit(NULL);
 }

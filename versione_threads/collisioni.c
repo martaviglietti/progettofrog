@@ -60,6 +60,7 @@ void* thread_grafica(void* arg) {
                 break;
 
             case PROJ_STATUS:
+                if (projectiles == NULL) break;
                 for (int i = 0; i < MAX_CROCODILES; i++){
                     if (atomic_load(&projectiles[i].alive)){
                         projectiles[i].x = ((int*)newMess.data)[i];
@@ -68,6 +69,7 @@ void* thread_grafica(void* arg) {
                 break;
 
             case GRAN_STATUS:
+            if (granates == NULL) break;
                 for (int i = 0; i < 2; i++){
                     if (atomic_load(&granates[i].alive)){
                         granates[i].x = ((int*)newMess.data)[i];
@@ -123,12 +125,12 @@ void* thread_grafica(void* arg) {
                 game_struct->score -= 10;
             }
             else{
-                //frog->crocIdx = crocId;
+                
                 //printf("GestGraph: la rana é arrivata sul coccodrillo %d\n", crocId);
-                //if (crocId == frog->crocIdx && newX > RANA_XMIN && newX < RANA_XMAX){
-                    //printf("GestGraph: Rana si muove sul coccodrillo %d, oldPos = %d, newPos = %d\n", crocId, frog->x, newX);
+                //printf("GestGraph: Rana si muove sul coccodrillo %d, oldPos = %d, newPos = %d\n", crocId, frog->x, newX);
                 pthread_mutex_lock(&frog->mutex);
-                frog->x = crocodiles[crocId].x;
+                frog->crocIdx = crocId;
+                if (crocodiles[crocId].x > RANA_XMIN && crocodiles[crocId].x < RANA_XMAX) frog->x = crocodiles[crocId].x;
                 pthread_mutex_unlock(&frog->mutex);
                 //}
             }
@@ -153,7 +155,7 @@ void* thread_grafica(void* arg) {
                     if ((crocod->x < POS_SPAWN_COC_SINISTRA  && crocod->dir == -1) || (crocod->x > POS_SPAWN_COC_DESTRA  && crocod->dir == 1)){     // coccodrillo fuori mappa, quindi muore
                         //printf(" is out of map\n");
                         atomic_store(&crocod->alive, false);
-                        crocod->wait = time + rand_funz(0, 3);
+                        crocod->wait = time + rand_funz(CROC_MIN_WAIT, CROC_MAX_WAIT);
                         crocod->x = -1;
                         crocod->y = -1;
                         crocod->dir = -1;
@@ -170,7 +172,7 @@ void* thread_grafica(void* arg) {
                         }
                         else sparaProiettile(&projectiles[crocod->idx], crocod, time, game_struct->gameCfg);
 
-                        crocod->wait = time + rand_funz(0, 3);
+                        crocod->wait = time + rand_funz(PROJ_MIN_WAIT, PROJ_MAX_WAIT);
                         usleep(5 * 1000);  // sleep 10 ms
                         continue;
                     }
@@ -187,7 +189,7 @@ void* thread_grafica(void* arg) {
                         crocod->y = flux->y;
                         crocod->dir = flux->dir;
                         crocod->speed = flux->speed;
-                        crocod->wait = time + rand_funz(3, 10);
+                        crocod->wait = time + rand_funz(PROJ_MIN_WAIT, PROJ_MAX_WAIT);
                         gettimeofday(&crocod->prev, NULL);
 
                         pthread_t t_coccod;
@@ -200,30 +202,26 @@ void* thread_grafica(void* arg) {
             }
             
             //Granate
-            int inactive = 0;
             if (granates != NULL){
+                bool all_dead = true;
                 for (int i = 0; i < 2; i++){
                     Projectile* gran = &granates[i];
                     //printf("Checking granade %d...", i);
 
-                    if (atomic_load(&gran->alive)){
+                    if (!atomic_load(&gran->alive)) continue;
 
-                        if ((gran->x <= 0 && gran->x >= LARGHEZZA_GIOCO) || CollGranataProiettile(gran, projectiles)){
-                            inactive ++;
-                            atomic_store(&gran->alive, false);
-                            gran->x = -1;
-                            gran->y = -1;
-                            gran->dir = -1;
-                            gran->speed = -1;
-                            gettimeofday(&gran->prev, NULL);
-                            continue;
-                        }
+                    if (gran->x <= 0 || gran->x >= LARGHEZZA_GIOCO || CollGranataProiettile(gran, projectiles)){
+                        atomic_store(&gran->alive, false);
+                        gran->x = -1;
+                        gran->y = -1;
+                        gran->dir = -1;
+                        gran->speed = -1;
+                        gettimeofday(&gran->prev, NULL);
+                        continue;
                     }
-                    else{
-                        inactive ++;
-                    }
+                    all_dead = false;
                 }
-                if (inactive == 2){
+                if (all_dead){
                     free(granates);
                     granates = NULL;
                 }
@@ -231,29 +229,25 @@ void* thread_grafica(void* arg) {
             
             // Proiettili
             if (projectiles != NULL){
-                inactive = 0;
+                bool all_dead = true;
                 for (int i = 0; i < MAX_CROCODILES; i++) {
                     Projectile* proj = &projectiles[i];
                     //printf("Checking projectile %d...", i);
 
-                    if (atomic_load(&proj->alive)){
+                    if (!atomic_load(&proj->alive)) continue;
 
-                        if ((proj->x <= 0  && proj->dir == -1) || (proj->x >= LARGHEZZA_GIOCO  && proj->dir == 1)){     // proiettile fuori mappa, quindi muore
-                            inactive ++;
-                            atomic_store(&proj->alive, false);
-                            proj->x = -1;
-                            proj->y = -1;
-                            proj->dir = -1;
-                            proj->speed = -1;
-                            gettimeofday(&proj->prev, NULL);
-                            continue;
-                        }
+                    if ((proj->x <= 0  && proj->dir == -1) || (proj->x >= LARGHEZZA_GIOCO  && proj->dir == 1)){     // proiettile fuori mappa, quindi muore
+                        atomic_store(&proj->alive, false);
+                        proj->x = -1;
+                        proj->y = -1;
+                        proj->dir = -1;
+                        proj->speed = -1;
+                        gettimeofday(&proj->prev, NULL);
+                        continue;
                     }
-                    else{
-                        inactive++;
-                    }  
+                    all_dead = false;
                 }
-                if (inactive == MAX_CROCODILES){
+                if (all_dead){
                     free(projectiles);
                     projectiles = NULL;
                 }
@@ -306,10 +300,6 @@ void* thread_grafica(void* arg) {
             }
         }
         pthread_mutex_unlock(&frog->mutex);
-        
-
-        // /wclear(game);
-        // /wrefresh(game);
 
         if(newManche){
             //printf("New manche...\n");
@@ -331,12 +321,16 @@ void* thread_grafica(void* arg) {
             }
 
             usleep(200 * 1000);  // sleep 10 ms
-
-            
-            free(frog);
             free(crocodiles);
-            if (projectiles != NULL) free(projectiles);
-            if (granates != NULL) free(granates);
+            free(frog);
+            if (granates != NULL) {
+                free(granates);
+                granates =NULL;
+            }
+            if (projectiles != NULL) {
+                free(projectiles);
+                projectiles=NULL;
+            }
 
             if (game_struct->win != 1 && game_struct->vite > 0){
 
@@ -415,6 +409,8 @@ bool CollRanaProiettile(const Frog* frog, Projectile* projectiles){
 }
 
 bool CollGranataProiettile(const Projectile* gran, Projectile* projectiles){
+
+    if (projectiles == NULL) return 0;
 
     const int gran_x = gran->x;
     const int gran_y = gran->y;

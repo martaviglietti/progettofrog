@@ -34,14 +34,14 @@ Crocodile* CrocodileInit(Flusso *flussi, const float time) {
             croc->y = flux->y;
             croc->dir = flux->dir;
             croc->speed = flux->speed;
-            croc->wait = time + rand_funz(2, 6);
+            croc->wait = time + rand_funz(PROJ_MIN_WAIT, PROJ_MAX_WAIT);
 
             pthread_create(&t_coccodrilli[i], NULL, thread_coccodrillo, (void*)&crocodiles[i]);
             pthread_detach(t_coccodrilli[i]);
         }
         else{
             atomic_store(&croc->alive, false);
-            croc->wait = time + rand_funz(0, 3);
+            croc->wait = time + rand_funz(CROC_MIN_WAIT, CROC_MAX_WAIT);
             croc->x = -1;
             croc->y = -1;
             croc->dir = -1;
@@ -131,29 +131,26 @@ void* thread_proiettile(void* arg) {
 
     Projectile* projectiles = (Projectile*)arg;
     Projectile localProj[MAX_CROCODILES];
-    int active = 0, updated = 0;
+    int updated = 0;
+    bool all_dead = false;
 
     for (int i = 0; i < MAX_CROCODILES; i++){
         localProj[i] = projectiles[i];
-        if (atomic_load(&projectiles[i].alive)) active++;
     }
     struct timeval now;
 
-    while(active>0){  
-        usleep(50 * 1000);  // sleep 100 ms
-        active = MAX_CROCODILES;
+    while(!all_dead){  
+        if (projectiles == NULL) break;
+
         updated = 0;
+        all_dead = true;
 
         for (int i = 0; i < MAX_CROCODILES; i++){
 
-            bool flag = atomic_load(&projectiles[i].alive);
-            if(!flag){
-                active--;
-                continue;
-            }
-            if (flag != localProj[i].alive){
-                localProj[i] = projectiles[i];
-            }
+            if(!atomic_load(&projectiles[i].alive)) continue;
+
+            all_dead = false;
+            if (!localProj[i].alive) localProj[i] = projectiles[i];
 
             gettimeofday(&now, NULL);
             const float dt = (now.tv_sec - localProj[i].prev.tv_sec) + (now.tv_usec - localProj[i].prev.tv_usec) / 1000000.0f;
@@ -167,6 +164,7 @@ void* thread_proiettile(void* arg) {
             localProj[i].prev = now;   
             updated ++;
         }
+
         if (updated > 0 ){
             int* msgProj = malloc(MAX_CROCODILES * sizeof(int));
             for (int i = 0; i < MAX_CROCODILES; i++){
