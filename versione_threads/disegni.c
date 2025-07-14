@@ -53,11 +53,12 @@ void creazione_colori(){
 }
 
 //funzione per disegnare il proiettile nella mappa
-void draw_proiettile(WINDOW* game){
+void draw_proiettile(WINDOW* game, const Projectile* projectiles){
 	
-    LOCK_PROJ();
-    for (int i = IDX_PROIETTILI; i< IDX_PROIETTILI + MAX_CROCODILES; i++){
-        const Projectile* proj = (Projectile*)buffer.buffer[i];
+    if (projectiles == NULL) return;
+
+    for (int i = 0; i < MAX_CROCODILES; i++){
+        const Projectile* proj = &projectiles[i];
         //printf("i = %d, ptr = %p\n", i, proj);
         if (proj->alive) {  //mostriamo il proiettile solo se vivo		
             wattron(game,COLOR_PAIR(11));
@@ -65,14 +66,14 @@ void draw_proiettile(WINDOW* game){
             wattroff(game,COLOR_PAIR(11));
         }
     }	
-    UNLOCK_PROJ();	
 }
 
-void draw_granate(WINDOW* game){
+void draw_granate(WINDOW* game, const Projectile* granates){
+
+    if (granates == NULL) return;
 	
-    LOCK_FROG();
-    for (int i = IDX_GRANATE; i < IDX_GRANATE + 2; i++){
-        const Projectile* gran = (Projectile*)buffer.buffer[i];
+    for (int i = 0; i < 2; i++){
+        const Projectile* gran = &granates[i];
         //printf("i = %d, ptr = %p\n", i, gran);
 
         if (gran->alive) { //mostriamo le granate solo se vive
@@ -94,13 +95,13 @@ void draw_granate(WINDOW* game){
                 }
         }                                                                                                                                                                                                                                                                  
     }
-    UNLOCK_FROG();
 }
 
 //funzione che disegna la rana
 void draw_frog(WINDOW *game, Frog* frog){
-	
-    
+
+    if (frog == NULL) return;
+
     wattron(game,COLOR_PAIR(1));
     
     for (int i = 0; i < ALTEZZARANA; i++) {
@@ -115,14 +116,15 @@ void draw_frog(WINDOW *game, Frog* frog){
 }
 
 //funzione che disegna i coccodrilli
-void drawCoccodrilli(WINDOW *game){
+void drawCoccodrilli(WINDOW *game, const Crocodile* crocodiles){
+
+    if (crocodiles == NULL) return;
 
     int h;  //variabile utilizzata per tenere conto di quale parte del coccodrillo stiamo printando (inferiore o superiore)
     wattron(game, COLOR_PAIR(10));
     
-    LOCK_CROCS();
-    for (int i = IDX_COCCODRILLI; i < IDX_COCCODRILLI + MAX_CROCODILES; i++){
-        const Crocodile* crocod = (Crocodile*)buffer.buffer[i];
+    for (int i = 0; i < MAX_CROCODILES; i++){
+        const Crocodile* crocod = &crocodiles[i];
 
         if (crocod->alive && crocod->dir==1) { //coccodrillo vivo e direzionato verso destra
           
@@ -181,13 +183,12 @@ void drawCoccodrilli(WINDOW *game){
    	        }
         }
     }
-    UNLOCK_CROCS();
     wattroff(game, COLOR_PAIR(10));
 }
 
 //funzione che mostra la barra del tempo rimanente
 void print_tempo(WINDOW* game,Game_struct* game_struct, int tempo){
     wattron(game, COLOR_PAIR(7));
-    mvwhline(game,46,15, ' ', (int)(62*((float)game_struct->time/tempo)));
+    mvwhline(game,46,15, ' ', (int)(62*(tempo)));
     wattroff(game, COLOR_PAIR(7));
 }

@@ -20,9 +20,6 @@ void push_event(messageBuffer* b, Message* m) {
 }
 
 Message pop_event(messageBuffer* b) {
-
-    Message found_message;
-    bool found = false;
     
     sem_wait(&b->full); // wait for available message
     pthread_mutex_lock(&b->mutex);
@@ -98,8 +95,12 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     bufferInit();
     
     // Initializzazione stato di gioco
-    printf("Inizializziamo variabili di gestione della partita\n");
+    printf("Inizializziamo variabili di gestione della partita");
     Game_struct* game_struct =  malloc(sizeof(Game_struct));
+    if (!game_struct) {
+        perror("malloc failed");
+        exit(EXIT_FAILURE);
+    }
     
     game_struct->score=0; 		          //contiene lo score di tutto il game
     game_struct->vite = gameConfig->vite;    //contiene numero di vite rimaste
@@ -112,16 +113,12 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     }
     game_struct->tane_count = 0;
 
-    //Initilization of the buffer
-    bufferInit();
-
     //inizio della partita - loop di gioco
     pthread_t t_graph;
-    pthread_create(&t_graph, NULL, thread_grafica, (void *)&game_struct);
+    pthread_create(&t_graph, NULL, thread_grafica, (void *)game_struct);
     pthread_join(t_graph, NULL);
 
     exit(1);
-    free(myBuffer.buffer);
     return game_struct;
 }
 

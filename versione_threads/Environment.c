@@ -16,7 +16,6 @@ void fluxInit(gameConfig *gameConfig){
             flux->dir = -gameConfig->flussi[i-1].dir;
         } 
         else {         //impostiamo la direzione del primo flusso in modo randomico
-            
             flux->dir= 2*rand()%2 -1;
         }
         //printf("Flusso %d inizializzato con y=%d, speed=%d, dir=%d\n", i, flux->y, flux->speed, flux->dir);
@@ -38,7 +37,7 @@ void* thread_tempo(void* arg) {
         float elapsed = (now.tv_sec - prev.tv_sec) + (now.tv_usec - prev.tv_usec) / 1000000.0f;
         prev = now;
 
-        newTime -= elapsed;
+        newTime += elapsed;
         printf("New time: %f\n",newTime);
 
         float* msgTime = malloc(sizeof(float));
@@ -52,9 +51,10 @@ void* thread_tempo(void* arg) {
     pthread_exit(NULL);
 }
 
-Time* timeInit(gameConfig *gameConfig){
+Time* timeInit(){
+
     Time* time = malloc(sizeof(Time));
-    time->time =  gameConfig->tempo;
+    time->time =  0;
     time->alive = 1;
 
     pthread_t t_tempo;

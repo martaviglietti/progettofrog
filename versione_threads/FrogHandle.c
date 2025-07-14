@@ -15,9 +15,9 @@ Frog* frogInit(){
     frog->y = RANA_YINIT;
     frog->crocIdx = -1;
     frog->key = -1;
-    frog->alive = 1;
+    atomic_store(&frog->alive, true);
     pthread_mutex_init(&frog->mutex, NULL);
-    //printf("Rana inizializzata con alive=%d, x=%d, y=%d, tempo_prec=%f\n", frog->alive, frog->x, frog->y, frog->tempo_prec);
+    printf("Rana inizializzata con alive=%d, x=%d, y=%d, key=%d\n", frog->alive, frog->x, frog->y, frog->key);
 
     pthread_t t_rana;
     pthread_create(&t_rana, NULL, thread_rana, (void *)frog);
@@ -74,7 +74,7 @@ void* thread_rana(void* arg) {
 
         push_event(&myBuffer, &newMess);
 
-        usleep(30 * 1000);  // sleep 10 ms
+        usleep(500 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }
@@ -93,12 +93,12 @@ Projectile* GranateInit(const Frog* frog, const float time, const gameConfig* ga
         Projectile* gran = (Projectile*)&granates[i];
         gran->x = frog->x;
         gran->y = frog->y;
-        gran->alive = 1;
-        gran->tempo_prec = time;
+        atomic_store(&gran->alive, true);
+        gettimeofday(&gran->prev, NULL);
         gran->dir = 2*(i%2) -1;
         gran->speed = gameConfig->velocità_proiettili;
 
-        printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, gran->tempo_prec);
+        printf("Granata %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, gran->alive, gran->x, gran->y, gran->speed, gran->dir, time);
     }
     pthread_t t_granate;
     pthread_create(&t_granate, NULL, thread_granata, (void *)granates);
@@ -109,44 +109,38 @@ Projectile* GranateInit(const Frog* frog, const float time, const gameConfig* ga
 void* thread_granata(void* arg) {
 
     Projectile* granates = (Projectile*)arg;
-    int granX[2];
-    float granTime_prec[2];
-    int granDir[2];
-    int granSpeed[2];
-    bool alive[2];
+    Projectile localGran[2];
+
     for (int i = 0; i < 2; i++){
-        granX[i] = granates[i].x;
-        granTime_prec[i] = granates[i].tempo_prec;
-        granDir[i] = granates[i].dir;
-        granSpeed[i] = granates[i].speed;
-        alive[i] = true;
+        localGran[i] = granates[i];
     }
+
     struct timeval now;
 
-    while(alive[0] || alive[1]){  
+    while(localGran[0].alive || localGran[1].alive){  
         usleep(50 * 1000);  // sleep 100 ms
 
         for (int i = 0; i < 2; i++){
 
             if(!atomic_load(&granates[i].alive)){
-                alive[i] = false;
+                localGran[i].alive = false;
                 continue;
             }
 
             gettimeofday(&now, NULL);
-            const float newTime = (float)now.tv_sec + (float)now.tv_usec  / 1e6f;
-            const int newX = granX[i] + granDir[i] * (int)(granSpeed[i] * (newTime - granTime_prec[i]));
+            const float dt = (now.tv_sec - localGran[i].prev.tv_sec) + (now.tv_usec - localGran[i].prev.tv_usec) / 1000000.0f;
+            const int dx = localGran[i].dir * (int)(localGran[i].speed * dt);
 
-            if (newX == granX[i]) continue;
+            if (dx == 0) continue;
             
-            printf("granade %d moved from %d to %d\n", i, granX[i], newX);
+            printf("granade %d moved from %d to %d\n", i, localGran[i].x, localGran[i].x + dx);
 
-            granX[i] = newX;
-            granTime_prec[i] = newTime;   
+            localGran[i].x += dx;
+            localGran[i].prev = now;  
         }
         int* msgGran = malloc(2 * sizeof(int));
-        msgGran[0] = granX[0];
-        msgGran[1] = granX[1];
+        msgGran[0] = localGran[0].x;
+        msgGran[1] = localGran[1].x;
         Message newMess;
         newMess.type = GRAN_STATUS;
         newMess.data = msgGran;

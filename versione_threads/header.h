@@ -92,7 +92,7 @@ typedef struct {
     int speed;
     _Atomic bool alive; //serve per capire se l ente è vivo
     int wait;  //per i coccodrilli, quando sono offline
-    float tempo_prec;
+    struct timeval prev;
     int idx;
 } Crocodile;  
 
@@ -106,7 +106,7 @@ typedef struct {
 } Frog;
 
 typedef struct {
-    float time;
+    _Atomic float time;
     _Atomic bool alive;
 } Time;
 
@@ -116,7 +116,7 @@ typedef struct {
     int dir;
     int speed;
     _Atomic bool alive; //serve per capire se l ente è vivo
-    float tempo_prec;
+    struct timeval prev;
 } Projectile;
 
 //buffer c è un contenutor organizzata con sincronizzazione 
@@ -160,11 +160,11 @@ Game_struct* startGame(WINDOW *game, gameConfig* gameConfig);
 void crea_thread_gioco(gameConfig* gameConfig);
 
 //funzioni inizializzazione oggetti
-Time* timeInit(gameConfig *gameConfig);
-Crocodile* CrocodileInit(Flusso *flussi, float time);
+Time* timeInit();
+Crocodile* CrocodileInit(Flusso *flussi, const float time);
 Projectile* GranateInit(const Frog* frog, const float time, const gameConfig* gameConfig);
 Frog* frogInit();
-Projectile* ProjectileInit();
+Projectile* ProjectileInit(const Crocodile* croc, const float time, const gameConfig* gameCfg);
 
 //produttori
 void* thread_rana(void* arg);
@@ -176,7 +176,7 @@ void* thread_grafica(void* arg);
 
 
 // --- Lancio dinamico di granate/proiettili ---
-void sparaProiettile(const float time, const gameConfig* gameConfig, const int idx);
+void sparaProiettile(Projectile* proj, const Crocodile* croc, const float time, const gameConfig* gameCfg);
 
 // --- Buffer ---
 //void produttore(messaggio m);
@@ -184,15 +184,15 @@ void sparaProiettile(const float time, const gameConfig* gameConfig, const int i
 
 
 // --- Gestore grafico e logica ---
-void draw_proiettile(WINDOW* game);
-void draw_granate(WINDOW* game);
+void draw_proiettile(WINDOW* game, const Projectile* projectiles);
+void draw_granate(WINDOW* game, const Projectile* granates);
 void draw_frog(WINDOW *game, Frog* rana);
-void drawCoccodrilli(WINDOW *game);
+void drawCoccodrilli(WINDOW *game, const Crocodile* crocodiles);
 
 
 // --- Utility di gioco e collisioni ---
 bool CollRanaProiettile(const Frog* frog, Projectile* projectiles);
-bool CollGranataProiettile(Projectile* gran);
+bool CollGranataProiettile(const Projectile* gran, Projectile* projectiles);
 bool RanaSuTana(const Frog* frog, Game_struct* game_struct);
 int RanaSuCoccodrillo(const Frog *frog, const Crocodile* croc);
 void print_tempo(WINDOW* game, Game_struct* game_struct, int tempo);
