@@ -47,8 +47,8 @@ void* thread_grafica(void* arg) {
                 newX = ((int*)newMess.data)[0];
                 newY = ((int*)newMess.data)[1];
                 pthread_mutex_lock(&frog->mutex);
-                if (newY < RANA_YINIT) frog->y = newY;
-                if (newX < RANA_XMAX && newX > RANA_XMIN) frog->x = newX;
+                if (newY <= RANA_YINIT) frog->y = newY;
+                if (newX <= RANA_XMAX && newX >= RANA_XMIN) frog->x = newX;
                 pthread_mutex_unlock(&frog->mutex);
                 break;
 
