@@ -234,7 +234,6 @@ void* thread_grafica(void* arg) {
             // Proiettili
             if (projectiles != NULL){
                 bool all_dead = true;
-                LOCK_PROJ();
                 for (int i = 0; i < MAX_CROCODILES; i++) {
                     Projectile* proj = &projectiles[i];
                     //printf("Checking projectile %d...", i);
@@ -243,21 +242,25 @@ void* thread_grafica(void* arg) {
 
                     if ((proj->x <= 0  && proj->dir == -1) || (proj->x >= LARGHEZZA_GIOCO  && proj->dir == 1)){     // proiettile fuori mappa, quindi muore
                         atomic_store(&proj->alive, false);
+                        LOCK_PROJ();
                         proj->x = -1;
                         proj->y = -1;
                         proj->dir = -1;
                         proj->speed = -1;
                         gettimeofday(&proj->prev, NULL);
+                        UNLOCK_PROJ();
                         continue;
                     }
                     all_dead = false;
                 }
                 if (all_dead){
-                    usleep(500 * 1000);  // sleep 10 ms
+                    usleep(50 * 1000);  // sleep 10 ms
+                    LOCK_PROJ();
                     free(projectiles);
                     projectiles = NULL;
+                    UNLOCK_PROJ();
                 }
-                UNLOCK_PROJ();
+                
             }
         }    
         
@@ -426,7 +429,7 @@ bool CollGranataProiettile(const Projectile* gran, Projectile* projectiles){
     const int gran_y = gran->y;
 
     for (int i = 0; i < MAX_CROCODILES; i++) {
-        Projectile* proj = (Projectile*)&projectiles[i];
+        Projectile* proj = &projectiles[i];
 
         if (atomic_load(&proj->alive)){
 

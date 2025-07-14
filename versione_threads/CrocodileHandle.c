@@ -141,7 +141,12 @@ void* thread_proiettile(void* arg) {
     struct timeval now;
 
     while(!all_dead){  
-        if (projectiles == NULL) break;
+        LOCK_PROJ();
+        if (projectiles == NULL) {
+            UNLOCK_PROJ();
+            break;
+        }
+        UNLOCK_PROJ();
 
         updated = 0;
         all_dead = true;
@@ -184,6 +189,7 @@ void* thread_proiettile(void* arg) {
 
             push_event(&myBuffer, &newMess);
         }
+        usleep(100 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }
@@ -193,10 +199,9 @@ void sparaProiettile(Projectile* proj, const Crocodile* croc, const float time, 
     if (atomic_load(&proj->alive)) return;
 
     //printf("Stiamo sparando un proiettile da coccodrillo %d\n", croc->idx);
-
+    atomic_store(&proj->alive, true);
     proj->x = (croc->dir == 1) ? croc->x + 5 : croc->x - 5;;
     proj->y = croc->y;
-    atomic_store(&proj->alive, true);
     proj->dir = croc->dir;
     gettimeofday(&proj->prev, NULL);
 }
