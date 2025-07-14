@@ -48,19 +48,19 @@ void* thread_rana(void* arg) {
         int oldY = newY;
         switch (key) {
             case KEY_UP:
-                newY  -=  ALTEZZARANA;
+                newY  -=  ALTEZZARANA+1;
                 break;
 
             case KEY_DOWN:
-                newY += ALTEZZARANA;
+                newY += ALTEZZARANA+1;
                 break;
 
             case KEY_LEFT:
-                newX -= LARGHEZZARANA;
+                newX -= LARGHEZZARANA-1;
                 break;
 
             case KEY_RIGHT:
-                newX += LARGHEZZARANA;
+                newX += LARGHEZZARANA-1;
                 break;
         }    
         
