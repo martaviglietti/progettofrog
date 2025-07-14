@@ -135,6 +135,7 @@ typedef struct {
     sem_t full; // counts how many items are available to consume
     sem_t empty; // counts how many slots are free for writing
     pthread_mutex_t mutex; // protects head/tail and buffer access
+    pthread_mutex_t mutexProj; // protects head/tail and buffer access
 } messageBuffer;
 
 
@@ -207,5 +208,7 @@ int rand_funz(int min, int max);
 void push_event(messageBuffer* b, Message* m);
 Message pop_event(messageBuffer* b);
 
+#define LOCK_PROJ() pthread_mutex_lock(&myBuffer.mutexProj);
+#define UNLOCK_PROJ() pthread_mutex_unlock(&myBuffer.mutexProj);
 
 #endif

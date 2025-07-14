@@ -61,7 +61,7 @@ void *thread_coccodrillo(void *arg) {
     struct timeval now;
 
     while(atomic_load(&croc->alive)){
-        usleep(30 * 1000);  // sleep 100 ms
+        usleep(10 * 1000);  // sleep 100 ms
 
         gettimeofday(&now, NULL);
 
@@ -133,9 +133,11 @@ void* thread_proiettile(void* arg) {
     int updated = 0;
     bool all_dead = false;
 
+    LOCK_PROJ();
     for (int i = 0; i < MAX_CROCODILES; i++){
         localProj[i] = projectiles[i];
     }
+    UNLOCK_PROJ();
     struct timeval now;
 
     while(!all_dead){  
@@ -152,7 +154,11 @@ void* thread_proiettile(void* arg) {
             }
 
             all_dead = false;
-            if (!localProj[i].alive) localProj[i] = projectiles[i];
+            if (!localProj[i].alive) {
+                LOCK_PROJ();
+                localProj[i] = projectiles[i];
+                UNLOCK_PROJ();
+            }
 
             gettimeofday(&now, NULL);
             const float dt = (now.tv_sec - localProj[i].prev.tv_sec) + (now.tv_usec - localProj[i].prev.tv_usec) / 1000000.0f;

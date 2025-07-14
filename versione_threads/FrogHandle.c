@@ -75,7 +75,7 @@ void* thread_rana(void* arg) {
 
         push_event(&myBuffer, &newMess);
 
-        usleep(30 * 1000);  // sleep 10 ms
+        usleep(20 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }

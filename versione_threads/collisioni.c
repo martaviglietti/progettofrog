@@ -61,11 +61,13 @@ void* thread_grafica(void* arg) {
 
             case PROJ_STATUS:
                 if (projectiles == NULL) break;
+                LOCK_PROJ();
                 for (int i = 0; i < MAX_CROCODILES; i++){
                     if (atomic_load(&projectiles[i].alive)){
                         projectiles[i].x = ((int*)newMess.data)[i];
                     }
                 }
+                UNLOCK_PROJ();
                 break;
 
             case GRAN_STATUS:
@@ -167,13 +169,14 @@ void* thread_grafica(void* arg) {
                     //controllo se Far sparare i proiettili
                     if (time >= crocod->wait){       //coccodrillo spara il proiettile
                         //printf("Crocodile %d is shooting a projectile\n", i);
+                        LOCK_PROJ();
                         if (projectiles == NULL){          // se é il primo proiettile sparato
                             projectiles = ProjectileInit(crocod,  time, game_struct->gameCfg);
                         }
                         else sparaProiettile(&projectiles[crocod->idx], crocod, time, game_struct->gameCfg);
+                        UNLOCK_PROJ();
 
                         crocod->wait = time + rand_funz(PROJ_MIN_WAIT, PROJ_MAX_WAIT);
-                        usleep(5 * 1000);  // sleep 10 ms
                         continue;
                     }
                 }
@@ -222,6 +225,7 @@ void* thread_grafica(void* arg) {
                     all_dead = false;
                 }
                 if (all_dead){
+                    usleep(50 * 1000);  // sleep 10 ms
                     free(granates);
                     granates = NULL;
                 }
@@ -230,6 +234,7 @@ void* thread_grafica(void* arg) {
             // Proiettili
             if (projectiles != NULL){
                 bool all_dead = true;
+                LOCK_PROJ();
                 for (int i = 0; i < MAX_CROCODILES; i++) {
                     Projectile* proj = &projectiles[i];
                     //printf("Checking projectile %d...", i);
@@ -248,9 +253,11 @@ void* thread_grafica(void* arg) {
                     all_dead = false;
                 }
                 if (all_dead){
+                    usleep(500 * 1000);  // sleep 10 ms
                     free(projectiles);
                     projectiles = NULL;
                 }
+                UNLOCK_PROJ();
             }
         }    
         
@@ -328,8 +335,10 @@ void* thread_grafica(void* arg) {
                 granates =NULL;
             }
             if (projectiles != NULL) {
+                LOCK_PROJ();
                 free(projectiles);
                 projectiles=NULL;
+                UNLOCK_PROJ();
             }
 
             if (game_struct->win != 1 && game_struct->vite > 0){
@@ -394,12 +403,13 @@ bool CollRanaProiettile(const Frog* frog, Projectile* projectiles){
             const int proj_y = proj->y;
             if(proj_y <= frog_y + ALTEZZARANA/2 && proj_y >= frog_y - ALTEZZARANA/2){
                 if (proj_x <= frog_x + LARGHEZZARANA/2 && proj_x >= frog_x - LARGHEZZARANA/2){
+                    LOCK_PROJ();
                     proj->x = -1;
                     proj->y = -1;
                     atomic_store(&proj->alive, false);
                     proj->dir = -1;
-                    proj->speed =-1;
                     gettimeofday(&proj->prev, NULL);
+                    UNLOCK_PROJ();
                     return 1;
                 }
             }
@@ -424,13 +434,13 @@ bool CollGranataProiettile(const Projectile* gran, Projectile* projectiles){
             const int proj_y = proj->y;
 
             if(proj_y == gran_y  && proj_x <= gran_x + 1 && proj_x >= gran_x - 1){
+                LOCK_PROJ();
                 proj->x = -1;
                 proj->y = -1;
                 atomic_store(&proj->alive, false);
                 proj->dir = -1;
-                proj->speed = -1;
                 gettimeofday(&proj->prev, NULL);
-
+                UNLOCK_PROJ();
                 return 1;
             }
         }

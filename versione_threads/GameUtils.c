@@ -137,6 +137,7 @@ void bufferInit(){
 
     // Initialize the mutex
     pthread_mutex_init(&myBuffer.mutex, NULL);
+    pthread_mutex_init(&myBuffer.mutexProj, NULL);
 
 }
 
