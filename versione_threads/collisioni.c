@@ -140,7 +140,6 @@ void* thread_grafica(void* arg) {
                 game_struct->score -= 15;
             }
         }
-        else frog->crocIdx = -1;
         
         //If the manche is not ended, check that every object is inside the window 
         if (!newManche){

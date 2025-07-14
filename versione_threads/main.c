@@ -48,19 +48,19 @@ int main(){
             switch (difficoltà) {
                 case 0:  //Facile
                     gameConfig.vite=10;			   //numero vite
-                    gameConfig.tempo=30;		   //tempo di gioco
+                    gameConfig.tempo=120;		   //tempo di gioco
                     gameConfig.velocità_proiettili=15;   //velocità proiettili
                     gameConfig.velocità_coccodrilli=10;  //velocità coccodrilli
                     break;
                 case 1:  //Medio
                     gameConfig.vite=10;
-                    gameConfig.tempo=30;
+                    gameConfig.tempo=900;
                     gameConfig.velocità_proiettili=30000;
                     gameConfig.velocità_coccodrilli=50000;
                     break;
                 case 2:  //Difficile
                     gameConfig.vite=10;
-                    gameConfig.tempo=30;
+                    gameConfig.tempo=60;
                     gameConfig.velocità_proiettili=3000;
                     gameConfig.velocità_coccodrilli=50000;
                     break;      

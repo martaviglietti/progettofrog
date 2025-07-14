@@ -118,7 +118,6 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     pthread_create(&t_graph, NULL, thread_grafica, (void *)game_struct);
     pthread_join(t_graph, NULL);
 
-    exit(1);
     return game_struct;
 }
 
