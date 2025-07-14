@@ -7,7 +7,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_
     int offsetSumH=1;  //variabile per ignorare il bordo laterale
     
     //Definiamo la mappa di gioco
-    char tane[6][LARGHEZZA_GIOCO-2]={
+    char tane[TANE][LARGHEZZA_GIOCO-2]={
         "     ..o..            o                   .          o                o        ",
     	"                 o               O                           .                 ",
     	"     +-------+      +-------+      +-------+      +-------+      +-------+  O  ",		          
@@ -59,7 +59,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_
     
     //Printiamo zona intorno alle tane
     wattron(game,COLOR_PAIR(3));
-    for (int i=0; i<NTANE;i++) {
+    for (int i=0; i<TANE;i++) {
     	for (int j=0; j<maxX-2;j++) {				
     	    if (tane[i][j]==' ' || tane[i][j]=='o' || tane[i][j]=='O' || tane[i][j]=='.') {  		
     	        mvwaddch(game,i+offsetSumV,j+offsetSumH,tane[i][j]);
@@ -74,7 +74,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_
     for(int i=0; i<5;i++){
 	if(game_struct->tane[i]==0){
             wattron(game,COLOR_PAIR(4));
-	    for (int v=2; v<NTANE;v++) {
+	    for (int v=2; v<TANE;v++) {
 	    	for (int h=5+(8+7)*i; h<5+(8+7)*i+9 ;h++) {							
 	    	    if (tane[v][h]=='|' || tane[v][h]=='+' || tane[v][h]=='-') {				
 	    	     	 mvwaddch(game,v+offsetSumV,h+offsetSumH,tane[v][h]);
@@ -83,7 +83,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_
  	    }
 	    wattroff(game,COLOR_PAIR(4));
 	    wattron(game,COLOR_PAIR(5));
-	    for (int v=2; v<NTANE;v++) {
+	    for (int v=2; v<TANE;v++) {
 	    	for (int h=5+(8+7)*i; h<5+(8+7)*i+9 ;h++) {
 	    	    if (tane[v][h]=='*') {									
 	    	        mvwaddch(game,v+offsetSumV,h+offsetSumH,tane[v][h]);
@@ -95,7 +95,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_
 	} else {
 	    
 	    wattron(game,COLOR_PAIR(3));
-	    for (int v=2; v<NTANE;v++) {
+	    for (int v=2; v<TANE;v++) {
 		for (int h=5+(8+7)*i; h<5+(8+7)*i+9 ;h++) {								
 	     	    mvwaddch(game,v+offsetSumV,h+offsetSumH,' ');
 		}
@@ -104,7 +104,7 @@ void windowGeneration(WINDOW *game, int maxX, int maxY, const Game_struct* game_
 	}
     }
     
-    offsetSumV += NTANE;  
+    offsetSumV += TANE;  
     
     //Sezione sponda superiore
     
