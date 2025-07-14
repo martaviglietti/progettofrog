@@ -26,6 +26,7 @@
 #define ALTEZZA_GIOCO 49
 #define POS_SPAWN_COC_SINISTRA -4
 #define POS_SPAWN_COC_DESTRA 84
+#define TANE 6
 #define FIUME 25
 #define PRATO 5
 #define SPONDA_SUPERIORE 5
