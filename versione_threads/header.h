@@ -49,8 +49,8 @@
 #define DELAY 100000
 #define PROJ_MIN_WAIT 3
 #define PROJ_MAX_WAIT 8
-#define CROC_MAX_WAIT 2
-#define CROC_MIN_WAIT 7
+#define CROC_MIN_WAIT 3
+#define CROC_MAX_WAIT 7
 
 typedef enum {
     FROG_STATUS,
