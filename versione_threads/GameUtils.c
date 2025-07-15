@@ -95,7 +95,7 @@ Game_struct* startGame(WINDOW *game, gameConfig *gameConfig){
     bufferInit();
     
     // Initializzazione stato di gioco
-    printf("Inizializziamo variabili di gestione della partita");
+    //printf("Inizializziamo variabili di gestione della partita\n");
     Game_struct* game_struct =  malloc(sizeof(Game_struct));
     if (!game_struct) {
         perror("malloc failed");

@@ -100,7 +100,6 @@ Projectile* ProjectileInit(const Crocodile* croc, const float time, const gameCo
 
         Projectile* proj = &projectiles[i];
         gettimeofday(&proj->prev, NULL);
-        //pthread_mutex_init(&proj->mutex, NULL);
         proj->speed = gameCfg->velocità_proiettili;
 
         if(i == croc->idx){
@@ -116,7 +115,7 @@ Projectile* ProjectileInit(const Crocodile* croc, const float time, const gameCo
             proj->dir = -1;
         }
         
-        //printf("Proiettile %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, proj->alive, proj->x, proj->y, proj->speed, proj->dir, time);
+        if(!useGraphics) printf("Proiettile %d inizializzato con alive=%d, x=%d, y=%d, speed=%d, dir=%d, tempo_prec=%f\n", i, proj->alive, proj->x, proj->y, proj->speed, proj->dir, time);
     }
 
     pthread_t t_proiettili;
@@ -132,6 +131,7 @@ void* thread_proiettile(void* arg) {
     Projectile localProj[MAX_CROCODILES];
     int updated = 0;
     bool all_dead = false;
+    bool isUpdated[MAX_CROCODILES];
 
     LOCK_PROJ();
     for (int i = 0; i < MAX_CROCODILES; i++){
@@ -141,6 +141,9 @@ void* thread_proiettile(void* arg) {
     struct timeval now;
 
     while(!all_dead){  
+        for (int i = 0; i < MAX_CROCODILES; i++){
+            isUpdated[i] = false;
+        }
         LOCK_PROJ();
         if (projectiles == NULL) {
             UNLOCK_PROJ();
@@ -152,6 +155,7 @@ void* thread_proiettile(void* arg) {
         all_dead = true;
 
         for (int i = 0; i < MAX_CROCODILES; i++){
+            if(!useGraphics) printf("Proj Status: idx %d, alive %d, dir %d, speed %d, x %d, y %d \n", i, localProj[i].alive,  localProj[i].dir,  localProj[i].speed,  localProj[i].x, localProj[i].y);
 
             if(!atomic_load(&projectiles[i].alive)){
                 localProj[i].alive = false;
@@ -163,6 +167,7 @@ void* thread_proiettile(void* arg) {
                 LOCK_PROJ();
                 localProj[i] = projectiles[i];
                 UNLOCK_PROJ();
+                if(!useGraphics) printf("Proj new: idx %d,  alive %d, dir %d, speed %d, x %d, y %d \n", i, localProj[i].alive,  localProj[i].dir,  localProj[i].speed,  localProj[i].x, localProj[i].y);
             }
 
             gettimeofday(&now, NULL);
@@ -171,17 +176,19 @@ void* thread_proiettile(void* arg) {
 
             if (dx == 0) continue;
             
-            //printf("Projectile %d moved from %d to %d\n", i, localProj[i].x, localProj[i].x + dx);
+            if(!useGraphics) printf("Projectile %d moved from %d to %d\n", i, localProj[i].x, localProj[i].x + dx);
 
             localProj[i].x += dx;
             localProj[i].prev = now;   
+            isUpdated[i] = true;
             updated ++;
         }
 
         if (updated > 0 ){
             int* msgProj = malloc(MAX_CROCODILES * sizeof(int));
             for (int i = 0; i < MAX_CROCODILES; i++){
-                msgProj[i] = localProj[i].x;
+                if(isUpdated[i]) msgProj[i] = localProj[i].x;
+                else msgProj[i] = -1;
             }
             Message newMess;
             newMess.type = PROJ_STATUS;
@@ -191,14 +198,16 @@ void* thread_proiettile(void* arg) {
         }
         usleep(100 * 1000);  // sleep 10 ms
     }
+    if(!useGraphics) printf("All projectiles are dead... terminatiing the thread...\n");
     pthread_exit(NULL);
+    
 }
 
 void sparaProiettile(Projectile* proj, const Crocodile* croc, const float time, const gameConfig* gameCfg) {
         
     if (atomic_load(&proj->alive)) return;
 
-    //printf("Stiamo sparando un proiettile da coccodrillo %d\n", croc->idx);
+    if(!useGraphics) printf("Stiamo sparando un proiettile da coccodrillo %d\n", croc->idx);
     atomic_store(&proj->alive, true);
     proj->x = (croc->dir == 1) ? croc->x + 5 : croc->x - 5;;
     proj->y = croc->y;

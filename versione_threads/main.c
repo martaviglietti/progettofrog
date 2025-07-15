@@ -6,6 +6,7 @@ void seed_random() {
 }
 
 messageBuffer myBuffer;
+const bool useGraphics = false;
 
 int main(){
 
@@ -15,20 +16,21 @@ int main(){
 
     seed_random(); 
     
-    printf("\e[8;%d;%dt", 49, 81);  //ridimensioniamo il terminale
-    fflush(stdout);
-    setlocale(LC_ALL, "");     // Abilita UTF-8	
-    sleep(1);	
+    if(useGraphics){
+        printf("\e[8;%d;%dt", 49, 81);  //ridimensioniamo il terminale
+        fflush(stdout);
+        setlocale(LC_ALL, "");     // Abilita UTF-8	
+        sleep(1);	
 
-    //Inizializziamo ncurses
-    initscr();
-    noecho();
-    cbreak();
-    curs_set(0);
-    resizeterm(49, 81);  //avvisiamo ncurses del cambio di dimensioni del terminale
-    creazione_colori();    
-    srand(time(NULL));
-   
+        //Inizializziamo ncurses
+        initscr();
+        noecho();
+        cbreak();
+        curs_set(0);
+        resizeterm(49, 81);  //avvisiamo ncurses del cambio di dimensioni del terminale
+        creazione_colori();    
+        srand(time(NULL));
+    }
     int height = LINES;
     int width = COLS; 
     int scelta = 0;	     //variabile contenente la scelta dal menù principale
@@ -36,14 +38,14 @@ int main(){
     int ricomincia=1;
    
     gameConfig gameConfig = {};
-    WINDOW* game = newwin(height, width, 0, 0);  //finestra dell'area gioco  
+    WINDOW* game = useGraphics ? newwin(height, width, 0, 0) : NULL;  //finestra dell'area gioco  
     while (true){
     	if (ricomincia) {  //se 'ricomincia' è 0 non torniamo al menu;
-            scelta= menu(game,"Menu Principale", OPZIONI, 3);  //se 'ricomincia' è 0 non torniamo al menu;
+            scelta= useGraphics ? menu(game,"Menu Principale", OPZIONI, 3) : 0;  //se 'ricomincia' è 0 non torniamo al menu;
         }	
         if (scelta == 0) { 
             if (ricomincia) {  //se 'ricomincia' è 0 manteniamo la stessa difficoltà
-                difficoltà=scegliDifficolta(game);
+                difficoltà= useGraphics ? scegliDifficolta(game) : 0;
             }
             switch (difficoltà) {
                 case 0:  //Facile

@@ -145,6 +145,7 @@ extern const char *frog_sprite[2];
 extern const char *coc_sprite[2][2];
 //ho la struttura buffer c  pe rimpacchettar ein un solo oggetto 7
 extern messageBuffer myBuffer;
+extern const bool useGraphics;
 
 
 //funzioni per l'interfaccia di gioco--

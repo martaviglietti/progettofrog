@@ -24,6 +24,7 @@ void* thread_grafica(void* arg) {
 
     const int waterYtop = TANA_POS + SPONDA_SUPERIORE;
     const int waterYlow = waterYtop + NFLUSSI * DIM_FLUSSI;
+    int key;
 
     while (1) {
 
@@ -63,7 +64,8 @@ void* thread_grafica(void* arg) {
                 if (projectiles == NULL) break;
                 LOCK_PROJ();
                 for (int i = 0; i < MAX_CROCODILES; i++){
-                    if (atomic_load(&projectiles[i].alive)){
+                    if(!useGraphics) printf("Main proj Status: idx %d, alive %d, dir %d, speed %d, x %d, y %d \n", i, projectiles[i].alive,  projectiles[i].dir,  projectiles[i].speed,  projectiles[i].x, projectiles[i].y);
+                    if (atomic_load(&projectiles[i].alive) &&  ((int*)newMess.data)[i] != -1){
                         projectiles[i].x = ((int*)newMess.data)[i];
                     }
                 }
@@ -168,7 +170,7 @@ void* thread_grafica(void* arg) {
 
                     //controllo se Far sparare i proiettili
                     if (time >= crocod->wait){       //coccodrillo spara il proiettile
-                        //printf("Crocodile %d is shooting a projectile\n", i);
+                        if(!useGraphics) printf("Crocodile %d is shooting a projectile\n", i);
                         LOCK_PROJ();
                         if (projectiles == NULL){          // se é il primo proiettile sparato
                             projectiles = ProjectileInit(crocod,  time, game_struct->gameCfg);
@@ -241,6 +243,7 @@ void* thread_grafica(void* arg) {
                     if (!atomic_load(&proj->alive)) continue;
 
                     if ((proj->x <= 0  && proj->dir == -1) || (proj->x >= LARGHEZZA_GIOCO  && proj->dir == 1)){     // proiettile fuori mappa, quindi muore
+                        if(!useGraphics) printf("Proj out of map: removing projectiles %d\n", i);
                         atomic_store(&proj->alive, false);
                         LOCK_PROJ();
                         proj->x = -1;
@@ -254,6 +257,7 @@ void* thread_grafica(void* arg) {
                     all_dead = false;
                 }
                 if (all_dead){
+                    if(!useGraphics) printf("Projs all dead.. the thread SHOULD terminate...\n");
                     usleep(50 * 1000);  // sleep 10 ms
                     LOCK_PROJ();
                     free(projectiles);
@@ -263,42 +267,44 @@ void* thread_grafica(void* arg) {
                 
             }
         }    
+        if(useGraphics){
+            werase(game);
+            windowGeneration(game, COLS, LINES, game_struct);
         
-        werase(game);
-        windowGeneration(game, COLS, LINES, game_struct);
-    
-        drawCoccodrilli(game, crocodiles);
-        draw_granate(game, granates);
-        draw_proiettile(game, projectiles);
-        draw_frog(game, frog);
+            drawCoccodrilli(game, crocodiles);
+            draw_granate(game, granates);
+            draw_proiettile(game, projectiles);
+            draw_frog(game, frog);
 
-        // Punteggio
-        wattron(game, COLOR_PAIR(15));
-        mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
-        wattroff(game, COLOR_PAIR(15));
+            // Punteggio
+            wattron(game, COLOR_PAIR(15));
+            mvwprintw(game, 2, 2, "Punteggio: %d ", game_struct->score);
+            wattroff(game, COLOR_PAIR(15));
 
-        // Vite
-        wattron(game, COLOR_PAIR(15));
-        mvwprintw(game, 2, 50, "Vite:");
-        mvwhline(game, 2, 55, ' ', 21);
-        for (int i = 0; i < game_struct->vite; i++) {
-            mvwprintw(game, 2, 55 + i * 2, "❤️");
+            // Vite
+            wattron(game, COLOR_PAIR(15));
+            mvwprintw(game, 2, 50, "Vite:");
+            mvwhline(game, 2, 55, ' ', 21);
+            for (int i = 0; i < game_struct->vite; i++) {
+                mvwprintw(game, 2, 55 + i * 2, "❤️");
+            }
+            wattroff(game, COLOR_PAIR(15));
+            // Tempo
+            wattron(game, COLOR_PAIR(15));
+            mvwhline(game, 46, 2, ' ', 10);
+            mvwprintw(game, 46, 2, "Tempo: %d ", (int)time);
+            wattroff(game, COLOR_PAIR(15));
+
+            print_tempo(game,game_struct, (int)time);
+            wrefresh(game);
+
+            keypad(game, true);  // abilita frecce
+            nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
+            key = wgetch(game);
         }
-        wattroff(game, COLOR_PAIR(15));
-        // Tempo
-        wattron(game, COLOR_PAIR(15));
-        mvwhline(game, 46, 2, ' ', 10);
-        mvwprintw(game, 46, 2, "Tempo: %d ", (int)time);
-        wattroff(game, COLOR_PAIR(15));
-
-        print_tempo(game,game_struct, (int)time);
-        wrefresh(game);
-
-        keypad(game, true);  // abilita frecce
-        nodelay(game, TRUE); // aspetta input (puoi metterlo TRUE se vuoi non bloccare il loop)
-        int key = wgetch(game);
-        //int key = 258 +rand_funz(0,3);
-
+        else{
+            key = ERR;// 258 +rand_funz(0,3);
+        }
         pthread_mutex_lock(&frog->mutex);
         if (key != ERR && frog->key == -1){
             //printf("Key pressed: %d\n", key);
@@ -406,6 +412,7 @@ bool CollRanaProiettile(const Frog* frog, Projectile* projectiles){
             const int proj_y = proj->y;
             if(proj_y <= frog_y + ALTEZZARANA/2 && proj_y >= frog_y - ALTEZZARANA/2){
                 if (proj_x <= frog_x + LARGHEZZARANA/2 && proj_x >= frog_x - LARGHEZZARANA/2){
+                    if(!useGraphics) printf("Proj-Frog collision: removing projectiles %d\n", i);
                     LOCK_PROJ();
                     proj->x = -1;
                     proj->y = -1;
@@ -437,6 +444,7 @@ bool CollGranataProiettile(const Projectile* gran, Projectile* projectiles){
             const int proj_y = proj->y;
 
             if(proj_y == gran_y  && proj_x <= gran_x + 1 && proj_x >= gran_x - 1){
+                if(!useGraphics) printf("Proj-Gran collision: removing projectiles %d\n", i);
                 LOCK_PROJ();
                 proj->x = -1;
                 proj->y = -1;
