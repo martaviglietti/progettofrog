@@ -50,7 +50,12 @@ $(THREADS_EXEC): $(OBJECTS_THREADS)
 	gcc $(OBJECTS_THREADS) -o $(THREADS_EXEC) $(LDFLAGS)
 
 $(OBJ_DIR_THREADS)/%.o: $(THREADS_SRC)/%.c
-	gcc $(CFLAGS) -c $< -o $@
+	gcc -MMD $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ_DIR)*.o $(BUILD_DIR)/versione_threads/a.out
+	rm -f $(OBJ_DIR)*.o $(OBJ_DIR)*.d $(BUILD_DIR)/versione_threads/a.out
+
+-include $(OBJECTS_THREADS:.o=.d)
+
+run: $(THREADS_EXEC)
+	./$(THREADS_EXEC)

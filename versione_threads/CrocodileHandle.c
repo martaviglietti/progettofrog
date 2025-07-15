@@ -9,7 +9,7 @@ Crocodile* CrocodileInit(Flusso *flussi, const float time) {
         exit(EXIT_FAILURE);
     }
 
-    const int Ninit = rand_funz(3, 8);
+    const int Ninit = rand_funz(5, 8);
     pthread_t t_coccodrilli[Ninit];
 
     bool used_flusso[NFLUSSI] = { false };
@@ -61,7 +61,6 @@ void *thread_coccodrillo(void *arg) {
     struct timeval now;
 
     while(atomic_load(&croc->alive)){
-        usleep(10 * 1000);  // sleep 100 ms
 
         gettimeofday(&now, NULL);
 
@@ -99,7 +98,7 @@ Projectile* ProjectileInit(const Crocodile* croc, const float time, const gameCo
     for (int i = 0; i < MAX_CROCODILES; i++){
 
         Projectile* proj = &projectiles[i];
-        gettimeofday(&proj->prev, NULL);
+        
         proj->speed = gameCfg->velocità_proiettili;
 
         if(i == croc->idx){
@@ -107,6 +106,7 @@ Projectile* ProjectileInit(const Crocodile* croc, const float time, const gameCo
             proj->y = croc->y;
             atomic_store(&proj->alive, true);
             proj->dir = croc->dir;
+            gettimeofday(&proj->prev, NULL);
         }
         else{
             proj->x = -1;
@@ -156,11 +156,13 @@ void* thread_proiettile(void* arg) {
 
         for (int i = 0; i < MAX_CROCODILES; i++){
             if(!useGraphics) printf("Proj Status: idx %d, alive %d, dir %d, speed %d, x %d, y %d \n", i, localProj[i].alive,  localProj[i].dir,  localProj[i].speed,  localProj[i].x, localProj[i].y);
-
+            LOCK_PROJ();
             if(!atomic_load(&projectiles[i].alive)){
                 localProj[i].alive = false;
+                UNLOCK_PROJ();
                 continue;
             }
+            UNLOCK_PROJ();
 
             all_dead = false;
             if (!localProj[i].alive) {
@@ -196,7 +198,6 @@ void* thread_proiettile(void* arg) {
 
             push_event(&myBuffer, &newMess);
         }
-        usleep(100 * 1000);  // sleep 10 ms
     }
     if(!useGraphics) printf("All projectiles are dead... terminatiing the thread...\n");
     pthread_exit(NULL);
@@ -204,10 +205,11 @@ void* thread_proiettile(void* arg) {
 }
 
 void sparaProiettile(Projectile* proj, const Crocodile* croc, const float time, const gameConfig* gameCfg) {
-        
+
     if (atomic_load(&proj->alive)) return;
 
     if(!useGraphics) printf("Stiamo sparando un proiettile da coccodrillo %d\n", croc->idx);
+
     atomic_store(&proj->alive, true);
     proj->x = (croc->dir == 1) ? croc->x + 5 : croc->x - 5;;
     proj->y = croc->y;

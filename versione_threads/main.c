@@ -6,7 +6,7 @@ void seed_random() {
 }
 
 messageBuffer myBuffer;
-const bool useGraphics = false;
+const bool useGraphics = true;
 
 int main(){
 
@@ -49,10 +49,10 @@ int main(){
             }
             switch (difficoltà) {
                 case 0:  //Facile
-                    gameConfig.vite=10;			   //numero vite
+                    gameConfig.vite=8;			   //numero vite
                     gameConfig.tempo=120;		   //tempo di gioco
-                    gameConfig.velocità_proiettili=15;   //velocità proiettili
-                    gameConfig.velocità_coccodrilli=10;  //velocità coccodrilli
+                    gameConfig.velocità_proiettili=9;   //velocità proiettili
+                    gameConfig.velocità_coccodrilli=4;  //velocità coccodrilli
                     break;
                 case 1:  //Medio
                     gameConfig.vite=10;

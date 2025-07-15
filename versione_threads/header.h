@@ -47,14 +47,13 @@
 #define RANA_XMIN 2
 
 #define DELAY 100000
-#define PROJ_MIN_WAIT 3
-#define PROJ_MAX_WAIT 8
-#define CROC_MIN_WAIT 3
-#define CROC_MAX_WAIT 7
+#define PROJ_MIN_WAIT 7
+#define PROJ_MAX_WAIT 12
+#define CROC_MIN_WAIT 5
+#define CROC_MAX_WAIT 9
 
 typedef enum {
     FROG_STATUS,
-    TIME_STATUS,
     PROJ_STATUS,
     GRAN_STATUS,
     CROC_STATUS,
@@ -111,11 +110,6 @@ typedef struct {
 } Frog;
 
 typedef struct {
-    _Atomic float time;
-    _Atomic bool alive;
-} Time;
-
-typedef struct {
     int y;
     int x;
     int dir;
@@ -167,7 +161,6 @@ Game_struct* startGame(WINDOW *game, gameConfig* gameConfig);
 void crea_thread_gioco(gameConfig* gameConfig);
 
 //funzioni inizializzazione oggetti
-Time* timeInit();
 Crocodile* CrocodileInit(Flusso *flussi, const float time);
 Projectile* GranateInit(const Frog* frog, const float time, const gameConfig* gameConfig);
 Frog* frogInit();
@@ -175,7 +168,6 @@ Projectile* ProjectileInit(const Crocodile* croc, const float time, const gameCo
 
 //produttori
 void* thread_rana(void* arg);
-void* thread_tempo(void* arg);
 void* thread_coccodrillo(void* arg);
 void* thread_proiettile(void* arg);
 void* thread_granata(void* arg);

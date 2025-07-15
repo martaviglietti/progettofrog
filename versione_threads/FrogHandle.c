@@ -34,6 +34,7 @@ void* thread_rana(void* arg) {
     int key = -1;
 
     while(atomic_load(&frog->alive)){
+        usleep(30 * 1000);  // sleep 10 ms
 
         pthread_mutex_lock(&frog->mutex);
         key = frog->key;
@@ -74,8 +75,6 @@ void* thread_rana(void* arg) {
         newMess.data = msgFrog;
 
         push_event(&myBuffer, &newMess);
-
-        usleep(20 * 1000);  // sleep 10 ms
     }
     pthread_exit(NULL);
 }
@@ -119,6 +118,7 @@ void* thread_granata(void* arg) {
     struct timeval now;
 
     while(localGran[0].alive || localGran[1].alive){  
+
         if (granates == NULL) break;
 
         for (int i = 0; i < 2; i++){

@@ -10,7 +10,6 @@ void* thread_grafica(void* arg) {
     WINDOW *game = game_struct->game;
 
     //Inizializzazione tempo
-    //Time* time = timeInit();
     struct timeval now, prev;
     gettimeofday(&prev, NULL);
     float time = 0.;
@@ -38,11 +37,6 @@ void* thread_grafica(void* arg) {
         Message newMess = pop_event(&myBuffer);
         //printf("We are reading a message of type %d.\n", newMess.type);
         switch (newMess.type) {
-
-            case TIME_STATUS:
-                //printf("Updating time from %f to %f\n", time->time, *((float*)newMess.data));
-                //time->time = *((float*)newMess.data);
-                break;
 
             case FROG_STATUS:
                 newX = ((int*)newMess.data)[0];
@@ -249,8 +243,6 @@ void* thread_grafica(void* arg) {
                         proj->x = -1;
                         proj->y = -1;
                         proj->dir = -1;
-                        proj->speed = -1;
-                        gettimeofday(&proj->prev, NULL);
                         UNLOCK_PROJ();
                         continue;
                     }
@@ -418,7 +410,6 @@ bool CollRanaProiettile(const Frog* frog, Projectile* projectiles){
                     proj->y = -1;
                     atomic_store(&proj->alive, false);
                     proj->dir = -1;
-                    gettimeofday(&proj->prev, NULL);
                     UNLOCK_PROJ();
                     return 1;
                 }
@@ -450,7 +441,6 @@ bool CollGranataProiettile(const Projectile* gran, Projectile* projectiles){
                 proj->y = -1;
                 atomic_store(&proj->alive, false);
                 proj->dir = -1;
-                gettimeofday(&proj->prev, NULL);
                 UNLOCK_PROJ();
                 return 1;
             }
