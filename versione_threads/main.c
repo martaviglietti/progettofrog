@@ -1,6 +1,5 @@
 #include "main.h"
-#include<collisioni.h>
-#include "main.h"
+#include "collisioni.h"
 #include "FrogHandle.h"
 #include "CrocHandle.h"
 #include "Partita.h"

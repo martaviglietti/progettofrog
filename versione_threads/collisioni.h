@@ -1,8 +1,7 @@
 #ifndef COLLISIONI_H
 #define COLLISIONI_H
-
-#include "Partita.h"
 #include "main.h"
+#include "Partita.h"
 #include "FrogHandle.h"
 #include "CrocHandle.h"
 #include "Draws.h"

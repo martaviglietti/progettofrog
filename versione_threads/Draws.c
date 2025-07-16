@@ -1,5 +1,5 @@
-#include<Draws.h>
-#include<main.h>
+#include "Draws.h"
+#include "main.h"
 
 void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche * statistiche_gioco){
     
@@ -17,7 +17,7 @@ void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche
     	"     |*******|      |*******|      |*******|      |*******|      |*******|     ",			
     	"  .  |*******|      |*******|   o  |*******|      |*******|      |*******|     ",
     	"     |*******|      |*******|      |*******|      |*******|      |*******|     "
-    };	
+    };
     							 
     char fiume[FIUME][LARGHEZZA_GIOCO-2]={
  	"                                                                               ",

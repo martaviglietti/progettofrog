@@ -6,7 +6,6 @@
 #include "Partita.h"
 #include "Draws.h"
 #include "collisioni.h"
-c
 
 
 #include <stdio.h>
@@ -25,30 +24,6 @@ c
 #define ALTEZZA_RANA 2
 #define LARGHEZZARANA 3
 
-
-
-typedef struct{
-    int id;
-    int y;
-    int x;
-    int vivo;
-}Granata;
-
-
-
-typedef struct{
-    int id;
-    int x;
-    int y;
-}Rana;
-
-typedef struct{
-
-	int x;
-	int y;
-	int velocità_granata;
-	
-}Parametri_granata;
 
 void* funzione_rana(void* parametri_thread);
 void spara_granata(int inizioX, int inizioY,int velocità_proiettili ,Thread_id thread_id[]);

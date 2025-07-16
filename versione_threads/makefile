@@ -1,29 +1,28 @@
-# === Makefile semplice per cartella singola ===
-
-# Compilatore e flag
+# === Impostazioni ===
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 LDFLAGS = -lncurses -lpthread
 
-# File sorgenti
-SRC = CrocHandle.c Draws.c FrogHandle.c Partita.c WindowGen.c collisioni.c main.c menu.c
+# Lista dei sorgenti e oggetti
+SOURCES = CrocHandle.c Draws.c FrogHandle.c Partita.c collisioni.c main.c
+OBJECTS = $(SOURCES:.c=.o)
 
-# File oggetto
-OBJ = $(SRC:.c=.o)
-
-# Eseguibile
+# Nome eseguibile
 EXEC = frog_game_threads
 
-# Regole
+# Target predefinito
 all: $(EXEC)
 
-$(EXEC): $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
+# Regola per l'eseguibile
+$(EXEC): $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+# Regola per compilare ogni file .c
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Pulizia
 clean:
-	rm -f *.o $(EXEC)
+	rm -f $(OBJECTS) $(EXEC)
 
 .PHONY: all clean

@@ -26,37 +26,6 @@
 #define ALTEZZA_COCCODRILLO 2
 #define LARGHEZZA_COCCODRILLO 9
 
-typedef struct{
-    int id;
-    int y;
-    int x;
-    int dir;
-    int vivo;
-    int attesa;
-}Coccodrillo;
-
-typedef struct{
-    int id;
-    int y;
-    int x;
-    int vivo;
-}Proiettile;
-
-typedef struct{
-	Temp coccodrillo;
-	Flusso* flussi;
-	int id_flusso;
-	Parametri* parametri_gioco;
-	
-}Parametri_coccodrillo;
-
-
-typedef struct{
-    int id;
-	Coccodrillo coccodrillo;
-	int velocità_proiettili;
-}Parametri_proiettile;
-
 
 void* funzione_gestione_coccodrilli(Flusso *flussi, Parametri* parametri_gioco, Thread_id thread_id[], Parametri_coccodrillo parametri_coccodrillo[]);
 void* funzione_coccodrillo(void* parametri_thread);
