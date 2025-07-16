@@ -425,7 +425,7 @@ Statistiche  Partita(WINDOW *finestra_gioco,Parametri parametri_gioco){
 	for (int i = 0; i < NUMERO_COCCODRILLI; i++) {
             if (sem_destroy(&semafori_coccodrilli[i]) != 0) {
             perror("sem_destroy fallita");
-            // qui puoi decidere se continuare o uscire, in genere si continua
+            
         }
 }
         sem_destroy(&sem_posti_occupati);
@@ -466,16 +466,7 @@ Statistiche  Partita(WINDOW *finestra_gioco,Parametri parametri_gioco){
 }
 
 
-void svuota_buffer(){
-     
-    Temp messaggio={-1,0,0,0};
-    while(0>0){
-    
-            messaggio = buffer[indice_lettura];
-            indice_lettura = (indice_lettura + 1) % DIM_BUFFER;
-            
-    }
-}
+
 
 void cancel_thread(Thread_id thread_id[]){
     for(int i=0; i< NUMERO_TID; i++){
@@ -1037,14 +1028,15 @@ Temp lettura_buffer(){
     
    sem_wait(&sem_posti_occupati);
 	    
-          
+          pthread_mutex_lock(&semaforo_buffer);
+          pthread_cleanup_push((void(*)(void*))pthread_mutex_unlock, &semaforo_buffer);
 
-           messaggio = buffer[indice_lettura];
-            indice_lettura = (indice_lettura + 1) % DIM_BUFFER;
-            
+          messaggio = buffer[indice_lettura];
+          indice_lettura = (indice_lettura + 1) % DIM_BUFFER;
+          pthread_cleanup_pop(1); // sblocca il mutex qui
 
             
-            sem_post(&sem_posti_liberi);
+          sem_post(&sem_posti_liberi);
     
     return messaggio;
     
