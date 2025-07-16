@@ -1,13 +1,26 @@
 #ifndef CROC_HANDLE_H
 #define CROC_HANDLE_H
 
+
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <ncurses.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <locale.h>
+#include "menu.h"
+#include <string.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <semaphore.h>
+
 #define NUMERO_COCCODRILLI 24
 #define SPAWN_SX_COCCODRILLO -4
 #define SPAWN_DX_COCCODRILLO 84
 #define ALTEZZA_COCCODRILLO 2
 #define LARGHEZZA_COCCODRILLO 9
-
-#endif
 
 typedef struct{
     int id;
@@ -54,3 +67,5 @@ void riattivazione_coccodrilli(Coccodrillo* coccodrilli, int distanze_coccodrill
 void attesa_coccodrilli(int id, Coccodrillo* coccodrilli, int distanze_coccodrilli[]);
 void controllo_stato_coccodrillo(int id,Coccodrillo* coccodrilli);
 void controllo_sparo_proiettile(Thread_id thread_id[], Coccodrillo* coccodrilli,Rana* rana, Proiettile* proiettili, struct timeval* inizio, struct timeval* fine, float* numero_randomico, int velocità_proiettili);
+
+#endif

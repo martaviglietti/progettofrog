@@ -1,5 +1,5 @@
 #include<CrocHandle.h>
-
+#include<main.h>
 
 void controllo_sparo_proiettile(Thread_id thread_id[] ,Coccodrillo* coccodrilli, Rana* rana,  Proiettile* proiettili,struct timeval* inizio, struct timeval* fine, float* numero_randomico, int velocità_proiettili){
     int coccodrillo_scelto;

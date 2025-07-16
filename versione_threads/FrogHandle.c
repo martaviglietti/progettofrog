@@ -1,6 +1,7 @@
 #include<FrogHandle.h>
-
-
+#include "main.h"
+#include "Partita.h"
+#include "CrocHandle.h"
 
 //funzione che gestisce la creazione del processo granata
 void spara_granata(int inizioX, int inizioY,int velocità_proiettile , Thread_id thread_id[]){
@@ -63,8 +64,6 @@ void* funzione_granata(void* parametri_thread){
     }	       
         
 }
-
-
 
 
 

@@ -1,37 +1,49 @@
-SRC_DIR = .
-BUILD_DIR = ../build
+# === Impostazioni di base ===
 
-OBJ_DIR_PROCESSI = ../obj/versione_processi
-OBJ_DIR_THREADS = ../obj/versione_threads
+# Directory dei sorgenti e di output
+SRC_DIR = versione_threads
+BUILD_DIR = build
+OBJ_DIR = $(BUILD_DIR)/versione_threads
 
-PROCESSI_SRC = $(SRC_DIR)/versione_processi
-THREADS_SRC = $(SRC_DIR)/versione_threads
+# Compilatore e flag
+CC = gcc
+CFLAGS = -Wall -Wextra -g -I$(SRC_DIR)
+LDFLAGS = -lncurses -lpthread
 
-OBJECTS_PROCESSI = $(OBJ_DIR_PROCESSI)/coccodrilli.o \
-				$(OBJ_DIR_PROCESSI)/collisioni.o \
-				$(OBJ_DIR_PROCESSI)/draws.o \
-				$(OBJ_DIR_PROCESSI)/main.o \
-				$(OBJ_DIR_PROCESSI)/funzionegioca.o \
-				$(OBJ_DIR_PROCESSI)/gestionegrafica.o \
-				$(OBJ_DIR_PROCESSI)/menu.o \
-				$(OBJ_DIR_PROCESSI)/rana.o \
-				$(OBJ_DIR_PROCESSI)/windowgeneration.o
+# File sorgenti
+SOURCES = CrocHandle.c Draws.c FrogHandle.c\
+          Partita.c WindowGen.c collisioni.c main.c menu.c
 
-CFLAGS = -g -Wall -I/usr/include  -I/usr/include/x86_64-linux-gnu # Include ncurses headers if needed
-LDFLAGS = -lncurses
+# File oggetto generati
+OBJECTS = $(addprefix $(OBJ_DIR)/, $(SOURCES:.c=.o))
 
-PROCESSI_EXEC = $(BUILD_DIR)/versione_processi/a.out
-THREADS_EXEC = $(BUILD_DIR)/versione_threads/a.out
+# Nome eseguibile
+EXEC = $(BUILD_DIR)/$(SRC_DIR)/frog_game_threads
 
-# Default target: build both projects
-#all: $(PROCESSI_EXEC) $(THREADS_EXEC)
+# === Target principali ===
 
-# Project 1 executable (build ont one executable)
-$(PROCESSI_EXEC): $(OBJECTS_PROCESSI)
-	gcc $(OBJECTS_PROCESSI) -o $(PROCESSI_EXEC) $(LDFLAGS)
+# Target predefinito: build + esegui
+default: run
 
-$(OBJ_DIR_PROCESSI)/%.o: $(PROCESSI_SRC)/%.c
-	gcc $(CFLAGS) -c $< -o $@
+# Compila tutti i file
+build: $(EXEC)
 
+# Compilazione ed esecuzione
+run: $(EXEC)
+	./$(EXEC)
+
+# Regola per creare l’eseguibile
+$(EXEC): $(OBJECTS)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+# Regola per compilare ogni .c in .o
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Pulizia degli oggetti e build
 clean:
-	rm -f $(OBJ_DIR)*.o $(BUILD_DIR)/versione_processi/a.out
+	rm -rf $(BUILD_DIR)
+
+.PHONY: default build run clean

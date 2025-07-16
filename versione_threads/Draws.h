@@ -1,6 +1,19 @@
 #ifndef DRAWS_H
 #define DRAWS_H
 
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <ncurses.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <locale.h>
+#include "menu.h"
+#include <string.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <semaphore.h>
 #include "main.h"  // Per ID, ncurses, e struct comuni
 #include "FrogHandle.h"
 #include "CrocHandle.h"

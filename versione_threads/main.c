@@ -1,4 +1,5 @@
 #include "main.h"
+#include<collisioni.h>
 
 Temp buffer[DIM_BUFFER];
 int indice_scrittura = 0;

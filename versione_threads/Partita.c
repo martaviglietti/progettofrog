@@ -1,5 +1,5 @@
 #include<Parita.h>
-
+#include<main.h>
 
 
 void impostazioni_gioco(Parametri* parametri_gioco, int difficoltà ){

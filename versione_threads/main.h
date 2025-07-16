@@ -37,6 +37,22 @@
 #define ID_RICHIESTA 90
 
 
+
+// Variabili globali condivise
+extern Temp buffer[DIM_BUFFER];
+extern int indice_scrittura;
+extern int indice_lettura;
+
+extern pthread_mutex_t semaforo_buffer;
+extern pthread_mutex_t semaforo_disegno;
+
+extern sem_t semafori_coccodrilli[NUMERO_COCCODRILLI];
+extern sem_t spazi_occupati;
+extern sem_t spazi_liberi;
+
+extern int fine_gioco;
+
+
 // opzioni del menu
 static const char *opzioni[] = {
     "Inizia game", "Crediti", "Esci"
@@ -94,22 +110,6 @@ void* funzione_tempo();
 int menu(WINDOW *finestra_gioco, const char *title, const char *options[], int num_options);
 void crediti(WINDOW *finestra_gioco);
 
-#ifndef COMUNICAZIONE_H
-#define COMUNICAZIONE_H
 
-
-// Variabili globali condivise
-extern Temp buffer[DIM_BUFFER];
-extern int indice_scrittura;
-extern int indice_lettura;
-
-extern pthread_mutex_t semaforo_buffer;
-extern pthread_mutex_t semaforo_disegno;
-
-extern sem_t semafori_coccodrilli[NUMERO_COCCODRILLI];
-extern sem_t spazi_occupati;
-extern sem_t spazi_liberi;
-
-extern int fine_gioco;
 
 #endif

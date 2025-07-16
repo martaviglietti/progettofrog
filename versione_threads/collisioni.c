@@ -1,5 +1,5 @@
 #include<collisioni.h>
-
+#include<main.h>
 
 
 

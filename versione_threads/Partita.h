@@ -2,6 +2,20 @@
 #define PARTITA_H
 #include "main.h" 
 
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <ncurses.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <locale.h>
+#include "menu.h"
+#include <string.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <semaphore.h>
+
 
 
 
