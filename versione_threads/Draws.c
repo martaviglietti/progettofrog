@@ -1,7 +1,7 @@
-#include "Draws.h"
+
 #include "main.h"
 
-void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche * statistiche_gioco){
+void generatore_finestra(WINDOW *finestra_gioco, Statistiche * statistiche_gioco){
     
    
     box(finestra_gioco, ACS_VLINE, ACS_HLINE);
@@ -17,7 +17,7 @@ void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche
     	"     |*******|      |*******|      |*******|      |*******|      |*******|     ",			
     	"  .  |*******|      |*******|   o  |*******|      |*******|      |*******|     ",
     	"     |*******|      |*******|      |*******|      |*******|      |*******|     "
-    };
+    };	
     							 
     char fiume[FIUME][LARGHEZZA_GIOCO-2]={
  	"                                                                               ",
@@ -63,7 +63,7 @@ void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche
     //Mostriamo zona intorno alle tane
     wattron(finestra_gioco,COLOR_PAIR(3));
     for (int i=0; i<TANE;i++) {
-    	for (int j=0; j<maxX-2;j++) {				
+    	for (int j=0; j<COLS-2;j++) {				
     	    if (tane[i][j]==' ' || tane[i][j]=='o' || tane[i][j]=='O' || tane[i][j]=='.') {  		
     	        mvwaddch(finestra_gioco,i+spostamento_verticale,j+spostamento_orizzontale,tane[i][j]);
             } 		
@@ -113,7 +113,7 @@ void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche
     
     wattron(finestra_gioco, COLOR_PAIR(6)); 
     for (int i = 0; i < SPONDA_SUPERIORE; i++) {
-        mvwhline(finestra_gioco, spostamento_verticale + i, spostamento_orizzontale, ' ', maxX - 2);
+        mvwhline(finestra_gioco, spostamento_verticale + i, spostamento_orizzontale, ' ', COLS - 2);
     }
     wattroff(finestra_gioco, COLOR_PAIR(6));
    
@@ -124,7 +124,7 @@ void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche
     
     wattron(finestra_gioco,COLOR_PAIR(2));
     for (int i=0; i<FIUME;i++) {
-        for (int j=0; j<maxX-2;j++) {										
+        for (int j=0; j<COLS-2;j++) {										
     	    mvwaddch(finestra_gioco,i+spostamento_verticale,j+spostamento_orizzontale,fiume[i][j]);
         }
     }
@@ -137,7 +137,7 @@ void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche
     
     wattron(finestra_gioco,COLOR_PAIR(8));
     for (int i=0; i<PRATO;i++) {
-    	for (int j=0; j<maxX-2;j++) {											
+    	for (int j=0; j<COLS-2;j++) {											
     	    mvwaddch(finestra_gioco,i+spostamento_verticale,j+spostamento_orizzontale,prato[i][j]);
         }
     }
@@ -147,10 +147,10 @@ void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche
     
     //mostriamo zona di riempimento della schermata
     wattron(finestra_gioco,COLOR_PAIR(14));
-    mvwhline(finestra_gioco, 1,1, ' ', maxX - 2);
-    mvwhline(finestra_gioco, 3,1, ' ', maxX - 2);
-    mvwhline(finestra_gioco, 45,1, ' ', maxX - 2);  
-    mvwhline(finestra_gioco, 47,1, ' ', maxX - 2);  
+    mvwhline(finestra_gioco, 1,1, ' ', COLS - 2);
+    mvwhline(finestra_gioco, 3,1, ' ', COLS - 2);
+    mvwhline(finestra_gioco, 45,1, ' ', COLS - 2);  
+    mvwhline(finestra_gioco, 47,1, ' ', COLS - 2);  
     mvwhline(finestra_gioco, 2,15, ' ', 35);
     mvwhline(finestra_gioco, 46,77, ' ', 3);
     mvwhline(finestra_gioco, 46,12, ' ', 3);
@@ -192,6 +192,36 @@ void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche
 };
 
 
+
+
+
+
+
+
+
+//funzione che gestisce la creazione del processo granata
+void spara_granata(int inizioX, int inizioY,int velocità_proiettile , Thread_id thread_id[]){
+
+    Parametri_granata* parametri_granata = malloc(sizeof(Parametri_granata));
+   
+    parametri_granata->x=inizioX;
+    parametri_granata->y=inizioY;
+    parametri_granata->velocità_granata=velocità_proiettile;
+   
+    pthread_create(&thread_id[ID_GRANATE].id, NULL, &funzione_granata, (void*)parametri_granata);
+    pthread_detach(thread_id[ID_GRANATE].id);
+    thread_id[ID_GRANATE].valido=1;
+}
+
+
+//funzione che mostra la barra del tempo rimanente
+void barra_tempo(WINDOW* finestra_gioco,Statistiche * statistiche_gioco, int tempo){
+    
+    wattron(finestra_gioco, COLOR_PAIR(7));
+    mvwhline(finestra_gioco,46,15, ' ', (int)(62*((float)statistiche_gioco->tempo/tempo)));
+    wattroff(finestra_gioco, COLOR_PAIR(7));
+   
+}
 
 
 void gestore_grafica(WINDOW* finestra_gioco,int velocità_proiettili, Statistiche * statistiche_gioco, Thread_id thread_id[]){			
@@ -243,28 +273,24 @@ void gestore_grafica(WINDOW* finestra_gioco,int velocità_proiettili, Statistich
 	distanze_coccodrilli[i]=numero_random(13,16);  //impostiamo le distanze iniziali da mantenere tra i coccodrilli, per ogni flusso del fiume
     }
    
-    int giocare=1;  //variabile utilizzata per terminare la manche quando si sono verificate le giuste condizioni
+    int gioca=1;  //variabile utilizzata per terminare la manche quando si sono verificate le giuste condizioni
     
-    int key;
-    int sval;
-    while (giocare) {
+  
+    while (gioca) {
     	
-	giocare=1;  //se durante il ciclo viene impostata a 0 allora si esce dal gioco
+	gioca=1;  //se durante il ciclo viene impostata a 0 allora si esce dal gioco
 	
 	
 	//funzioni di gestione grafica del gioco
 	pthread_mutex_lock(&semaforo_disegno);
 	werase(finestra_gioco);
 	
-	generatore_finestra(finestra_gioco,COLS,LINES,statistiche_gioco);
+	generatore_finestra(finestra_gioco,statistiche_gioco);
         disegna_coccodrilli(finestra_gioco,coccodrilli);
         disegna_granate(finestra_gioco,granate);
         disegna_proiettile(finestra_gioco,proiettili);
         disegna_rana(finestra_gioco,&rana);
         barra_tempo(finestra_gioco,statistiche_gioco,tempo); //mostra la barra dinamica del tempo 
-     
-        
-     
      
         wrefresh(finestra_gioco);
         pthread_mutex_unlock(&semaforo_disegno);
@@ -285,11 +311,11 @@ void gestore_grafica(WINDOW* finestra_gioco,int velocità_proiettili, Statistich
 		    if (rana_su_tana(&rana,statistiche_gioco)) {  //controllo se la rana si trova su una delle tane        
 		        statistiche_gioco->punteggio+=15;
 			statistiche_gioco->punteggio+=(int)(15*(float)statistiche_gioco->tempo/100);
-			giocare=0;						
+			gioca=0;						
 		    } else {  //altrimenti la rana si trova nella zona circostante alle tane ( e muore)
 		        statistiche_gioco->vite--;
 			statistiche_gioco->punteggio-=10; 
-		        giocare=0;
+		        gioca=0;
 		    }
 		}
 		
@@ -311,7 +337,7 @@ void gestore_grafica(WINDOW* finestra_gioco,int velocità_proiettili, Statistich
 	    if (statistiche_gioco->tempo==0) {  //controllo per verificare se il tempo è terminato
 	        statistiche_gioco->vite--;
 		statistiche_gioco->punteggio-=20;
-		giocare=0;
+		gioca=0;
 	    }
 	}
 	
@@ -325,7 +351,7 @@ void gestore_grafica(WINDOW* finestra_gioco,int velocità_proiettili, Statistich
 	        coccodrilli[temp.id].dir=temp.info;  
 
                 //controlli per lo spostamento della rana
-		giocare=movimento_rana_su_coccodrillo(temp.id, coccodrillo_scelto,coccodrilli, &rana,statistiche_gioco, giocare);
+		gioca=movimento_rana_su_coccodrillo(temp.id, coccodrillo_scelto,coccodrilli, &rana,statistiche_gioco, gioca);
                 //controllo sullo stato del coccodrillo
 		controllo_stato_coccodrillo(temp.id,coccodrilli);
 		
@@ -356,43 +382,37 @@ void gestore_grafica(WINDOW* finestra_gioco,int velocità_proiettili, Statistich
                     
 	            
 	        }
-	    } else {  
-	        granate[temp.id-ID_GRANATE].x=temp.x;	
-		granate[temp.id-ID_GRANATE].y=temp.y;
+	    } else {
+	         
+	            granate[temp.id-ID_GRANATE].x=temp.x;	
+		    granate[temp.id-ID_GRANATE].y=temp.y;
+		
 			   
 	    }	  
-	}  
-
+	}
+	
+	//controllo se sparare un nuovo proiettile
+        controllo_sparo_proiettile( thread_id,coccodrilli,&rana,proiettili, &inizio,&fine, &numero_randomico, velocità_proiettili); 
+        
+        //controllo collisione proiettile-bordi
+        collisione_proiettili_confine(thread_id ,proiettili);
+        
+        //controllo collisione granate-bordi
+	collisione_granate_confine(granate);
+        
+        //controllo collisione rana-proiettile
+	gioca=collisione_rana_proiettili(&rana, proiettili,statistiche_gioco, gioca);
+	
+	//controllo collisione granata-proiettile
+	collisione_granate_proiettili(granate, proiettili, thread_id,statistiche_gioco);
+	
+        //controllo per killare il processo granate una volta morte
+	uccidi_granate(granate, thread_id);
+        
+        usleep(500);
+        
     }
 }
-
-
-
-//funzione che gestisce la creazione del processo granata
-void spara_granata(int inizioX, int inizioY,int velocità_proiettile , Thread_id thread_id[]){
-
-    Parametri_granata* parametri_granata = malloc(sizeof(Parametri_granata));
-   
-    parametri_granata->x=inizioX;
-    parametri_granata->y=inizioY;
-    parametri_granata->velocità_granata=velocità_proiettile;
-   
-    pthread_create(&thread_id[ID_GRANATE].id, NULL, &funzione_granata, (void*)parametri_granata);
-    pthread_detach(thread_id[ID_GRANATE].id);
-    thread_id[ID_GRANATE].valido=1;
-}
-
-
-//funzione che mostra la barra del tempo rimanente
-void barra_tempo(WINDOW* finestra_gioco,Statistiche * statistiche_gioco, int tempo){
-    
-    wattron(finestra_gioco, COLOR_PAIR(7));
-    mvwhline(finestra_gioco,46,15, ' ', (int)(62*((float)statistiche_gioco->tempo/tempo)));
-    wattroff(finestra_gioco, COLOR_PAIR(7));
-   
-}
-
-
 
 
 
