@@ -17,7 +17,7 @@ sem_t semafori_coccodrilli[NUMERO_COCCODRILLI];
 sem_t spazi_occupati;
 sem_t spazi_liberi;
 
-int fine_gioco = 0;
+
 
 
 
@@ -95,6 +95,78 @@ int main(){
     return 0;
 }
 
+void impostazioni_gioco(Parametri* parametri_gioco, int difficoltà ){
+    switch (difficoltà) {
+        case 0:  //Facile
+            parametri_gioco->livello_difficoltà=1;         //livello di difficoltà
+            parametri_gioco->vite=10;			   //numero vite
+            parametri_gioco->tempo=100;		           //tempo di gioco
+            parametri_gioco->velocità_proiettili=50000;    //velocità proiettili
+            parametri_gioco->velocità_coccodrilli=100000;  //velocità coccodrilli        
+            break;
+            
+        case 1:  //Medio
+            parametri_gioco->livello_difficoltà=2;
+            parametri_gioco->vite=5;
+            parametri_gioco->tempo=50;
+            parametri_gioco->velocità_proiettili=40000;
+            parametri_gioco->velocità_coccodrilli=80000;
+            
+            break;
+        case 2:  //Difficile
+            parametri_gioco->livello_difficoltà=3;
+            parametri_gioco->vite=3;
+            parametri_gioco->tempo=30;
+            parametri_gioco->velocità_proiettili=30000;
+            parametri_gioco->velocità_coccodrilli=60000;
+            
+            break;      
+    }
+}
+
+int game_vinto(WINDOW *finestra_gioco, int punteggio){  //schermata in caso di vittoria
+    nodelay(finestra_gioco, false);
+    wclear(finestra_gioco);
+    box(finestra_gioco, ACS_VLINE, ACS_HLINE);
+    mvwprintw(finestra_gioco, 10, 10, "HAI VINTO! Punteggio: %d. Vuoi giocare ancora? (s/n)", punteggio);
+    wrefresh(finestra_gioco);
+    char decisione = wgetch(finestra_gioco);
+    while (decisione!= 's' && decisione!='n') {
+        decisione = wgetch(finestra_gioco);
+    }
+    if (decisione == 's') {  //se rispondiamo di si ripetiamo il gioco (con la stessa difficoltà) da capo
+        return 0;
+    } else {  //altrimenti torniamo al menù
+        return 1;
+    }
+    
+}
+
+
+int game_perso(WINDOW *finestra_gioco, int punteggio){  //schermata in caso di perdita
+    nodelay(finestra_gioco, false);
+    wclear(finestra_gioco);
+    box(finestra_gioco, ACS_VLINE, ACS_HLINE);
+    mvwprintw(finestra_gioco, 10, 10, "GAME OVER! Punteggio: %d. Vuoi giocare ancora? (s/n)", punteggio);
+    wrefresh(finestra_gioco);
+    char decisione = wgetch(finestra_gioco);
+    while (decisione!= 's' && decisione!='n') {
+    	 decisione = wgetch(finestra_gioco);
+    }
+    if (decisione == 's') {  //se rispondiamo di si ripetiamo il gioco (con la stessa difficoltà) da capo
+        return 0;
+    } else {  //altrimenti torniamo al menù
+        return 1;
+    }
+}
+
+
+
+int scelta_difficoltà(WINDOW *finestra_gioco) {  //schermata per scelta della difficoltà
+    const char *difficolta[] = {"Facile", "Media", "Difficile"};
+    return menu(finestra_gioco, "Scegli la Difficoltà", difficolta, 3);
+}
+
 
 
 
@@ -103,8 +175,8 @@ int menu(WINDOW *finestra_gioco, const char *title, const char *options[], int n
     keypad(finestra_gioco, true);  //abilita l'input da tastiera
 
     int posizione = 0;
-    int gameLINES = getmaxy(finestra_gioco);
-    int gameCOLS = getmaxx(finestra_gioco);
+    int gameLINES = LINES;
+    int gameCOLS = COLS;
     int scelta;
 
     while (true) {
@@ -151,8 +223,8 @@ void crediti(WINDOW *finestra_gioco){
     wclear(finestra_gioco);
     box(finestra_gioco, ACS_VLINE, ACS_HLINE);
 
-    int gameLINES = getmaxy(finestra_gioco);
-    int gameCOLS = getmaxx(finestra_gioco);
+    int gameLINES = LINES;
+    int gameCOLS = COLS;
 
     mvwprintw(finestra_gioco, gameLINES / 2 - 2, gameCOLS / 2 - 15, "Marta Viglietti");
     mvwprintw(finestra_gioco, gameLINES / 2 - 1, gameCOLS / 2 - 15, "Gabriele Stampatori");
@@ -160,6 +232,14 @@ void crediti(WINDOW *finestra_gioco){
 
     wrefresh(finestra_gioco); 
     wgetch(finestra_gioco);
+}
+
+
+//funzione utile per creare un numero numero_random tra un minimo e un massimo (compresi)
+int numero_random(int min, int max){
+
+    return min + rand() % (max-min+1);
+
 }
 
 //funzione che gestisce il tempo
@@ -171,3 +251,5 @@ void* funzione_tempo(){
 	scrittura_buffer(tempo); //manda un messaggio alla funzione di controllo ogni secondo
     }
 }
+
+
