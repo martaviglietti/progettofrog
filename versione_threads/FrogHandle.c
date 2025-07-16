@@ -1,7 +1,6 @@
-#include"FrogHandle.h"
+
 #include "main.h"
-#include "Partita.h"
-#include "CrocHandle.h"
+
 
 //funzione che gestisce la creazione del processo granata
 void spara_granata(int inizioX, int inizioY,int velocità_proiettile , Thread_id thread_id[]){
@@ -16,55 +15,6 @@ void spara_granata(int inizioX, int inizioY,int velocità_proiettile , Thread_id
     pthread_detach(thread_id[ID_GRANATE].id);
     thread_id[ID_GRANATE].valido=1;
 }
-
-
-//funzione che gestisce il processo granata
-void* funzione_granata(void* parametri_thread){		
-    						
-    Parametri_granata* param= (Parametri_granata*) parametri_thread;
-    int velocità= param->velocità_granata;
-    Temp granate[2];
-    int messaggio;  //variabile per leggere il messaggio dal gestore grafico
-    
-    //variabili che gestiscono lo stato delle granate
-    int alive_destra=1;
-    int alive_sinistra=1;
-   
-    //impostazione iniziale delle granate (id e posizione di partenza)
-    granate[0].id=ID_GRANATE; 
-    granate[1].id=ID_GRANATE + 1;
-    granate[0].x=param->x - 2;
-    granate[1].x=param->x + 2; 			
-    granate[0].y=param->y;
-    granate[1].y=param->y;   
-    granate[0].info=0;
-    granate[1].info=0;
-    
-    
-    
-    while (true) {
-       
-        if(granate[1].x>79 && alive_destra){       			
-        	alive_destra=0;
-        	scrittura_buffer(granate[1]);
-    		
-        }else if(alive_destra){
-        	scrittura_buffer(granate[1]);
-        	granate[1].x++;}
-        	
-        if(granate[0].x<1 && alive_sinistra){
-        	alive_sinistra=0;
-    		scrittura_buffer(granate[0]);  //avvisa della morte;
-        }else if(alive_sinistra){
-        	scrittura_buffer(granate[0]);
-        	granate[0].x--;
-        }
-        	         
-        usleep(velocità); // Velocità del movimento   
-    }	       
-        
-}
-
 
 
 void* funzione_rana(void* parametri_thread){
@@ -119,4 +69,54 @@ void* funzione_rana(void* parametri_thread){
         
        usleep(5000);
     }
+}
+
+
+
+
+//funzione che gestisce il processo granata
+void* funzione_granata(void* parametri_thread){		
+    						
+    Parametri_granata* param= (Parametri_granata*) parametri_thread;
+    int velocità= param->velocità_granata;
+    Temp granate[2];
+    int messaggio;  //variabile per leggere il messaggio dal gestore grafico
+    
+    //variabili che gestiscono lo stato delle granate
+    int alive_destra=1;
+    int alive_sinistra=1;
+   
+    //impostazione iniziale delle granate (id e posizione di partenza)
+    granate[0].id=ID_GRANATE; 
+    granate[1].id=ID_GRANATE + 1;
+    granate[0].x=param->x - 2;
+    granate[1].x=param->x + 2; 			
+    granate[0].y=param->y;
+    granate[1].y=param->y;   
+    granate[0].info=0;
+    granate[1].info=0;
+    
+    
+    
+    while (true) {
+       
+        if(granate[1].x>LARGHEZZA_GIOCO-2 && alive_destra){       			
+        	alive_destra=0;
+        	scrittura_buffer(granate[1]);
+    		
+        }else if(alive_destra){
+        	scrittura_buffer(granate[1]);
+        	granate[1].x++;}
+        	
+        if(granate[0].x<1 && alive_sinistra){
+        	alive_sinistra=0;
+    		scrittura_buffer(granate[0]);  //avvisa della morte;
+        }else if(alive_sinistra){
+        	scrittura_buffer(granate[0]);
+        	granate[0].x--;
+        }
+        	         
+        usleep(velocità); // Velocità del movimento   
+    }	       
+        
 }
