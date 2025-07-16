@@ -1,6 +1,11 @@
 #ifndef CROC_HANDLE_H
 #define CROC_HANDLE_H
 
+#include "main.h"
+#include "FrogHandle.h"
+#include "Partita.h"
+#include "Draws.h"
+#include "collisioni.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -10,7 +15,6 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <locale.h>
-#include "menu.h"
 #include <string.h>
 #include <fcntl.h>
 #include <pthread.h>

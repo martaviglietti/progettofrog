@@ -1,6 +1,12 @@
 #ifndef PARTITA_H
 #define PARTITA_H
-#include "main.h" 
+
+#include "main.h"
+#include "FrogHandle.h"
+#include "CrocHandle.h"
+#include "Draws.h"
+#include "collisioni.h"
+
 
 #include <stdio.h>
 #include <time.h>
@@ -10,7 +16,6 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <locale.h>
-#include "menu.h"
 #include <string.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -36,3 +41,4 @@ void cancel_thread(Thread_id thread_id[]);
 void scrittura_buffer(Temp messaggio);
 Temp lettura_buffer();
 void svuota_buffer();
+#endif

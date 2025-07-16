@@ -1,5 +1,6 @@
 #include<Draws.h>
 #include<main.h>
+
 void generatore_finestra(WINDOW *finestra_gioco, int maxX, int maxY, Statistiche * statistiche_gioco){
     
    

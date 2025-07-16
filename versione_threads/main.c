@@ -1,5 +1,11 @@
 #include "main.h"
 #include<collisioni.h>
+#include "main.h"
+#include "FrogHandle.h"
+#include "CrocHandle.h"
+#include "Partita.h"
+#include "Draws.h"
+
 
 Temp buffer[DIM_BUFFER];
 int indice_scrittura = 0;

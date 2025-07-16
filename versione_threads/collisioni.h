@@ -1,6 +1,12 @@
 #ifndef COLLISIONI_H
 #define COLLISIONI_H
 
+#include "Partita.h"
+#include "main.h"
+#include "FrogHandle.h"
+#include "CrocHandle.h"
+#include "Draws.h"
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -13,10 +19,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include "main.h"  // Per ID, buffer, struct comuni
-#include "FrogHandle.h"
-#include "CrocHandle.h"
-#include "Partita.h"
+
 
 
 int collisione_rana_proiettili(Rana* rana,Proiettile proiettile[], Statistiche * statistiche_gioco, int giocare);

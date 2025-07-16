@@ -1,5 +1,13 @@
 #ifndef FROG_HANDLE_H
 #define FROG_HANDLE_H
+#include "main.h"
+
+#include "CrocHandle.h"
+#include "Partita.h"
+#include "Draws.h"
+#include "collisioni.h"
+c
+
 
 #include <stdio.h>
 #include <time.h>
@@ -16,7 +24,7 @@
 #include <semaphore.h>
 #define ALTEZZA_RANA 2
 #define LARGHEZZARANA 3
-#include "main.h"
+
 
 
 typedef struct{
