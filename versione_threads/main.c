@@ -1,9 +1,5 @@
 #include "main.h"
-#include "collisioni.h"
-#include "FrogHandle.h"
-#include "CrocHandle.h"
-#include "Partita.h"
-#include "Draws.h"
+
 
 
 Temp buffer[DIM_BUFFER];
