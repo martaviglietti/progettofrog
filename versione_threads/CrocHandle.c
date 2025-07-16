@@ -248,3 +248,75 @@ Temp lettura_buffer(){
 }
 
 
+
+void attesa_coccodrilli(int id, Coccodrillo* coccodrilli, int distanze_coccodrilli[] ){
+    int indice_flusso;
+    
+    if ((coccodrilli[id].x==SPAWN_DX_COCCODRILLO && coccodrilli[id].dir==-1) || (coccodrilli[id].x==SPAWN_SX_COCCODRILLO && coccodrilli[id].dir==1)) {  //controlliamo che il coccodrillo corrente si trovi a inizio tragitto (quindi appena prima di entrare in mappa)		
+        for (int i=0;i<NUMERO_COCCODRILLI;i++) {
+            indice_flusso=(coccodrilli[i].y-37)/-3;  //individuiamo l'indice del flusso del coccoddrillo corrente
+			
+	    //controlliamo se il coccodrillo attuale stia spawnando con coccodrilli troppo vicini nelle stesso flusso (ovviamente esclusi quelli in attesa)
+	    if (i!=coccodrilli[id].id && coccodrilli[i].y==coccodrilli[id].y && ((coccodrilli[id].x-distanze_coccodrilli[indice_flusso]<coccodrilli[i].x && coccodrilli[id].dir==-1) || (coccodrilli[id].x+distanze_coccodrilli[indice_flusso]>coccodrilli[i].x && coccodrilli[id].dir==1)) && coccodrilli[i].attesa!=1){
+	        if(coccodrilli[id].attesa==1) exit(1);
+	        coccodrilli[id].attesa=1;  //lo mettiamo in attesa perchè ci sono coccodrilli non in attesa vicino a dove spawna
+	        sem_wait(&semafori_coccodrilli[id]);
+	    }
+        }
+    }
+}
+
+void riattivazione_coccodrilli(Coccodrillo* coccodrilli, int distanze_coccodrilli[]){
+
+    int indice_flusso;
+    int riattivare;
+    
+    for (int i=0;i<NUMERO_COCCODRILLI;i++) {  //controlliamo se dobbiamo sbloccare qualche coccodrillo
+        if (coccodrilli[i].attesa==1) {
+	    indice_flusso=(coccodrilli[i].y-37)/-3;  //individuiamo l'indice del flusso del coccoddrillo corrente	
+	    riattivare=1;
+	    for (int j=0;j<NUMERO_COCCODRILLI;j++) {  //per ogni coccodrillo in attesa controlliamo se ci sono ancora coccodrilli nelle vicinanze (quelli in attesa non contano)
+	        if(i!=j && coccodrilli[j].y==coccodrilli[i].y && ((coccodrilli[i].x-distanze_coccodrilli[indice_flusso]<coccodrilli[j].x && coccodrilli[i].dir==-1) || (coccodrilli[i].x+distanze_coccodrilli[indice_flusso]>coccodrilli[j].x && coccodrilli[i].dir==1)) && coccodrilli[j].attesa!=1){
+		    riattivare=0;
+		    break; 
+		}		
+	    }
+	    if (riattivare) {  //se riattivare è rimasto uguale a 1 significa che non aveva coccodrilli nelle vicinanze	  	  
+	        distanze_coccodrilli[indice_flusso]=numero_random(13,16);   //modifichiamo la distanza da rispettare così da aggiungere casualità	
+	        if(coccodrilli[i].attesa==-1) exit(1);						    	
+		coccodrilli[i].attesa=-1;  //togliamo la attesa e lo facciamo ripartire;
+		sem_post(&semafori_coccodrilli[i]);
+	    }
+	}
+    }
+}
+
+
+
+//funzione che assegna una velocità a ogni flusso
+void velocità_flussi(Flusso *flussi, int vel){
+	
+    int altezza_base=37;  //posizione del primo flusso (quello più in basso)
+    int dimensione_flussi=3;  //larghezza dei flussi
+    for (int i=0;i<8;i++) {
+        flussi[i].y=altezza_base - i*dimensione_flussi;  //impostiamo anche l'altezza di ogni flusso 
+	flussi[i].velocità= numero_random(vel - 20000,vel+20000);
+    }
+}
+
+
+
+//funzione che assegna una direzione ad ogni flusso
+void direzione_flussi(Flusso *flussi){
+    for (int i=0;i<8;i++) {
+	if (i>=1) {  //tutti i flussi dal secondo in poi hanno direzione opposta al flusso precedente
+	    flussi[i].dir= -flussi[i-1].dir;
+
+	} else {
+	    //impostiamo la direzione del primo flusso in modo randomico
+	    flussi[i].dir= rand()%2;
+	    if (flussi[i].dir==0) flussi[i].dir=1;
+	    else flussi[i].dir=-1;
+	}
+    }	
+}

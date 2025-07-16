@@ -3,7 +3,7 @@
 # Directory dei sorgenti e di output
 SRC_DIR = versione_threads
 BUILD_DIR = build
-OBJ_DIR = $(BUILD_DIR)/$(SRC_DIR)
+OBJ_DIR = $(BUILD_DIR)/versione_threads
 
 # Compilatore e flag
 CC = gcc
