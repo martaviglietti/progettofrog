@@ -1,6 +1,8 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -9,13 +11,10 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <locale.h>
-#include "menu.h"
 #include <string.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
-
-
 #define NUMERO_COCCODRILLI 24
 #define LARGHEZZA_GIOCO 81
 #define ALTEZZA_GIOCO 49
@@ -26,12 +25,11 @@
 #define LARGHEZZARANA 3
 #define ALTEZZA_COCCODRILLO 2
 #define LARGHEZZA_COCCODRILLO 9
-#define DELAY 100000
 #define TANE 6
 #define FIUME 25
 #define PRATO 5
 #define SPONDA_SUPERIORE 5
-#define NUMERO_PID 100
+#define NUMERO_TID 100
 #define DIM_BUFFER 100
 //definizione id da usare;
 #define ID_TIME 45
@@ -39,9 +37,6 @@
 #define ID_RANA 50
 #define ID_GRANATE 60
 #define ID_PROIETTILE 70
-#define ID_AGGIUNTAPID 30
-#define ID_MORTE -10
-#define ID_RICHIESTA 90
 
 
 // opzioni del menu
@@ -125,9 +120,13 @@ typedef struct{
 
 
 typedef struct{
-    pthread_t id;   // ID del thread
+
+    pthread_t id;   // Id del thread
     int valido;
+
+
 }Thread_id;
+
 
 typedef struct{
 	Temp coccodrillo;
@@ -135,6 +134,8 @@ typedef struct{
 	int id_flusso;
 	Parametri* parametri_gioco;
 	
+
+
 }Parametri_coccodrillo;
 
 typedef struct{
@@ -153,24 +154,67 @@ typedef struct{
 	
 }Parametri_granata;
 
-extern Temp buffer[DIM_BUFFER];
-extern int indice_scrittura;
-extern int indice_lettura;
 
-extern pthread_mutex_t semaforo_buffer;
-extern pthread_mutex_t semaforo_disegno;
-
-extern sem_t semafori_coccodrilli[NUMERO_COCCODRILLI];
-extern sem_t spazi_occupati;
-extern sem_t spazi_liberi;
-
-extern int fine_gioco;
-
-
-
+int game_vinto(WINDOW *finestra_gioco, int punteggio);
+int game_perso(WINDOW *finestra_gioco, int punteggio);
+int scelta_difficoltà(WINDOW *finestra_gioco);
+void generatore_finestra(WINDOW *finestra_gioco, Statistiche * statistiche_gioco);
+Statistiche Partita(WINDOW *finestra_gioco,Parametri parametri_gioco);
+void gestore_grafica(WINDOW* finestra_gioco,int velocità_proiettili, Statistiche * statistiche_gioco, Thread_id thread_id[]);
+int collisione_rana_proiettili(Rana* rana,Proiettile proiettile[], Statistiche * statistiche_gioco, int gioca);
+int rana_su_tana(Rana*rana, Statistiche * statistiche_gioco);
+int rana_su_coccodrillo(Rana *rana, Coccodrillo *coccodrilli);
+void creazione_processi(Flusso *flussi, int array_pid[NUMERO_TID],WINDOW* finestra_gioco, Parametri* parametri_gioco);
+void* funzione_gestione_coccodrilli(Flusso *flussi, Parametri* parametri_gioco, Thread_id thread_id[], Parametri_coccodrillo parametri_coccodrillo[]);
+void* funzione_coccodrillo(void* parametri_thread);
+void* funzione_proiettile(void* parametri_thread);
 void* funzione_tempo();
+
+void velocità_flussi(Flusso *flussi, int velocità_coccodrillo);
+void direzione_flussi(Flusso *flussi);
 int menu(WINDOW *finestra_gioco, const char *title, const char *options[], int num_options);
 void crediti(WINDOW *finestra_gioco);
+int numero_random(int min, int max);
+void* funzione_rana(void* parametri_thread);
+void spara_granata(int inizioX, int inizioY,int velocità_proiettili ,Thread_id thread_id[]);
+void spara_proiettile(int id, int identificatore_coc, Coccodrillo* coccodrilli,int velocità_proiettili, Thread_id thread_id[]);
+void* funzione_granata(void* parametri_thread);
+void creazione_colori();
+void disegna_proiettile(WINDOW* finestra_gioco, Proiettile proiettile[]);
+void disegna_granate(WINDOW* finestra_gioco, Granata granate[2]);
+void disegna_rana(WINDOW *finestra_gioco, Rana* rana);
+void disegna_coccodrilli(WINDOW *finestra_gioco, Coccodrillo *coccodrilli);
+int rana_in_finestra(Rana* rana, Temp*temp);
+
+void barra_tempo(WINDOW* finestra_gioco,Statistiche * statistiche_gioco, int tempo);    
+void punteggio_tempo(Statistiche * statistiche_gioco);         
+void collisione_granate_confine( Granata* granate);
+void collisione_proiettili_confine(Thread_id thread_id[], Proiettile proiettile[]);
+void collisione_granate_proiettili(Granata* granate, Proiettile proiettili[], Thread_id thread_id[], Statistiche * statistiche_gioco);
+void uccidi_granate(Granata* granate, Thread_id thread_id[]);
+void riattivazione_coccodrilli(Coccodrillo* coccodrilli, int distanze_coccodrilli[]);
+void attesa_coccodrilli(int id, Coccodrillo* coccodrilli, int distanze_coccodrilli[]);
+void controllo_stato_coccodrillo(int id,Coccodrillo* coccodrilli);
+int movimento_rana_su_coccodrillo(int id, int coccodrillo_scelto, Coccodrillo* coccodrilli, Rana* rana, Statistiche * statistiche_gioco , int gioca);
+void impostazioni_gioco(Parametri* parametri_gioco, int difficoltà );
+float numero_random_float(float minimo, float max);
+void controllo_sparo_proiettile(Thread_id thread_id[], Coccodrillo* coccodrilli,Rana* rana, Proiettile* proiettili, struct timeval* inizio, struct timeval* fine, float* numero_randomico, int velocità_proiettili);
+void scrittura_buffer(Temp messaggio);
+Temp lettura_buffer();
+void cancel_thread(Thread_id thread_id[]);
+
+
+Temp buffer[DIM_BUFFER];
+
+int indice_scrittura=0;
+int indice_lettura=0;
+pthread_mutex_t semaforo_buffer;
+pthread_mutex_t semaforo_disegno;
+sem_t semafori_coccodrilli[NUMERO_COCCODRILLI]; //creo un mutex per ogni coccodrillo per gestire le pause
+sem_t sem_posti_occupati;   // conta gli elementi presenti
+sem_t sem_posti_liberi;
+
+
 
 
 #endif
