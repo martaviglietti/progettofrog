@@ -28,6 +28,7 @@ void controllo_sparo_proiettile(Thread_id thread_id[] ,Coccodrillo* coccodrilli,
 
 }
 
+
 //funzione che gestisce la creazione del processo proiettile
 void spara_proiettile(int id,int identificatore_coccodrillo, Coccodrillo* coccodrilli,int velocità_proiettili,Thread_id thread_id[]){
    
@@ -171,7 +172,7 @@ void* funzione_coccodrillo(void* parametri_thread){
     Temp coccodrillo= parametri_coccodrillo->coccodrillo;
     
     
-  
+    usleep(numero_random((int)(500000*((float)parametri_coccodrillo->parametri_gioco->velocità_coccodrilli/120000)),(int)(800000*((float)parametri_coccodrillo->parametri_gioco->velocità_coccodrilli/120000)))*coccodrillo.id); 
     
     
     int id_flusso_scelto= parametri_coccodrillo->id_flusso;
@@ -215,7 +216,7 @@ void scrittura_buffer(Temp messaggio){
     
     
     
-    sem_wait(&spazi_liberi);  // aspetta spazio libero
+    sem_wait(&sem_posti_liberi);  // aspetta spazio libero
     pthread_mutex_lock(&semaforo_buffer);
     pthread_cleanup_push((void(*)(void*))pthread_mutex_unlock, &semaforo_buffer);
 
@@ -224,7 +225,7 @@ void scrittura_buffer(Temp messaggio){
     
 
     pthread_cleanup_pop(1); // sblocca il mutex qui
-    sem_post(&spazi_occupati);
+    sem_post(&sem_posti_occupati);
     
 }
 
@@ -232,17 +233,18 @@ Temp lettura_buffer(){
     
     Temp messaggio={-1,0,0,0};
     
-    if (sem_trywait(&spazi_occupati) == 0){
-	    pthread_mutex_lock(&semaforo_buffer);
-            pthread_cleanup_push((void(*)(void*))pthread_mutex_unlock, &semaforo_buffer);
+   sem_wait(&sem_posti_occupati);
+	    
+          
+         pthread_mutex_lock(&semaforo_buffer);
+	 pthread_cleanup_push((void(*)(void*))pthread_mutex_unlock, &semaforo_buffer);
+         messaggio = buffer[indice_lettura];
+         indice_lettura = (indice_lettura + 1) % DIM_BUFFER;
+          pthread_cleanup_pop(1); // sblocca il mutex qui
 
-            messaggio = buffer[indice_lettura];
-            indice_lettura = (indice_lettura + 1) % DIM_BUFFER;
             
-
-            pthread_cleanup_pop(1);  // sblocca il mutex qui
-            sem_post(&spazi_liberi);
-    }
+          sem_post(&sem_posti_liberi);
+    
     return messaggio;
     
 }
@@ -257,8 +259,8 @@ void attesa_coccodrilli(int id, Coccodrillo* coccodrilli, int distanze_coccodril
             indice_flusso=(coccodrilli[i].y-37)/-3;  //individuiamo l'indice del flusso del coccoddrillo corrente
 			
 	    //controlliamo se il coccodrillo attuale stia spawnando con coccodrilli troppo vicini nelle stesso flusso (ovviamente esclusi quelli in attesa)
-	    if (i!=coccodrilli[id].id && coccodrilli[i].y==coccodrilli[id].y && ((coccodrilli[id].x-distanze_coccodrilli[indice_flusso]<coccodrilli[i].x && coccodrilli[id].dir==-1) || (coccodrilli[id].x+distanze_coccodrilli[indice_flusso]>coccodrilli[i].x && coccodrilli[id].dir==1)) && coccodrilli[i].attesa!=1){
-	        if(coccodrilli[id].attesa==1) exit(1);
+	    if (i!=coccodrilli[id].id && coccodrilli[i].y==coccodrilli[id].y && ((coccodrilli[id].x-distanze_coccodrilli[indice_flusso]<coccodrilli[i].x && coccodrilli[id].dir==-1) || (coccodrilli[id].x+distanze_coccodrilli[indice_flusso]>coccodrilli[i].x && coccodrilli[id].dir==1)) && coccodrilli[i].attesa!=1 && coccodrilli[id].attesa!=1){
+	        
 	        coccodrilli[id].attesa=1;  //lo mettiamo in attesa perchè ci sono coccodrilli non in attesa vicino a dove spawna
 	        sem_wait(&semafori_coccodrilli[id]);
 	    }
@@ -276,20 +278,21 @@ void riattivazione_coccodrilli(Coccodrillo* coccodrilli, int distanze_coccodrill
 	    indice_flusso=(coccodrilli[i].y-37)/-3;  //individuiamo l'indice del flusso del coccoddrillo corrente	
 	    riattivare=1;
 	    for (int j=0;j<NUMERO_COCCODRILLI;j++) {  //per ogni coccodrillo in attesa controlliamo se ci sono ancora coccodrilli nelle vicinanze (quelli in attesa non contano)
-	        if(i!=j && coccodrilli[j].y==coccodrilli[i].y && ((coccodrilli[i].x-distanze_coccodrilli[indice_flusso]<coccodrilli[j].x && coccodrilli[i].dir==-1) || (coccodrilli[i].x+distanze_coccodrilli[indice_flusso]>coccodrilli[j].x && coccodrilli[i].dir==1)) && coccodrilli[j].attesa!=1){
+	        if(i!=j && coccodrilli[j].y==coccodrilli[i].y && ((coccodrilli[i].x-distanze_coccodrilli[indice_flusso]<coccodrilli[j].x && coccodrilli[i].dir==-1) || (coccodrilli[i].x+distanze_coccodrilli[indice_flusso]>coccodrilli[j].x && coccodrilli[i].dir==1)) && coccodrilli[j].attesa!=1 ){
 		    riattivare=0;
 		    break; 
 		}		
 	    }
 	    if (riattivare) {  //se riattivare è rimasto uguale a 1 significa che non aveva coccodrilli nelle vicinanze	  	  
 	        distanze_coccodrilli[indice_flusso]=numero_random(13,16);   //modifichiamo la distanza da rispettare così da aggiungere casualità	
-	        if(coccodrilli[i].attesa==-1) exit(1);						    	
+	        					    	
 		coccodrilli[i].attesa=-1;  //togliamo la attesa e lo facciamo ripartire;
 		sem_post(&semafori_coccodrilli[i]);
 	    }
 	}
     }
 }
+
 
 
 
@@ -303,6 +306,7 @@ void velocità_flussi(Flusso *flussi, int vel){
 	flussi[i].velocità= numero_random(vel - 20000,vel+20000);
     }
 }
+
 
 
 
