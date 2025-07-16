@@ -45,7 +45,7 @@ const char *rana_sprite[2] = {
     "   "
 };
 
-const char *coccodrillo_sprite[2][2]={{"///////","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
+const char *coccodrillo_sprite[2][2]={{"XXXXXXX","XXXXXX0X0"},{"XXXXXXX","0X0XXXXXX"}};
             
 
 
