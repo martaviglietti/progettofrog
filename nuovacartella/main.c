@@ -1339,7 +1339,7 @@ void* funzione_rana(void* parametri_thread){
                 rana.x=2;
                 scrittura_buffer(rana);		
                 break;
-            case 's':  //tasto per sparare le granate 
+            case ' ':  //tasto per sparare le granate 
             	scrittura_buffer(granata);
             	
           
